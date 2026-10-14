@@ -37,6 +37,10 @@ export async function signUpCollector(input: z.input<typeof signupInput>): Promi
     return { ok: true, phone }
 }
 
-export async function normalizePhoneAction(phone: string): Promise<string | null> {
-    return normalizePhone(phone)
+/** Whether a number already has an account (sign-up uses this to send existing users to login). */
+export async function phoneHasAccount(phone: string): Promise<boolean> {
+    const e164 = normalizePhone(phone)
+    if (!e164) return false
+    const existing = await db.query.user.findFirst({ where: eq(user.phoneNumber, e164), columns: { id: true } })
+    return Boolean(existing)
 }

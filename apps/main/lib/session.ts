@@ -8,7 +8,7 @@ export const getSession = cache(async () => getServerSession())
 /** Current collector's user id. Redirects to /login when signed out. */
 export async function requireCollectorId(): Promise<string> {
     const session = await getSession()
-    if (!session) redirect("/login")
+    if (!session) redirect("/api/session/clear")
     return session.user.id
 }
 

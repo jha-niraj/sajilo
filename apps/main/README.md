@@ -21,7 +21,7 @@ The collector's PWA. See the root `README.md` for setup and `CLAUDE.md` for arch
 ## Scripts
 
 ```bash
-pnpm dev            # next dev on :3000
+pnpm dev            # next dev on :3100
 pnpm test           # vitest (lib/**/*.test.ts)
 pnpm build          # next build
 pnpm deploy:build   # OpenNext Cloudflare build

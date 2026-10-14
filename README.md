@@ -12,7 +12,7 @@ English by default, Nepali at a tap.
 
 ```
 apps/
-  main/    Sajilo PWA (port 3000)
+  main/    Sajilo PWA (port 3100)
   admin/   Admin dashboard (port 3001)
 packages/
   auth/      @repo/auth      Better Auth (phone + PIN for collectors, email for admins)
@@ -43,10 +43,10 @@ cp apps/admin/.env.example apps/admin/.env
 pnpm --filter @repo/db db:push                # create tables
 pnpm --filter @repo/db db:seed                # admin: superadmin@admin.com / Admin@1234
 
-pnpm dev                                      # main :3000, admin :3001
+pnpm dev                                      # main :3100, admin :3001
 ```
 
-Open http://localhost:3000, create an account with a phone number and a 4-digit PIN, then add customers (type, paste a list, or scan a photo).
+Open http://localhost:3100, create an account with a phone number and a 4-digit PIN, then add customers (type, paste a list, or scan a photo).
 
 ## Tests
 

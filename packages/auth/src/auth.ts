@@ -79,7 +79,7 @@ export const auth = betterAuth({
             : {},
 
     trustedOrigins: [
-        process.env.MAIN_APP_URL || 'http://localhost:3000',
+        process.env.MAIN_APP_URL || 'http://localhost:3100',
         process.env.ADMIN_APP_URL || 'http://localhost:3001',
     ],
 
@@ -113,7 +113,7 @@ export const auth = betterAuth({
 
     baseURL: process.env.BETTER_AUTH_URL,
 
-    // localhost:3000 and :3001 share cookies (cookies ignore ports), so each app gets its own prefix.
+    // localhost:3100 and :3001 share cookies (cookies ignore ports), so each app gets its own prefix.
     advanced: {
         cookiePrefix: process.env.AUTH_COOKIE_PREFIX || 'better-auth',
     },

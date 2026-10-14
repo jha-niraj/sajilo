@@ -52,7 +52,7 @@ function PinSlot({ index, error }: { index: number; error?: boolean }) {
             className={cn(
                 "relative flex h-16 w-16 items-center justify-center border-y border-r border-line bg-card text-3xl text-ink transition-colors",
                 "first:rounded-l-2xl first:border-l last:rounded-r-2xl",
-                isActive && "z-10 ring-2 ring-saffron",
+                isActive && "z-10 rounded-xl ring-2 ring-saffron ring-offset-2 ring-offset-paper first:rounded-l-2xl last:rounded-r-2xl",
                 error && "border-miss bg-miss-soft",
             )}
         >

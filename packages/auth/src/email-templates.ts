@@ -24,7 +24,7 @@ export function welcomeEmail({ name }: { name: string }): string {
               <p style="margin:0 0 32px;font-size:15px;color:#6B6E67;line-height:1.6;">
                 Your account is ready. We&apos;re glad you&apos;re here. Jump in and start exploring.
               </p>
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/home"
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3100'}/home"
                 style="display:inline-block;background:#111211;color:#F6F4EE;padding:14px 28px;border-radius:999px;font-size:15px;font-weight:500;text-decoration:none;letter-spacing:-0.01em;">
                 Get started
               </a>
@@ -70,7 +70,7 @@ export function passwordChangedEmail({ name }: { name: string }): string {
                 Your account password was successfully changed. If you made this change, no action is needed.
                 If you <strong style="color:#111211;">didn&apos;t</strong> make this change, reset your password immediately.
               </p>
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/forgotpassword"
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3100'}/forgotpassword"
                 style="display:inline-block;background:#111211;color:#F6F4EE;padding:14px 28px;border-radius:999px;font-size:15px;font-weight:500;text-decoration:none;letter-spacing:-0.01em;">
                 Reset password
               </a>

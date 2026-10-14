@@ -12,7 +12,7 @@ import { PrintButton } from "./print-button"
 export const metadata: Metadata = { title: "Report" }
 
 export default async function PrintMonthPage({ searchParams }: { searchParams: Promise<{ y?: string; m?: string }> }) {
-    if (!(await getSession())) redirect("/login")
+    if (!(await getSession())) redirect("/api/session/clear")
     const sp = await searchParams
     const lang: Lang = (await cookies()).get("sajilo.lang")?.value === "ne" ? "ne" : "en"
     const today = nepalToday()

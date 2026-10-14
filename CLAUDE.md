@@ -32,7 +32,7 @@ Production-ready Next.js monorepo. Clone, fill `.env` files, run `pnpm --filter 
 ```
 basecodebase/
 ├── apps/
-│   ├── main/          # Customer-facing Next.js app  (port 3000)
+│   ├── main/          # Customer-facing Next.js app  (port 3100)
 │   └── admin/         # Admin dashboard              (port 3001)
 └── packages/
     ├── auth/          # @repo/auth  - Better Auth config, email templates, session helpers
@@ -51,13 +51,13 @@ Each app has its own `.env` file. Root `.env` is empty (env moved to apps).
 ```bash
 DATABASE_URL=postgresql://...
 BETTER_AUTH_SECRET=<32-char secret>
-BETTER_AUTH_URL=http://localhost:3000
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+BETTER_AUTH_URL=http://localhost:3100
+NEXT_PUBLIC_SITE_URL=http://localhost:3100
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 RESEND_API_KEY=
 RESEND_FROM_EMAIL="AppName <noreply@domain.com>"
-MAIN_APP_URL=http://localhost:3000
+MAIN_APP_URL=http://localhost:3100
 ADMIN_APP_URL=http://localhost:3001
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
 NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=   # Unsigned preset for profile pictures
@@ -85,7 +85,7 @@ pnpm --filter @repo/db db:push
 pnpm --filter @repo/db db:seed
 # Creates: superadmin@admin.com / Admin@1234
 
-pnpm dev   # main :3000, admin :3001
+pnpm dev   # main :3100, admin :3001
 ```
 
 ## Database (`packages/db`)
@@ -186,7 +186,7 @@ const { data: session, isPending } = useSession()
 
 Emails silently skip when `RESEND_API_KEY` is not set.
 
-## Main App (`apps/main`) - Sajilo, port 3000
+## Main App (`apps/main`) - Sajilo, port 3100
 
 Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: daily collection) and his lending book (Phase 2). Plans and task lists: `plan/phase-1-daily-collection.md`, `plan/phase-2-lending.md`. DB choice rationale: `plan/database-hyperdrive-vs-neon.pdf`.
 
@@ -199,10 +199,21 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - Keep the file name `middleware.ts` (edge). OpenNext on Workers does not run Node "proxy" yet. Next is pinned to 16.3.x until OpenNext supports 16.4.
 
 ### Routes
-`/login`, `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month`, `/customers/[id]`, `/manage`, `/scan`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/more`, `/settings`, `/offline`.
+`/login`, `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month`, `/customers/[id]`, `/manage`, `/scan`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/more`, `/settings`, `/offline`.
 
 ### Offline
 `lib/offline/store.ts` (Dexie: day snapshots + outbox) and `lib/offline/sync.ts` (flush on online/visibility/30s). `public/sw.js` caches the app shell and pages (network-first). Server actions in `actions/` are the only API.
+
+### Munshi (AI bookkeeper, `/munshi`)
+- Voice: Sarvam Saaras v4 STT (customer/borrower names as keyterms) -> agent -> Sarvam Bulbul v3 TTS (Hindi voice reads Nepali Devanagari; no Nepali TTS yet). Chat uses the same agent.
+- Agent: Vercel AI SDK `generateText` with tools built by `makeTool` (`@repo/ai/agent`), same layout as Gurukul Saathi: `lib/munshi/agenttools/<area>/<area>-reads.ts|-writes.ts`, registry in `agenttools/index.ts`.
+- Model: GPT (`OPENAI_API_KEY`) or, without it, Sarvam `sarvam-105b-conversations` via the AI SDK OpenAI-compatible provider (`lib/munshi/model.ts`).
+- Write tools follow preview/confirm: `confirm=false` saves nothing and shows a Confirm card; `confirm=true` only after he says yes; one write per turn (`claimWriteSlot`). Writes wrap existing server actions.
+- Turns go through `POST /api/munshi` (JSON = chat, multipart = voice). Confirm button -> `confirmProposal` server action.
+- New tool: add a def in the right area file and list it in `agenttools/index.ts`.
+
+### Auth flow
+`/login` is PIN-only when the phone is remembered on the device (`lib/device-account.ts`); otherwise it asks the number once (joined +977 boxes, `components/auth/phone-input.tsx`). `/signup` = name -> number -> PIN -> confirm -> `/munshi?welcome=1`.
 
 ### Scan import
 Photo -> `@repo/sarvamai` digitise (ne-IN, handwritten, md) -> `lib/scan/structure.ts` (gpt-4o-mini JSON; falls back to a line parser without `OPENAI_API_KEY`) -> review screen -> `applyScan`. Photo kept in R2 when `R2_*` is set.

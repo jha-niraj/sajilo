@@ -2,35 +2,69 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { motion } from "framer-motion"
+import { ArrowLeft, ArrowRight, Check } from "lucide-react"
 import { signIn } from "@repo/auth/client"
-import { AuthFrame } from "@/components/auth/auth-frame"
+import { Loader } from "@repo/ui/components/ui/loader"
+import { AuthFrame, AuthHeading } from "@/components/auth/auth-frame"
+import { PhoneInput } from "@/components/auth/phone-input"
 import { PinInput } from "@/components/pin-input"
 import { useI18n } from "@/lib/i18n"
-import { normalizePhone, toAsciiDigits } from "@/lib/phone"
-import { signUpCollector } from "@/actions/auth.action"
-import { Loader } from "@repo/ui/components/ui/loader"
+import { normalizePhone } from "@/lib/phone"
+import { saveDeviceAccount } from "@/lib/device-account"
+import { phoneHasAccount, signUpCollector } from "@/actions/auth.action"
 
-type Step = "details" | "pin" | "confirm"
+type Step = "name" | "phone" | "pin" | "confirm" | "done"
+const ORDER: Step[] = ["name", "phone", "pin", "confirm"]
 
 export function SignupClient() {
     const { t, lang } = useI18n()
-    const [step, setStep] = useState<Step>("details")
+    const [step, setStep] = useState<Step>("name")
+    const [direction, setDirection] = useState<1 | -1>(1)
     const [name, setName] = useState("")
     const [phone, setPhone] = useState("")
     const [pin, setPin] = useState("")
     const [confirm, setConfirm] = useState("")
     const [error, setError] = useState<string | null>(null)
+    const [taken, setTaken] = useState(false)
     const [busy, setBusy] = useState(false)
 
-    const e164 = normalizePhone(phone)
+    const go = (next: Step, dir: 1 | -1 = 1) => {
+        setError(null)
+        setDirection(dir)
+        setStep(next)
+    }
+
+    const back = () => {
+        const i = ORDER.indexOf(step)
+        if (i <= 0) return
+        if (step === "confirm") {
+            setPin("")
+            setConfirm("")
+            return go("pin", -1)
+        }
+        go(ORDER[i - 1]!, -1)
+    }
+
+    const checkPhone = async (digits: string) => {
+        if (!normalizePhone(digits)) return setError(t("invalidPhone"))
+        setBusy(true)
+        const exists = await phoneHasAccount(digits).catch(() => false)
+        setBusy(false)
+        if (exists) {
+            setTaken(true)
+            return
+        }
+        go("pin")
+    }
 
     const finish = async (confirmPin: string) => {
         if (confirmPin !== pin) {
-            setError(t("pinMismatch"))
             setConfirm("")
             setPin("")
+            setDirection(-1)
             setStep("pin")
+            setError(t("pinMismatch"))
             return
         }
         setBusy(true)
@@ -39,116 +73,177 @@ export function SignupClient() {
             setBusy(false)
             setConfirm("")
             setPin("")
-            setStep("details")
-            setError(res.error === "phone_taken" ? t("phoneTaken") : t("invalidPhone"))
+            if (res.error === "phone_taken") {
+                setTaken(true)
+                go("phone", -1)
+            } else {
+                go("phone", -1)
+                setError(t("invalidPhone"))
+            }
             return
         }
         const login = await signIn.phoneNumber({ phoneNumber: res.phone, password: pin, rememberMe: true })
+        saveDeviceAccount({ phone: res.phone, name: name.trim() })
         if (login.error) {
             window.location.replace("/login")
             return
         }
-        localStorage.setItem("sajilo.lastPhone", res.phone)
-        window.location.replace("/manage")
+        setDirection(1)
+        setStep("done")
+        setTimeout(() => window.location.replace("/munshi?welcome=1"), 1400)
     }
 
-    const onPinChange = (v: string) => {
-        setError(null)
-        if (step === "pin") setPin(v)
-        else setConfirm(v)
-    }
-
-    const onPinComplete = (v: string) => {
-        if (step === "pin") setTimeout(() => setStep("confirm"), 150)
-        else void finish(v)
-    }
-
-    if (step === "details") {
+    if (step === "done") {
         return (
-            <AuthFrame>
-                <form
-                    className="flex flex-1 flex-col"
-                    onSubmit={(e) => {
-                        e.preventDefault()
-                        if (!name.trim()) return
-                        if (!e164) return setError(t("invalidPhone"))
-                        setStep("pin")
-                    }}
-                >
-                    <h1 className="mt-12 text-[30px] font-semibold leading-tight text-ink">{t("signupTitle")}</h1>
-                    <label className="mt-8 block">
-                        <span className="text-[15px] font-medium text-ink-2">{t("yourName")}</span>
-                        <input
-                            autoFocus
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            autoComplete="name"
-                            className="mt-2 h-16 w-full rounded-2xl bg-card px-4 text-xl text-ink outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
-                        />
-                    </label>
-                    <label className="mt-5 block">
-                        <span className="text-[15px] font-medium text-ink-2">{t("phone")}</span>
-                        <div className="mt-2 flex h-16 items-center rounded-2xl bg-card px-4 ring-1 ring-line focus-within:ring-2 focus-within:ring-saffron">
-                            <span className="mr-3 text-lg text-ink-3">+977</span>
-                            <input
-                                inputMode="numeric"
-                                autoComplete="tel-national"
-                                value={phone}
-                                onChange={(e) => {
-                                    setError(null)
-                                    setPhone(toAsciiDigits(e.target.value).replace(/\D/g, "").slice(0, 10))
-                                }}
-                                placeholder={t("phonePlaceholder")}
-                                className="h-full w-full bg-transparent text-2xl tracking-wider text-ink outline-none placeholder:text-ink-3/50"
-                            />
-                        </div>
-                    </label>
-                    {error && <p className="mt-3 text-[15px] text-miss">{error}</p>}
-                    <div className="mt-auto pb-6">
-                        <button
-                            type="submit"
-                            disabled={!name.trim() || phone.length < 10}
-                            className="flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-30"
-                        >
-                            {t("next")} <ArrowRight className="h-5 w-5" />
-                        </button>
-                        <p className="mt-5 text-center text-[15px] text-ink-2">
-                            {t("haveAccount")}{" "}
-                            <Link href="/login" className="font-semibold text-saffron">
-                                {t("signIn")}
-                            </Link>
-                        </p>
-                    </div>
-                </form>
+            <AuthFrame stepKey="done">
+                <div className="flex flex-1 flex-col items-center justify-center text-center">
+                    <motion.span
+                        initial={{ scale: 0.4, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                        className="flex h-24 w-24 items-center justify-center rounded-full bg-paid text-white shadow-[0_16px_40px_-12px_rgb(47_138_87/0.7)]"
+                    >
+                        <Check className="h-12 w-12" strokeWidth={3} />
+                    </motion.span>
+                    <h1 className="mt-7 text-[28px] font-semibold text-ink">{t("allSet", { name: name.trim().split(" ")[0] ?? "" })}</h1>
+                    <p className="mt-2 text-[17px] text-ink-2">{t("meetMunshi")}</p>
+                </div>
             </AuthFrame>
         )
     }
 
-    const value = step === "pin" ? pin : confirm
+    const index = ORDER.indexOf(step)
     return (
-        <AuthFrame>
-            <div className="flex flex-1 flex-col">
+        <AuthFrame stepKey={step} step={index} steps={ORDER.length} direction={direction}>
+            {index > 0 && (
                 <button
                     type="button"
-                    onClick={() => {
-                        setPin("")
-                        setConfirm("")
-                        setStep("details")
-                    }}
+                    onClick={back}
+                    disabled={busy}
                     className="mt-6 inline-flex w-fit items-center gap-1.5 rounded-full bg-paper-2 px-3 py-1.5 text-[15px] text-ink-2"
                 >
                     <ArrowLeft className="h-4 w-4" /> {t("back")}
                 </button>
-                <h1 className="mt-8 text-center text-[26px] font-semibold text-ink">
-                    {step === "pin" ? t("choosePin") : t("confirmPin")}
-                </h1>
-                <div className="mt-8">
-                    <PinInput key={`${step}-${error ?? ""}`} value={value} onChange={onPinChange} onComplete={onPinComplete} disabled={busy} error={!!error} />
+            )}
+
+            {step === "name" && (
+                <form
+                    className="flex flex-1 flex-col"
+                    onSubmit={(e) => {
+                        e.preventDefault()
+                        if (name.trim()) go("phone")
+                    }}
+                >
+                    <AuthHeading title={t("nameTitle")} sub={t("nameSub")} />
+                    <input
+                        autoFocus
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        autoComplete="name"
+                        placeholder={t("namePlaceholder")}
+                        className="mt-9 h-16 w-full rounded-2xl border border-line bg-card px-5 text-[22px] font-medium text-ink outline-none transition-shadow placeholder:text-ink-3/50 focus:ring-2 focus:ring-saffron"
+                    />
+                    <PrimaryButton disabled={!name.trim()} label={t("continue")} />
+                </form>
+            )}
+
+            {step === "phone" && (
+                <div className="flex flex-1 flex-col">
+                    <AuthHeading title={t("phoneOnceTitle")} sub={t("phoneSignupSub")} />
+                    <div className="mt-9">
+                        <PhoneInput
+                            value={phone}
+                            onChange={(v) => {
+                                setError(null)
+                                setTaken(false)
+                                setPhone(v)
+                            }}
+                            onComplete={(v) => void checkPhone(v)}
+                            disabled={busy}
+                            error={!!error || taken}
+                        />
+                        <div className="mt-3 min-h-6">
+                            {busy ? (
+                                <Loader size={22} dotSize={3} />
+                            ) : taken ? (
+                                <div className="rounded-2xl bg-card p-4 ring-1 ring-line">
+                                    <p className="text-[15px] font-medium text-ink">{t("alreadyHasAccount")}</p>
+                                    <Link
+                                        href="/login"
+                                        onClick={() => {
+                                            const e164 = normalizePhone(phone)
+                                            if (e164) saveDeviceAccount({ phone: e164 })
+                                        }}
+                                        className="mt-3 flex h-12 items-center justify-center rounded-xl bg-ink font-semibold text-paper"
+                                    >
+                                        {t("loginWithNumber")}
+                                    </Link>
+                                </div>
+                            ) : (
+                                <p className="text-[15px] text-miss">{error}</p>
+                            )}
+                        </div>
+                    </div>
                 </div>
-                <div className="mt-4 flex h-8 items-center justify-center">
-                    {busy ? <Loader size={24} dotSize={3} /> : <p className="text-center text-[15px] text-miss">{error}</p>}
+            )}
+
+            {(step === "pin" || step === "confirm") && (
+                <div className="flex flex-1 flex-col">
+                    <AuthHeading
+                        title={step === "pin" ? t("choosePin") : t("confirmPin")}
+                        sub={step === "pin" ? t("pinCreateSub") : t("pinConfirmSub")}
+                    />
+                    <div className="mt-9">
+                        <PinInput
+                            key={`${step}-${error ?? ""}`}
+                            value={step === "pin" ? pin : confirm}
+                            onChange={(v) => {
+                                setError(null)
+                                if (step === "pin") setPin(v)
+                                else setConfirm(v)
+                            }}
+                            onComplete={(v) => {
+                                if (step === "pin") setTimeout(() => go("confirm"), 120)
+                                else void finish(v)
+                            }}
+                            disabled={busy}
+                            error={!!error}
+                        />
+                        <div className="mt-4 flex min-h-8 items-center justify-center">
+                            {busy ? (
+                                <span className="flex items-center gap-2 text-[15px] text-ink-2">
+                                    <Loader size={20} dotSize={2} /> {t("settingUp")}
+                                </span>
+                            ) : (
+                                <p className="text-center text-[15px] text-miss">{error}</p>
+                            )}
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {step === "name" && (
+                <p className="pb-8 text-center text-[15px] text-ink-2">
+                    {t("haveAccount")}{" "}
+                    <Link href="/login" className="font-semibold text-saffron">
+                        {t("signIn")}
+                    </Link>
+                </p>
+            )}
         </AuthFrame>
+    )
+}
+
+function PrimaryButton({ disabled, label }: { disabled?: boolean; label: string }) {
+    return (
+        <div className="mt-auto pb-5 pt-10">
+            <button
+                type="submit"
+                disabled={disabled}
+                className="flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-ink text-lg font-semibold text-paper shadow-[0_12px_30px_-14px_rgb(42_33_24/0.6)] transition-opacity disabled:opacity-25 disabled:shadow-none"
+            >
+                {label} <ArrowRight className="h-5 w-5" />
+            </button>
+        </div>
     )
 }

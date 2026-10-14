@@ -52,7 +52,7 @@ During the month he holds collected cash until the bank deadline. Sometimes he l
 - [x] Overdue / due-soon highlighting on the home screen
 - [x] Scan import for old loan notes (scan kind `loans`)
 - [ ] Offline: read-only cache of loans; new loans/repayments queue like ticks
-- [ ] Later: AI assistant ("Ram ले कति तिर्नु पर्छ?") on top of the same engine
+- [x] Munshi AI assistant (voice + chat) on top of the same engines, Vercel AI SDK tools with preview/confirm writes
 
 ## Open questions
 

@@ -3,5 +3,5 @@ import { getSession } from "@/lib/session"
 
 export default async function Root() {
     const session = await getSession()
-    redirect(session ? "/today" : "/login")
+    redirect(session ? "/today" : "/api/session/clear")
 }
