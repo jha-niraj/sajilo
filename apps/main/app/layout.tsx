@@ -25,6 +25,15 @@ export const metadata: Metadata = {
     title: { default: "Sajilo", template: "%s · Sajilo" },
     description: "दैनिक बचत संकलन, सजिलै। Daily savings collection made easy.",
     applicationName: "Sajilo",
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3100"),
+    openGraph: {
+        type: "website",
+        siteName: "Sajilo",
+        title: "Sajilo - सजिलो",
+        description: "दैनिक बचत संकलन, सजिलै। Daily savings collection made easy.",
+        images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "Sajilo" }],
+    },
+    twitter: { card: "summary", title: "Sajilo - सजिलो", images: ["/icons/icon-512.png"] },
     appleWebApp: { capable: true, title: "Sajilo", statusBarStyle: "default" },
     formatDetection: { telephone: false },
     icons: {
@@ -40,6 +49,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
     themeColor: "#faf6ee",
+    // Light only. Chrome's Auto Dark Theme and Samsung Internet's force dark skip pages that say so;
+    // without it they repaint the page and dark-on-dark loaders and text disappear.
+    colorScheme: "only light",
     width: "device-width",
     initialScale: 1,
     maximumScale: 1,

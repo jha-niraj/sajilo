@@ -29,7 +29,7 @@
 }
 
 :root {
-    color-scheme: light;
+    color-scheme: only light;
     --background: #faf6ee;
     --foreground: #2a2118;
     --primary: #2a2118;

@@ -1,9 +1,9 @@
 /* global process, Buffer */
-// Generates the app icon options and the auth-screen illustrations with OpenAI, saves them under
-// public/, and writes a .webp next to every .png.
+// Generates the auth-screen illustrations with OpenAI, saves them under public/, and writes a
+// .webp next to every .png. The app icon has its own script (generate-icon.mjs).
 //
 //   pnpm images                     # everything not generated yet
-//   pnpm images auth-pin icon-b     # only these (by name, see JOBS)
+//   pnpm images auth-pin auth-done  # only these (by name, see JOBS)
 //   pnpm images --force             # redo even if the file exists
 //   pnpm images --model gpt-image-1.5 --quality medium
 //   pnpm images --webp              # only rebuild the .webp files from the saved PNGs (no API)
@@ -33,38 +33,8 @@ const HERO =
 
 const SCENE = `${STYLE} ${HERO} Isolated subject on a transparent background, no frame, no ground shadow box, centred with generous empty margin.`
 
-const ICON =
-    "App icon for 'Sajilo', a friendly money-collection app for a Nepali savings collector. " +
-    "Square 1024x1024 artwork filling the whole canvas edge to edge (no rounded corners, no outer border, " +
-    "the OS will mask it). Simple, bold, readable at 48px. Palette: saffron #c8611f, cream #faf6ee, " +
-    "deep brown #2a2118, a hint of violet #6b5bd2. Cartoon-modern, soft depth, no small details, no text except where asked."
-
 /** name -> output path (without extension), prompt and options */
 const JOBS = {
-    "icon-a": {
-        out: "brand/icon-options/icon-a",
-        size: "1024x1024",
-        background: "opaque",
-        prompt: `${ICON} A bold cream Devanagari letter स centred on a rich saffron gradient tile, with a small shiny gold coin tucked at its lower right, gentle 3D bevel.`,
-    },
-    "icon-b": {
-        out: "brand/icon-options/icon-b",
-        size: "1024x1024",
-        background: "opaque",
-        prompt: `${ICON} A chunky cartoon clay piggy-bank style coin pot (Nepali gagri shape) in saffron with a cream coin dropping in, on a cream background. No letters.`,
-    },
-    "icon-c": {
-        out: "brand/icon-options/icon-c",
-        size: "1024x1024",
-        background: "opaque",
-        prompt: `${ICON} An open red-bound ledger book seen from slightly above with a big green tick mark on the page and a coin beside it, on a saffron background. No letters.`,
-    },
-    "icon-d": {
-        out: "brand/icon-options/icon-d",
-        size: "1024x1024",
-        background: "opaque",
-        prompt: `${ICON} A glowing round orb with a warm radial gradient (cream highlight, saffron body, violet rim glow) floating on a deep brown background, with a tiny cream स letter subtly inside it.`,
-    },
     "auth-welcome": {
         out: "images/auth/welcome",
         size: "1536x1024",
