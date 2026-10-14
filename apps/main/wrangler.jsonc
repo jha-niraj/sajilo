@@ -19,9 +19,9 @@
 	// Non-secret config. Secrets (DATABASE_URL, BETTER_AUTH_SECRET, SARVAM_API_KEY, OPENAI_API_KEY,
 	// R2_*, RESEND_API_KEY) go in with `wrangler secret put` or `pnpm deploy` (see DEPLOY.md).
 	"vars": {
-		"BETTER_AUTH_URL": "https://sajilo.example.com",
-		"NEXT_PUBLIC_SITE_URL": "https://sajilo.example.com",
-		"MAIN_APP_URL": "https://sajilo.example.com",
+		"BETTER_AUTH_URL": "https://sajilo.shunyatechofficial.workers.dev",
+		"NEXT_PUBLIC_SITE_URL": "https://sajilo.shunyatechofficial.workers.dev",
+		"MAIN_APP_URL": "https://sajilo.shunyatechofficial.workers.dev",
 		"ADMIN_APP_URL": "https://admin.sajilo.example.com",
 		"AUTH_COOKIE_PREFIX": "sajilo",
 		"R2_BUCKET_NAME": "sajilo-uploads"
