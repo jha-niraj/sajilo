@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { RotateCcw } from "lucide-react"
 import { signIn } from "@repo/auth/client"
+import { updateSettings } from "@/actions/settings.action"
 import { Loader } from "@repo/ui/components/ui/loader"
 import { AuthFrame, AuthHeading } from "@/components/auth/auth-frame"
 import { PhoneInput } from "@/components/auth/phone-input"
@@ -15,7 +16,7 @@ import { readDeviceAccount, saveDeviceAccount, type DeviceAccount } from "@/lib/
 type Mode = "loading" | "phone" | "pin"
 
 export function LoginClient() {
-    const { t } = useI18n()
+    const { t, lang } = useI18n()
     const [mode, setMode] = useState<Mode>("loading")
     const [account, setAccount] = useState<DeviceAccount | null>(null)
     const [phone, setPhone] = useState("")
@@ -56,6 +57,7 @@ export function LoginClient() {
             return
         }
         saveDeviceAccount({ phone: account.phone, name: res.data?.user?.name ?? account.name })
+        await updateSettings({ language: lang }).catch(() => {})
         window.location.replace("/munshi")
     }
 
