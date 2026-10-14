@@ -168,6 +168,11 @@ export function SignupClient() {
                             onComplete={(v) => void checkPhone(v)}
                             disabled={busy}
                             error={!!error || taken}
+                            onClear={() => {
+                                setError(null)
+                                setTaken(false)
+                                setPhone("")
+                            }}
                         />
                         <div className="mt-3 min-h-6">
                             {busy ? (
@@ -187,7 +192,7 @@ export function SignupClient() {
                                     </Link>
                                 </div>
                             ) : (
-                                <p className="text-[15px] text-miss">{error}</p>
+                                <p className="text-center text-[15px] text-miss">{error}</p>
                             )}
                         </div>
                     </div>

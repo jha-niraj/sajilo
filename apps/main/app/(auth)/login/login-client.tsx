@@ -84,8 +84,12 @@ export function LoginClient() {
                         }}
                         onComplete={confirmPhone}
                         error={!!error}
+                        onClear={() => {
+                            setError(null)
+                            setPhone("")
+                        }}
                     />
-                    <p className="mt-3 min-h-6 text-[15px] text-miss">{error}</p>
+                    <p className="mt-3 min-h-6 text-center text-[15px] text-miss">{error}</p>
                 </div>
                 <Footer />
             </AuthFrame>
@@ -112,9 +116,8 @@ export function LoginClient() {
                     {busy ? <Loader size={24} dotSize={3} /> : <p className="text-center text-[15px] text-miss">{error}</p>}
                 </div>
             </div>
-            <div className="mt-2 flex items-center justify-center gap-2 text-[15px] text-ink-2">
+            <div className="mt-2 flex flex-col items-center gap-1.5 text-[15px] text-ink-2">
                 <span className="tabular">+977 {displayPhone(account?.phone)}</span>
-                <span className="text-ink-3">·</span>
                 <button
                     type="button"
                     onClick={() => {

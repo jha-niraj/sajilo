@@ -219,6 +219,7 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - `pnpm images [names] [--force|--webp]` (in `apps/main`): OpenAI art for the auth steps, saved as PNG in `public/images/auth/` plus a transparent, trimmed 600px-tall WebP (`AuthArt` in `components/auth/auth-frame.tsx`). `--webp` rebuilds WebPs from the PNGs with no API call.
 - `pnpm icon` generates ONE abstract full-bleed maskable icon to `public/brand/icon-source.png` (refuses to overwrite without `--force`). `pnpm icon:build` (free) makes `public/icons/*` and `public/favicon.ico` from it. `BrandMark` shows the icon.
 - Middleware skips any path with a file extension, so public files load when signed out.
+- Profile photo: tap the photo on More (`components/settings/profile-photo.tsx`). Shrunk to 512px on the phone, saved to the private R2 bucket by `uploadProfilePhoto` (`actions/profile.action.ts`) as an `avatars/<userId>/...` key in `user.image`, shown via `/api/avatar` (302 to a 1-hour signed link).
 
 ### Auth flow
 `/login` is PIN-only when the phone is remembered on the device (`lib/device-account.ts`); otherwise it asks the number once (joined +977 boxes, `components/auth/phone-input.tsx`). `/signup` = name -> number -> PIN -> confirm -> `/munshi?welcome=1`.

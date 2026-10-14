@@ -93,7 +93,7 @@ export function AuthArt({ name, className }: { name: AuthArtName; className?: st
 
 export function AuthHeading({ title, sub, art }: { title: string; sub?: React.ReactNode; art?: AuthArtName }) {
     return (
-        <div className={art ? "mt-4" : "mt-10"}>
+        <div className={cn("text-center", art ? "mt-4" : "mt-10")}>
             {art && <AuthArt name={art} className="mb-3" />}
             <h1 className="text-[26px] font-semibold leading-[1.15] tracking-[-0.01em] text-ink">{title}</h1>
             {sub && <p className="mt-2 text-[15px] leading-snug text-ink-2">{sub}</p>}

@@ -5,7 +5,7 @@ import { Calculator, Camera, ChevronRight, LogOut, Settings, Users, Wallet } fro
 import { signOut } from "@repo/auth/client"
 import { PageTop } from "@/components/shell/page-top"
 import { InstallCard } from "@/components/shell/install-card"
-import { BrandMark } from "@/components/brand"
+import { ProfilePhoto } from "@/components/settings/profile-photo"
 import { useI18n } from "@/lib/i18n"
 import { displayPhone } from "@/lib/phone"
 import { clearLocalData } from "@/lib/offline/store"
@@ -19,7 +19,7 @@ const LINKS: { href: string; label: DictKey; icon: typeof Users }[] = [
     { href: "/settings", label: "settingsTitle", icon: Settings },
 ]
 
-export function MoreClient({ name, phone }: { name: string; phone: string | null }) {
+export function MoreClient({ name, phone, photo }: { name: string; phone: string | null; photo: string | null }) {
     const { t } = useI18n()
     const logout = async () => {
         await signOut()
@@ -32,7 +32,7 @@ export function MoreClient({ name, phone }: { name: string; phone: string | null
             <PageTop title={t("navMore")} />
             <div className="space-y-4 px-4 pt-4">
                 <div className="flex items-center gap-3 rounded-[24px] bg-card p-4 ring-1 ring-line">
-                    <BrandMark size={48} />
+                    <ProfilePhoto name={name} initialUrl={photo} />
                     <div className="min-w-0">
                         <p className="truncate text-[16px] font-semibold text-ink">{name}</p>
                         {phone && <p className="text-[15px] text-ink-3">+977 {displayPhone(phone)}</p>}

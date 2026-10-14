@@ -1,9 +1,11 @@
 "use client"
 
-import { useContext } from "react"
+import { useContext, useRef } from "react"
+import { X } from "lucide-react"
 import { OTPInputContext, REGEXP_ONLY_DIGITS } from "input-otp"
 import { InputOTP, InputOTPGroup } from "@repo/ui/components/ui/input-otp"
 import { cn } from "@repo/ui/lib/utils"
+import { useI18n } from "@/lib/i18n"
 
 /** +977 block joined to 10 digit boxes, one strip, no gaps. Native number keyboard, no autofill popups. */
 export function PhoneInput({
@@ -13,6 +15,7 @@ export function PhoneInput({
     disabled,
     error,
     autoFocus = true,
+    onClear,
 }: {
     value: string
     onChange: (v: string) => void
@@ -20,9 +23,14 @@ export function PhoneInput({
     disabled?: boolean
     error?: boolean
     autoFocus?: boolean
+    /** Shows an X next to the boxes once something is typed; clears and puts the cursor back. */
+    onClear?: () => void
 }) {
-    return (
+    const { t } = useI18n()
+    const ref = useRef<HTMLInputElement>(null)
+    const input = (
         <InputOTP
+            ref={ref}
             maxLength={10}
             value={value}
             onChange={onChange}
@@ -50,6 +58,26 @@ export function PhoneInput({
                 ))}
             </InputOTPGroup>
         </InputOTP>
+    )
+    if (!onClear) return input
+    return (
+        <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">{input}</div>
+            {value.length > 0 && (
+                <button
+                    type="button"
+                    disabled={disabled}
+                    aria-label={t("clearNumber")}
+                    onClick={() => {
+                        onClear()
+                        requestAnimationFrame(() => ref.current?.focus())
+                    }}
+                    className="flex h-12 w-10 shrink-0 items-center justify-center rounded-2xl bg-paper-2 text-ink-2 ring-1 ring-line active:bg-line"
+                >
+                    <X className="h-5 w-5" />
+                </button>
+            )}
+        </div>
     )
 }
 

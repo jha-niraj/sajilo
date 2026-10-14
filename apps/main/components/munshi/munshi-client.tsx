@@ -253,18 +253,19 @@ export function MunshiClient({
                             <SquarePen className="h-[18px] w-[18px]" />
                         </button>
                     )}
-                    <div className="grid grid-cols-2 rounded-full bg-paper-2 p-1 text-[14px] font-semibold" role="tablist">
+                    <div className="grid grid-cols-2 rounded-full bg-paper-2 p-1" role="tablist">
                         {(["voice", "chat"] as const).map((m) => (
                             <button
                                 key={m}
                                 type="button"
                                 role="tab"
                                 aria-selected={mode === m}
+                                aria-label={m === "voice" ? t("modeVoice") : t("modeChat")}
+                                title={m === "voice" ? t("modeVoice") : t("modeChat")}
                                 onClick={() => switchMode(m)}
-                                className={cn("flex h-9 items-center gap-1.5 rounded-full px-3.5 transition-colors", mode === m ? "bg-card text-ink shadow-sm" : "text-ink-3")}
+                                className={cn("flex h-8 w-9 items-center justify-center rounded-full transition-colors", mode === m ? "bg-card text-saffron shadow-sm" : "text-ink-3")}
                             >
-                                {m === "voice" ? <AudioLines className="h-4 w-4" /> : <Keyboard className="h-4 w-4" />}
-                                {m === "voice" ? t("modeVoice") : t("modeChat")}
+                                {m === "voice" ? <AudioLines className="h-[18px] w-[18px]" /> : <Keyboard className="h-[18px] w-[18px]" />}
                             </button>
                         ))}
                     </div>
@@ -498,12 +499,13 @@ function StartCards() {
     return (
         <div className="rounded-[22px] bg-card p-4 ring-1 ring-line">
             <p className="text-[15px] font-medium text-ink">{t("welcomeEmpty")}</p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-                <Link href="/manage" className="flex h-12 items-center justify-center gap-2 rounded-xl bg-ink text-[15px] font-semibold text-paper">
-                    <UserPlus className="h-5 w-5" /> {t("addCustomers")}
+            {/* Stacked: side by side the labels (longer still in Nepali) spill out on a phone. */}
+            <div className="mt-3 grid gap-2">
+                <Link href="/manage" className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-center text-[15px] font-semibold text-paper">
+                    <UserPlus className="h-5 w-5 shrink-0" /> {t("addCustomers")}
                 </Link>
-                <Link href="/scan?kind=customers" className="flex h-12 items-center justify-center gap-2 rounded-xl bg-paper-2 text-[15px] font-semibold text-ink">
-                    <Camera className="h-5 w-5" /> {t("importFromPhoto")}
+                <Link href="/scan?kind=customers" className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-paper-2 px-4 py-2.5 text-center text-[15px] font-semibold text-ink">
+                    <Camera className="h-5 w-5 shrink-0" /> {t("importFromPhoto")}
                 </Link>
             </div>
         </div>
