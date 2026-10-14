@@ -188,7 +188,7 @@ Emails silently skip when `RESEND_API_KEY` is not set.
 
 ## Main App (`apps/main`) - Sajilo, port 3100
 
-Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: daily collection) and his lending book (Phase 2). Plans and task lists: `plan/phase-1-daily-collection.md`, `plan/phase-2-lending.md`. DB choice rationale: `plan/database-hyperdrive-vs-neon.pdf`.
+Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: daily collection) and his lending book (Phase 2). Plans and task lists: `plan/phase-1-daily-collection.md`, `plan/phase-2-lending.md`, `plan/phase-3-profiles-bank-loans.md` (planned, not built). DB choice rationale: `plan/database-hyperdrive-vs-neon.pdf`.
 
 ### Rules
 - English by default, Nepali toggle (`lib/dict.ts`, `useI18n()`); every user-facing string goes through the dictionary in both languages.
