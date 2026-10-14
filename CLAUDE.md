@@ -202,7 +202,7 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - Keep the file name `middleware.ts` (edge). OpenNext on Workers does not run Node "proxy" yet. Next is pinned to 16.3.x until OpenNext supports 16.4.
 
 ### Routes
-`/login`, `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month` (landscape A4 register: customers x BS days), `/customers/[id]`, `/manage`, `/scan`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/more`, `/settings`, `/offline`.
+`/` (the login screen itself, no redirect; `/login` just forwards to `/`), `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month` (landscape A4 register: customers x BS days), `/customers/[id]`, `/manage`, `/scan`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/more`, `/settings`, `/offline`.
 
 ### Offline
 `lib/offline/store.ts` (Dexie: day snapshots + outbox) and `lib/offline/sync.ts` (flush on online/visibility/30s). `public/sw.js` caches the app shell and pages (network-first). Server actions in `actions/` are the only API.
@@ -214,6 +214,11 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - Write tools follow preview/confirm: `confirm=false` saves nothing and shows a Confirm card; `confirm=true` only after he says yes; one write per turn (`claimWriteSlot`). Writes wrap existing server actions.
 - Turns go through `POST /api/munshi` (JSON = chat, multipart = voice). Confirm button -> `confirmProposal` server action.
 - New tool: add a def in the right area file and list it in `agenttools/index.ts`.
+
+### Images and icon
+- `pnpm images [names] [--force|--webp]` (in `apps/main`): OpenAI art for the auth steps, saved as PNG in `public/images/auth/` plus a transparent, trimmed 600px-tall WebP (`AuthArt` in `components/auth/auth-frame.tsx`). `--webp` rebuilds WebPs from the PNGs with no API call.
+- `pnpm icon` generates ONE abstract full-bleed maskable icon to `public/brand/icon-source.png` (refuses to overwrite without `--force`). `pnpm icon:build` (free) makes `public/icons/*` and `public/favicon.ico` from it. `BrandMark` shows the icon.
+- Middleware skips any path with a file extension, so public files load when signed out.
 
 ### Auth flow
 `/login` is PIN-only when the phone is remembered on the device (`lib/device-account.ts`); otherwise it asks the number once (joined +977 boxes, `components/auth/phone-input.tsx`). `/signup` = name -> number -> PIN -> confirm -> `/munshi?welcome=1`.

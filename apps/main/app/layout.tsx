@@ -28,6 +28,7 @@ export const metadata: Metadata = {
     formatDetection: { telephone: false },
     icons: {
         icon: [
+            { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
             { url: "/icons/favicon-48.png", sizes: "48x48", type: "image/png" },
             { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
         ],

@@ -1,3 +1,4 @@
+/* global process, Buffer */
 // Generates the app icon options and the auth-screen illustrations with OpenAI, saves them under
 // public/, and writes a .webp next to every .png.
 //
@@ -5,11 +6,13 @@
 //   pnpm images auth-pin icon-b     # only these (by name, see JOBS)
 //   pnpm images --force             # redo even if the file exists
 //   pnpm images --model gpt-image-1.5 --quality medium
+//   pnpm images --webp              # only rebuild the .webp files from the saved PNGs (no API)
 //
-// Reads OPENAI_API_KEY from apps/main/.env. WebP needs cwebp (brew install webp).
+// Reads OPENAI_API_KEY from apps/main/.env. Auth art gets its flat cream background cut out, so
+// the .webp is transparent and sits on any page colour.
 import fs from "node:fs"
 import path from "node:path"
-import { execFileSync } from "node:child_process"
+import sharp from "sharp"
 import { fileURLToPath } from "node:url"
 
 const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
@@ -106,6 +109,7 @@ const flag = (name, fallback) => {
     return i >= 0 ? args[i + 1] : fallback
 }
 const force = args.includes("--force")
+const webpOnly = args.includes("--webp")
 const model = flag("model", "gpt-image-2")
 const quality = flag("quality", "high")
 const flagValues = new Set(["--model", "--quality"].map((f) => flag(f.slice(2))).filter(Boolean))
@@ -116,17 +120,9 @@ if (unknown.length) {
     console.error(`Unknown: ${unknown.join(", ")}. Choose from: ${Object.keys(JOBS).join(", ")}`)
     process.exit(1)
 }
-if (!process.env.OPENAI_API_KEY) {
+if (!webpOnly && !process.env.OPENAI_API_KEY) {
     console.error("OPENAI_API_KEY is not set. Run with `pnpm images` (loads apps/main/.env).")
     process.exit(1)
-}
-
-let cwebp = true
-try {
-    execFileSync("cwebp", ["-version"], { stdio: "ignore" })
-} catch {
-    cwebp = false
-    console.warn("cwebp not found - PNGs only. Install with `brew install webp` and re-run to add .webp.")
 }
 
 async function generate(job, background) {
@@ -150,10 +146,77 @@ async function generate(job, background) {
     return Buffer.from(b64, "base64")
 }
 
-function toWebp(png) {
-    if (!cwebp) return
+/**
+ * Makes the flat generated background transparent: flood-fill from the edges over pixels within a
+ * few levels of the edge colour (so the cream kurta, which only touches the background through its
+ * outline, is never eaten), clear larger enclosed pockets of exactly that colour (between arm and
+ * body), then feather the edge pixels so the outline stays smooth.
+ */
+async function cutout(png) {
+    const { data, info } = await sharp(png).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+    const W = info.width
+    const H = info.height
+    const N = W * H
+    const border = []
+    for (let x = 0; x < W; x++) border.push(x, (H - 1) * W + x)
+    for (let y = 0; y < H; y++) border.push(y * W, y * W + W - 1)
+    const bg = [0, 1, 2].map((c) => border.map((i) => data[i * 3 + c]).sort((a, b) => a - b)[border.length >> 1])
+    const dist = new Uint8Array(N)
+    for (let i = 0; i < N; i++) {
+        dist[i] = Math.max(Math.abs(data[i * 3] - bg[0]), Math.abs(data[i * 3 + 1] - bg[1]), Math.abs(data[i * 3 + 2] - bg[2]))
+    }
+    const NEAR = 8
+    const FAR = 40
+    const clear = new Uint8Array(N)
+    const flood = (seeds, limit) => {
+        const stack = seeds.filter((i) => dist[i] <= limit && !clear[i])
+        for (const i of stack) clear[i] = 1
+        const region = [...stack]
+        while (stack.length) {
+            const i = stack.pop()
+            const x = i % W
+            for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W]) {
+                if (j >= 0 && j < N && !clear[j] && dist[j] <= limit) {
+                    clear[j] = 1
+                    stack.push(j)
+                    region.push(j)
+                }
+            }
+        }
+        return region
+    }
+    flood(border, NEAR)
+    // Enclosed pockets: only big, near-exact matches, so small light details stay.
+    const seen = new Uint8Array(N)
+    for (let i = 0; i < N; i++) {
+        if (clear[i] || seen[i] || dist[i] > 3) continue
+        const region = flood([i], 3)
+        for (const j of region) seen[j] = 1
+        if (region.length < 600) for (const j of region) clear[j] = 0
+    }
+    const rgba = Buffer.alloc(N * 4)
+    for (let i = 0; i < N; i++) {
+        rgba[i * 4] = data[i * 3]
+        rgba[i * 4 + 1] = data[i * 3 + 1]
+        rgba[i * 4 + 2] = data[i * 3 + 2]
+        let a = 255
+        if (clear[i]) a = 0
+        else {
+            const x = i % W
+            const edge = (x > 0 && clear[i - 1]) || (x < W - 1 && clear[i + 1]) || (i >= W && clear[i - W]) || (i + W < N && clear[i + W])
+            if (edge) a = Math.round(255 * Math.min(1, Math.max(0, (dist[i] - NEAR) / (FAR - NEAR))))
+        }
+        rgba[i * 4 + 3] = a
+    }
+    return sharp(rgba, { raw: { width: W, height: H, channels: 4 } }).trim({ threshold: 0 })
+}
+
+/** Auth art is shown at most ~200px tall, so 600px covers 3x screens at a fraction of the size. */
+async function toWebp(png) {
     const webp = png.replace(/\.png$/, ".webp")
-    execFileSync("cwebp", ["-quiet", "-q", "85", "-m", "6", "-alpha_q", "100", png, "-o", webp])
+    const isArt = png.includes(`${path.sep}images${path.sep}auth${path.sep}`)
+    const img = isArt ? (await cutout(png)).resize({ height: 600, withoutEnlargement: true }) : sharp(png)
+    await img.webp({ quality: 85, alphaQuality: 100, effort: 6 }).toFile(webp)
     return webp
 }
 
@@ -162,11 +225,12 @@ const kb = (f) => `${Math.round(fs.statSync(f).size / 1024)} KB`
 const names = picked.length ? picked : Object.keys(JOBS)
 const todo = names.filter((n) => force || !fs.existsSync(path.join(pub, `${JOBS[n].out}.png`)))
 const skipped = names.filter((n) => !todo.includes(n))
-if (skipped.length) console.log(`Already there (use --force to redo): ${skipped.join(", ")}`)
-if (!todo.length) {
-    for (const n of skipped) {
+if (skipped.length && !webpOnly) console.log(`Already there (use --force to redo): ${skipped.join(", ")}`)
+if (webpOnly || !todo.length) {
+    for (const n of names) {
         const png = path.join(pub, `${JOBS[n].out}.png`)
-        if (cwebp && !fs.existsSync(png.replace(/\.png$/, ".webp"))) toWebp(png)
+        if (!fs.existsSync(png)) continue
+        if (webpOnly || !fs.existsSync(png.replace(/\.png$/, ".webp"))) console.log(`✓ ${n}  ${path.relative(pub, await toWebp(png))} (${kb(png.replace(/\.png$/, ".webp"))})`)
     }
     process.exit(0)
 }
@@ -183,7 +247,7 @@ async function worker() {
             const buf = await generate(job, job.background)
             fs.mkdirSync(path.dirname(png), { recursive: true })
             fs.writeFileSync(png, buf)
-            const webp = toWebp(png)
+            const webp = await toWebp(png)
             console.log(`✓ ${name}  public/${job.out}.png (${kb(png)})${webp ? ` + .webp (${kb(webp)})` : ""}`)
         } catch (e) {
             failed++

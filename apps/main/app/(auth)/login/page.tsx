@@ -1,8 +1,6 @@
-import type { Metadata } from "next"
-import { LoginClient } from "./login-client"
+import { redirect } from "next/navigation"
 
-export const metadata: Metadata = { title: "Login" }
-
+// Old links and saved bookmarks: the login screen now lives at /.
 export default function LoginPage() {
-    return <LoginClient />
+    redirect("/")
 }

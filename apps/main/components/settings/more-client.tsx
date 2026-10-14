@@ -37,7 +37,7 @@ export function MoreClient({ name, phone }: { name: string; phone: string | null
     const logout = async () => {
         await signOut()
         await clearLocalData()
-        window.location.replace("/login")
+        window.location.replace("/")
     }
 
     return (

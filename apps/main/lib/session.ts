@@ -5,7 +5,7 @@ import { getServerSession } from "@repo/auth"
 
 export const getSession = cache(async () => getServerSession())
 
-/** Current collector's user id. Redirects to /login when signed out. */
+/** Current collector's user id. Redirects to the login screen (/) when signed out. */
 export async function requireCollectorId(): Promise<string> {
     const session = await getSession()
     if (!session) redirect("/api/session/clear")

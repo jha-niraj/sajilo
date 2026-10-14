@@ -6,7 +6,7 @@
  * - Everything else (server actions, auth): straight to the network. Marks made offline are
  *   kept in IndexedDB by the app and sent later, not by this worker.
  */
-const VERSION = "v4"
+const VERSION = "v5"
 const STATIC_CACHE = `sajilo-static-${VERSION}`
 const PAGE_CACHE = `sajilo-pages-${VERSION}`
 const PRECACHE = ["/offline", "/icons/icon-192.png", "/icons/icon-512.png", "/manifest.webmanifest"]
@@ -72,7 +72,7 @@ self.addEventListener("fetch", (event) => {
     if (url.origin !== self.location.origin) return
     if (url.pathname.startsWith("/api/")) return
 
-    if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
+    if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/images/")) {
         event.respondWith(cacheFirst(request))
         return
     }

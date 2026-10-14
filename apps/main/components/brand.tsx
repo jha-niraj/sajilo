@@ -2,18 +2,14 @@ import { cn } from "@repo/ui/lib/utils"
 
 export function BrandMark({ size = 40, className }: { size?: number; className?: string }) {
     return (
-        <span
-            className={cn(
-                "inline-flex shrink-0 flex-col items-center justify-center rounded-[28%] bg-gradient-to-br from-[#d9722c] to-[#b8521a] text-[#fff8ee] shadow-sm",
-                className,
-            )}
-            style={{ width: size, height: size }}
+        // eslint-disable-next-line @next/next/no-img-element -- the app icon itself; no image optimizer on Workers
+        <img
+            src={size > 64 ? "/icons/icon-512.png" : "/icons/icon-192.png"}
+            alt=""
             aria-hidden
-        >
-            <span className="font-semibold leading-none" style={{ fontSize: size * 0.56, marginTop: size * 0.06 }}>
-                स
-            </span>
-            <span className="rounded-full bg-[#fff8ee]/85" style={{ width: size * 0.34, height: Math.max(2, size * 0.04), marginTop: size * 0.04 }} />
-        </span>
+            width={size}
+            height={size}
+            className={cn("shrink-0 rounded-[28%] shadow-sm", className)}
+        />
     )
 }

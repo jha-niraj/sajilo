@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { ArrowLeft, ArrowRight, Check } from "lucide-react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
 import { signIn } from "@repo/auth/client"
 import { Loader } from "@repo/ui/components/ui/loader"
-import { AuthFrame, AuthHeading } from "@/components/auth/auth-frame"
+import { AuthArt, AuthFrame, AuthHeading } from "@/components/auth/auth-frame"
 import { PhoneInput } from "@/components/auth/phone-input"
 import { PinInput } from "@/components/pin-input"
 import { useI18n } from "@/lib/i18n"
@@ -92,7 +92,7 @@ export function SignupClient() {
         const login = await signIn.phoneNumber({ phoneNumber: res.phone, password: pin, rememberMe: true })
         saveDeviceAccount({ phone: res.phone, name: name.trim() })
         if (login.error) {
-            window.location.replace("/login")
+            window.location.replace("/")
             return
         }
         setDirection(1)
@@ -104,14 +104,13 @@ export function SignupClient() {
         return (
             <AuthFrame stepKey="done">
                 <div className="flex flex-1 flex-col items-center justify-center text-center">
-                    <motion.span
-                        initial={{ scale: 0.4, opacity: 0 }}
+                    <motion.div
+                        initial={{ scale: 0.6, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                        className="flex h-24 w-24 items-center justify-center rounded-full bg-paid text-white shadow-[0_16px_40px_-12px_rgb(47_138_87/0.7)]"
                     >
-                        <Check className="h-12 w-12" strokeWidth={3} />
-                    </motion.span>
+                        <AuthArt name="done" className="h-[min(34dvh,280px)]" />
+                    </motion.div>
                     <h1 className="mt-7 text-[24px] font-semibold text-ink">{t("allSet", { name: name.trim().split(" ")[0] ?? "" })}</h1>
                     <p className="mt-2 text-[15px] text-ink-2">{t("meetMunshi")}</p>
                 </div>
@@ -141,7 +140,7 @@ export function SignupClient() {
                         if (name.trim()) go("phone")
                     }}
                 >
-                    <AuthHeading title={t("nameTitle")} sub={t("nameSub")} />
+                    <AuthHeading art="name" title={t("nameTitle")} sub={t("nameSub")} />
                     <input
                         ref={nameRef}
                         autoFocus
@@ -157,7 +156,7 @@ export function SignupClient() {
 
             {step === "phone" && (
                 <div className="flex flex-1 flex-col">
-                    <AuthHeading title={t("phoneOnceTitle")} sub={t("phoneSignupSub")} />
+                    <AuthHeading art="phone" title={t("phoneOnceTitle")} sub={t("phoneSignupSub")} />
                     <div className="mt-9">
                         <PhoneInput
                             value={phone}
@@ -177,7 +176,7 @@ export function SignupClient() {
                                 <div className="rounded-2xl bg-card p-4 ring-1 ring-line">
                                     <p className="text-[15px] font-medium text-ink">{t("alreadyHasAccount")}</p>
                                     <Link
-                                        href="/login"
+                                        href="/"
                                         onClick={() => {
                                             const e164 = normalizePhone(phone)
                                             if (e164) saveDeviceAccount({ phone: e164 })
@@ -198,6 +197,7 @@ export function SignupClient() {
             {(step === "pin" || step === "confirm") && (
                 <div className="flex flex-1 flex-col">
                     <AuthHeading
+                        art={step === "pin" ? "pin" : "confirm"}
                         title={step === "pin" ? t("choosePin") : t("confirmPin")}
                         sub={step === "pin" ? t("pinCreateSub") : t("pinConfirmSub")}
                     />
@@ -233,7 +233,7 @@ export function SignupClient() {
             {step === "name" && (
                 <p className="pb-8 text-center text-[15px] text-ink-2">
                     {t("haveAccount")}{" "}
-                    <Link href="/login" className="font-semibold text-saffron">
+                    <Link href="/" className="font-semibold text-saffron">
                         {t("signIn")}
                     </Link>
                 </p>

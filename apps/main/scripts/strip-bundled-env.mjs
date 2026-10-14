@@ -1,3 +1,4 @@
+/* global process */
 // Runs after `opennextjs-cloudflare build`. OpenNext copies every value from .env and
 // .env.production into the Worker code (.open-next/cloudflare/next-env.mjs) as a fallback for
 // process.env, which would ship the dev .env and every key inside the bundle. The real values come

@@ -74,7 +74,7 @@ export function LoginClient() {
     if (mode === "phone") {
         return (
             <AuthFrame stepKey="phone" direction={direction}>
-                <AuthHeading title={t("phoneOnceTitle")} sub={t("phoneOnceSub")} />
+                <AuthHeading art="phone" title={t("phoneOnceTitle")} sub={t("phoneOnceSub")} />
                 <div className="mt-9">
                     <PhoneInput
                         value={phone}
@@ -95,7 +95,7 @@ export function LoginClient() {
     const firstName = account?.name?.split(" ")[0]
     return (
         <AuthFrame stepKey="pin" direction={direction}>
-            <AuthHeading title={firstName ? t("welcomeBackName", { name: firstName }) : t("welcomeBack")} sub={t("pinSub")} />
+            <AuthHeading art="welcome" title={firstName ? t("welcomeBackName", { name: firstName }) : t("welcomeBack")} sub={t("pinSub")} />
             <div className="mt-9">
                 <PinInput
                     key={attempt}

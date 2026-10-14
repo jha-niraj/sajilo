@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { cn } from "@repo/ui/lib/utils"
 import { BrandMark } from "@/components/brand"
 import { LangToggle } from "@/components/lang-toggle"
 import { useI18n } from "@/lib/i18n"
@@ -73,9 +74,27 @@ export function AuthFrame({
     )
 }
 
-export function AuthHeading({ title, sub }: { title: string; sub?: React.ReactNode }) {
+export type AuthArtName = "welcome" | "phone" | "name" | "pin" | "confirm" | "done"
+
+/** Step illustration (transparent cut-out). Height follows the screen so the input stays above the keyboard. */
+export function AuthArt({ name, className }: { name: AuthArtName; className?: string }) {
     return (
-        <div className="mt-10">
+        // eslint-disable-next-line @next/next/no-img-element -- static WebP; no image optimizer on Workers
+        <img
+            src={`/images/auth/${name}.webp`}
+            alt=""
+            aria-hidden
+            decoding="async"
+            fetchPriority="high"
+            className={cn("pointer-events-none mx-auto block h-[min(24dvh,200px)] w-auto select-none", className)}
+        />
+    )
+}
+
+export function AuthHeading({ title, sub, art }: { title: string; sub?: React.ReactNode; art?: AuthArtName }) {
+    return (
+        <div className={art ? "mt-4" : "mt-10"}>
+            {art && <AuthArt name={art} className="mb-3" />}
             <h1 className="text-[26px] font-semibold leading-[1.15] tracking-[-0.01em] text-ink">{title}</h1>
             {sub && <p className="mt-2 text-[15px] leading-snug text-ink-2">{sub}</p>}
         </div>
