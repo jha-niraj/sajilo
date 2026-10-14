@@ -10,8 +10,11 @@ function key(): string {
 
 /** Speech -> text with Saaras v4. `keyterms` bias recognition toward his customers' names. */
 export async function transcribe(audio: Blob, lang: "ne" | "en", keyterms: string[]): Promise<{ text: string; language: string | null }> {
+    // Browsers label recordings "audio/webm;codecs=opus"; Sarvam only accepts the bare type.
+    const type = (audio.type.split(";")[0] || "audio/webm").trim()
+    const clean = new Blob([await audio.arrayBuffer()], { type })
     const form = new FormData()
-    form.append("file", audio, audio.type.includes("mp4") ? "speech.mp4" : "speech.webm")
+    form.append("file", clean, type.includes("mp4") ? "speech.mp4" : type.includes("ogg") ? "speech.ogg" : "speech.webm")
     form.append("model", "saaras:v4")
     form.append("language_code", lang === "ne" ? "ne-IN" : "unknown")
     const terms = keyterms.filter((k) => k.length <= 64).slice(0, 50)
