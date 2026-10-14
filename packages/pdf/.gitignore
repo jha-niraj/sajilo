@@ -1,0 +1,2 @@
+# Incremental typecheck cache - machine-local, changes on every run.
+*.tsbuildinfo

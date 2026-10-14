@@ -1,64 +1,114 @@
-import type React from "react"
+import { Button } from "./button"
+import { ReactNode } from "react"
+import { cn } from "../../lib/utils"
 
-interface EmptyStateProps {
-    icon?: React.ReactNode
-    title: string
-    description?: string
-    action?: React.ReactNode
-    className?: string
+// Scoped keyframes for the default illustration. Prefixed (gkes-) to avoid collisions;
+// duplicate identical <style> tags across instances are harmless.
+const ILLUSTRATION_CSS = `
+@keyframes gkes-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+@keyframes gkes-float-b { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }
+@keyframes gkes-spin { to { transform: rotate(360deg) } }
+@keyframes gkes-dot { 0%,80%,100%{opacity:.2; transform:scale(.7)} 40%{opacity:1; transform:scale(1)} }
+`
+
+/**
+ * Animated, self-contained empty-state illustration (pure CSS - no JS/deps).
+ * Neutral with a single amber accent so it fits the app's palette in light + dark.
+ */
+export function EmptyStateIllustration({ className }: { className?: string }) {
+    return (
+        <div className={cn("relative", className)} aria-hidden>
+            <style>{ILLUSTRATION_CSS}</style>
+            <svg viewBox="0 0 200 170" className="w-28 h-auto sm:w-40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Ambient rotating dashed ring */}
+                <circle
+                    cx="100" cy="82" r="60"
+                    className="stroke-neutral-200 dark:stroke-neutral-800"
+                    strokeWidth="2" strokeDasharray="4 10" strokeLinecap="round"
+                    style={{ transformBox: "fill-box", transformOrigin: "center", animation: "gkes-spin 24s linear infinite" }}
+                />
+
+                {/* Floating document card */}
+                <g style={{ transformBox: "fill-box", transformOrigin: "center", animation: "gkes-float 3.6s ease-in-out infinite" }}>
+                    <rect x="62" y="44" width="76" height="92" rx="10"
+                        className="fill-white dark:fill-neutral-900 stroke-neutral-200 dark:stroke-neutral-700" strokeWidth="2" />
+                    <rect x="74" y="60" width="52" height="6" rx="3" className="fill-neutral-200 dark:fill-neutral-700" />
+                    <rect x="74" y="74" width="40" height="6" rx="3" className="fill-neutral-200 dark:fill-neutral-800" />
+                    <rect x="74" y="88" width="46" height="6" rx="3" className="fill-neutral-200 dark:fill-neutral-800" />
+                    <rect x="74" y="102" width="30" height="6" rx="3" className="fill-neutral-200 dark:fill-neutral-800" />
+                </g>
+
+                {/* Magnifying glass, floating opposite the card */}
+                <g style={{ transformBox: "fill-box", transformOrigin: "center", animation: "gkes-float-b 3.6s ease-in-out infinite" }}>
+                    <circle cx="126" cy="112" r="20"
+                        className="fill-amber-50 dark:fill-amber-500/10 stroke-amber-400/80" strokeWidth="3" />
+                    <line x1="141" y1="127" x2="152" y2="138"
+                        className="stroke-amber-400/80" strokeWidth="4" strokeLinecap="round" />
+                </g>
+
+                {/* Searching dots */}
+                {[0, 1, 2].map((i) => (
+                    <circle key={i} cx={86 + i * 14} cy="150" r="4"
+                        className="fill-neutral-300 dark:fill-neutral-600"
+                        style={{ transformBox: "fill-box", transformOrigin: "center", animation: `gkes-dot 1.4s ease-in-out ${i * 0.2}s infinite` }} />
+                ))}
+            </svg>
+        </div>
+    )
 }
 
-export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
+interface EmptyStateProps {
+    /** Optional custom glyph. When omitted, the animated illustration is shown. */
+    icon?: ReactNode
+    title: string
+    description: string
+    action?: ReactNode
+    actionLabel?: string
+    onAction?: () => void
+    className?: string
+    /** Set false to render without the card chrome (border/bg) - e.g. inside an existing card. */
+    bordered?: boolean
+}
+
+export const EmptyState = ({
+    icon,
+    title,
+    description,
+    action,
+    actionLabel,
+    onAction,
+    className,
+    bordered = false,
+}: EmptyStateProps) => {
     return (
         <div
-            className={className}
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "clamp(48px,6vw,80px) 24px",
-                textAlign: "center",
-                gap: 0,
-            }}
+            className={cn(
+                // `p-6` on a phone and a `w-28` illustration, stepping up from `sm`. Measured at
+                // 360x640: at `p-8` with the 160px illustration this component is ~306px tall, and
+                // a bounded page routinely gives its empty region less than that - the billing
+                // subscriptions roster gives it 206px - so the illustration and part of the text
+                // were clipped by the region's `overflow-hidden`. An empty state that does not fit
+                // is worse than a plain sentence, and it is the one state where the page has the
+                // least to say.
+                "flex flex-col items-center justify-center text-center p-6 sm:p-8",
+                bordered && "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900",
+                className,
+            )}
         >
-            {icon && (
-                <div
-                    style={{
-                        marginBottom: 16,
-                        opacity: 0.35,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    {icon}
-                </div>
+            {icon ? (
+                <div className="text-neutral-400 dark:text-neutral-500 mb-4">{icon}</div>
+            ) : (
+                <EmptyStateIllustration className="mb-3 sm:mb-4" />
             )}
-            <p
-                style={{
-                    fontSize: 15,
-                    fontWeight: 500,
-                    color: "var(--so-ink, #111211)",
-                    margin: "0 0 6px",
-                }}
-            >
-                {title}
-            </p>
-            {description && (
-                <p
-                    style={{
-                        fontSize: 13,
-                        color: "var(--so-ink-3, #6B6E67)",
-                        margin: "0 0 24px",
-                        maxWidth: "36ch",
-                        lineHeight: 1.5,
-                    }}
-                >
-                    {description}
-                </p>
-            )}
-            {action && <div>{action}</div>}
+            <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-1.5">{title}</h3>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm">{description}</p>
+            {action ? (
+                <div className="mt-6">{action}</div>
+            ) : actionLabel && onAction ? (
+                <Button onClick={onAction} variant="outline" className="mt-6">
+                    {actionLabel}
+                </Button>
+            ) : null}
         </div>
     )
 }

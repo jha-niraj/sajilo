@@ -24,8 +24,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default: "Admin",
-		template: "%s | Admin"
+		default: "Sajilo Admin",
+		template: "%s | Sajilo Admin"
 	},
 	description: "Admin control panel - manage users, settings, and platform operations.",
 	robots: { index: false, follow: false },

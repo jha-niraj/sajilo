@@ -1,0 +1,57 @@
+{
+    "name": "@repo/core",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        "./assessment": "./src/assessment/index.ts",
+        "./curriculum": "./src/curriculum/index.ts",
+        "./exam-types": "./src/exam-types/index.ts",
+        "./exam-grading": "./src/exam-grading/index.ts",
+        "./lessonplan": "./src/lessonplan/index.ts",
+        "./lessonplan/blueprint": "./src/lessonplan/blueprint.ts",
+        "./lessonplan/worker-client": "./src/lessonplan/worker-client.ts",
+        "./lessonplan/answer-key": "./src/lessonplan/answer-key.ts",
+        "./lessonplan/pages": "./src/lessonplan/pages.ts",
+        "./lessonplan/outline": "./src/lessonplan/outline.ts",
+        "./lessonplan/write-page": "./src/lessonplan/write-page.ts",
+        "./lessonplan/content-page": "./src/lessonplan/content-page.ts",
+        "./lessonplan/content-prompts": "./src/lessonplan/content-prompts.ts",
+        "./lessonplan/diagram-prompt": "./src/lessonplan/diagram-prompt.ts",
+        "./lessonplan/puzzle-prompt": "./src/lessonplan/puzzle-prompt.ts",
+        "./lessonplan/credits": "./src/lessonplan/credits.ts",
+        "./lessonplan/puzzle": "./src/lessonplan/puzzle/index.ts",
+        "./lessonplan/figure-tier": "./src/lessonplan/figure-tier.ts",
+        "./curriculum/subject-aliases": "./src/curriculum/subject-aliases.ts",
+        "./curriculum/text-layer": "./src/curriculum/text-layer.ts",
+        "./curriculum/sarvam-page": "./src/curriculum/sarvam-page.ts",
+        "./permissions": "./src/permissions/index.ts",
+        "./permissions/resolve": "./src/permissions/resolve.ts",
+        "./questionpaper/generation": "./src/questionpaper/generation.ts",
+        "./questionpaper/worker-client": "./src/questionpaper/worker-client.ts",
+        "./geo": "./src/geo/index.ts",
+        "./csv": "./src/csv/index.ts",
+        "./documents": "./src/documents/index.ts",
+        "./exports/statutory": "./src/exports/statutory.ts",
+        "./logger": "./src/logger.ts",
+        "./exam-grading/status": "./src/exam-grading/status.ts",
+        "./exam-grading/rubric": "./src/exam-grading/rubric.ts",
+        "./diagram": "./src/diagram/index.ts",
+        "./questionpaper/answer-space": "./src/questionpaper/answer-space.ts",
+        "./my-day": "./src/my-day/cards.ts",
+        "./reports/generation": "./src/reports/generation.ts"
+    },
+    "scripts": {
+        "lint": "eslint . --max-warnings 0",
+        "check-types": "tsc --noEmit"
+    },
+    "dependencies": {
+        "zod": "^4"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^22.15.3",
+        "typescript": "5.9.2",
+        "@repo/eslint-config": "workspace:*"
+    }
+}

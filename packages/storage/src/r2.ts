@@ -80,3 +80,20 @@ export function generateKey(prefix: string, userId: string, filename: string): s
     const rand = Math.random().toString(36).slice(2, 8)
     return `${prefix}/${userId}/${ts}-${rand}.${ext}`
 }
+
+export function isR2Configured(): boolean {
+    return Boolean(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET_NAME)
+}
+
+/** Server-side upload (e.g. a scanned photo already in memory). */
+export async function putObject(key: string, body: Uint8Array, contentType: string): Promise<void> {
+    const client = getR2Client()
+    await client.send(
+        new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: key,
+            Body: body,
+            ContentType: contentType,
+        }),
+    )
+}

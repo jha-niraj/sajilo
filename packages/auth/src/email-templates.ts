@@ -13,7 +13,7 @@ export function welcomeEmail({ name }: { name: string }): string {
         <table width="100%" style="max-width:480px;background:#FFFFFF;border-radius:16px;border:1px solid #E2E0DA;overflow:hidden;">
           <tr>
             <td style="padding:32px 40px 24px;border-bottom:1px solid #E2E0DA;">
-              <span style="font-size:16px;font-weight:500;color:#111211;letter-spacing:-0.015em;">YourApp</span>
+              <span style="font-size:16px;font-weight:500;color:#111211;letter-spacing:-0.015em;">Sajilo</span>
             </td>
           </tr>
           <tr>
@@ -58,7 +58,7 @@ export function passwordChangedEmail({ name }: { name: string }): string {
         <table width="100%" style="max-width:480px;background:#FFFFFF;border-radius:16px;border:1px solid #E2E0DA;overflow:hidden;">
           <tr>
             <td style="padding:32px 40px 24px;border-bottom:1px solid #E2E0DA;">
-              <span style="font-size:16px;font-weight:500;color:#111211;letter-spacing:-0.015em;">YourApp</span>
+              <span style="font-size:16px;font-weight:500;color:#111211;letter-spacing:-0.015em;">Sajilo</span>
             </td>
           </tr>
           <tr>
@@ -110,7 +110,7 @@ export function resetPasswordEmail({
         <table width="100%" style="max-width:480px;background:#FFFFFF;border-radius:16px;border:1px solid #E2E0DA;overflow:hidden;">
           <tr>
             <td style="padding:32px 40px 24px;border-bottom:1px solid #E2E0DA;">
-              <span style="font-size:16px;font-weight:500;color:#111211;letter-spacing:-0.015em;">YourApp</span>
+              <span style="font-size:16px;font-weight:500;color:#111211;letter-spacing:-0.015em;">Sajilo</span>
             </td>
           </tr>
           <tr>
@@ -164,7 +164,7 @@ export function verifyEmailTemplate({
         <table width="100%" style="max-width:480px;background:#FFFFFF;border-radius:16px;border:1px solid #E2E0DA;overflow:hidden;">
           <tr>
             <td style="padding:32px 40px 24px;border-bottom:1px solid #E2E0DA;">
-              <span style="font-size:16px;font-weight:500;color:#111211;letter-spacing:-0.015em;">YourApp</span>
+              <span style="font-size:16px;font-weight:500;color:#111211;letter-spacing:-0.015em;">Sajilo</span>
             </td>
           </tr>
           <tr>

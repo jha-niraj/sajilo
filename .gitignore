@@ -36,3 +36,11 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# TypeScript
+*.tsbuildinfo
+
+# Cloudflare / OpenNext
+.open-next
+.wrangler
+.dev.vars

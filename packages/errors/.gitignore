@@ -1,0 +1,10 @@
+# @repo/errors ships RAW TypeScript source (package.json "main"/"exports" -> ./src/index.ts).
+# It must NEVER be built into src/. Stale compiled .js/.d.ts files here shadow the .ts sources and
+# break bundlers (Turbopack resolves `./x.js` to the dead .js: "no exports at all / CommonJs").
+# check-types uses `tsc --noEmit`, so these only appear if someone runs a bare `tsc` build - ignore
+# and never commit them.
+src/*.js
+src/*.jsx
+src/*.d.ts
+src/*.js.map
+dist/

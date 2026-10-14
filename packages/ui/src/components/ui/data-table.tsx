@@ -3,7 +3,7 @@
 import type React from "react"
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Search } from "lucide-react"
 import { cn } from "../../lib/utils"
-import { InlineLoader } from "./loader"
+import { Loader } from "./loader"
 import { Input } from "./input"
 
 // ─── Column definition ────────────────────────────────────────────────────────
@@ -157,7 +157,7 @@ export function DataTable<T>({
             <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden">
                 {loading ? (
                     <div className="flex items-center justify-center py-16">
-                        <InlineLoader size={32} />
+                        <Loader size={32} />
                     </div>
                 ) : data.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center px-6">

@@ -8,14 +8,12 @@
  * Run: pnpm --filter @repo/db db:seed
  */
 
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
+import { neon } from '@neondatabase/serverless'
+import { drizzle } from 'drizzle-orm/neon-http'
 import { hashPassword } from 'better-auth/crypto'
-import * as schema from './schema'
-import { eq } from 'drizzle-orm'
+import * as schema from './schema/index'
 
-const client = postgres(process.env.DATABASE_URL!)
-const db = drizzle(client, { schema })
+const db = drizzle({ client: neon(process.env.DATABASE_URL!), schema })
 
 const EMAIL = 'superadmin@admin.com'
 const PASSWORD = 'Admin@1234'
@@ -31,7 +29,6 @@ async function seed() {
 
     if (existing) {
         console.log('Super admin already exists. Skipping.')
-        await client.end()
         return
     }
 
@@ -82,7 +79,6 @@ async function seed() {
     console.log(`  Email:    ${EMAIL}`)
     console.log(`  Password: ${PASSWORD}`)
 
-    await client.end()
 }
 
 seed().catch((err) => {

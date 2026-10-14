@@ -1,53 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server"
 
-// Routes that require a session — redirect to /signin if not logged in
-const protectedRoutes = [
-    '/home',
-    '/profile',
-]
+// Edge middleware (Cloudflare/OpenNext does not run Node "proxy" yet), so this only checks
+// that a session cookie exists. Pages and actions verify the session for real.
 
-// Auth-only routes — redirect to /home if ALREADY logged in
-// NOTE: /verifyemail is intentionally excluded — a signed-in user who just
-// registered must be able to reach this page before their email is verified.
-const authOnlyRoutes = [
-    '/signin',
-    '/signup',
-    '/forgotpassword',
-    '/resetpassword',
-]
+const PUBLIC_ROUTES = ["/login", "/signup"]
+const COOKIE_PREFIX = process.env.AUTH_COOKIE_PREFIX || "better-auth"
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
 
-    if (
-        pathname.startsWith('/api/') ||
-        pathname.startsWith('/_next/') ||
-        pathname.includes('.')
-    ) {
-        return NextResponse.next()
+    const isLoggedIn = Boolean(
+        request.cookies.get(`${COOKIE_PREFIX}.session_token`)?.value ||
+            request.cookies.get(`__Secure-${COOKIE_PREFIX}.session_token`)?.value,
+    )
+    const isPublic = PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"))
+
+    if (!isLoggedIn && !isPublic) {
+        return NextResponse.redirect(new URL("/login", request.nextUrl.origin))
     }
-
-    const isProtected = protectedRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
-    const isAuthOnly = authOnlyRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))
-
-    const sessionCookie = request.cookies.get('better-auth.session_token')
-    const isLoggedIn = !!sessionCookie?.value
-
-    // Not logged in trying to access a protected page
-    if (!isLoggedIn && isProtected) {
-        const url = new URL('/signin', request.nextUrl.origin)
-        url.searchParams.set('callbackUrl', pathname)
-        return NextResponse.redirect(url)
+    if (isLoggedIn && (isPublic || pathname === "/")) {
+        return NextResponse.redirect(new URL("/today", request.nextUrl.origin))
     }
-
-    // Already logged in trying to access sign-in/sign-up pages
-    if (isLoggedIn && isAuthOnly) {
-        return NextResponse.redirect(new URL('/home', request.nextUrl.origin))
-    }
-
     return NextResponse.next()
 }
 
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+    matcher: ["/((?!api|_next/static|_next/image|sw.js|manifest.webmanifest|icons|offline|favicon.ico|robots.txt).*)"],
 }

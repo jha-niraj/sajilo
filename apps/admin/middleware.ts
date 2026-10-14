@@ -25,7 +25,9 @@ export async function middleware(request: NextRequest) {
         (p) => pathname === p || pathname.startsWith(p + "/"),
     )
 
-    const sessionCookie = request.cookies.get("better-auth.session_token")
+    const prefix = process.env.AUTH_COOKIE_PREFIX || "better-auth"
+    const sessionCookie =
+        request.cookies.get(`${prefix}.session_token`) ?? request.cookies.get(`__Secure-${prefix}.session_token`)
     const isLoggedIn = !!sessionCookie?.value
 
     if (!isLoggedIn && isProtected) {

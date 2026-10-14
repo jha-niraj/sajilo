@@ -1,0 +1,43 @@
+"use client"
+
+import { PageTop } from "@/components/shell/page-top"
+import { useI18n } from "@/lib/i18n"
+import type { CashOnHand } from "@/lib/lending/server"
+
+export function CashClient({ cash }: { cash: CashOnHand }) {
+    const { t, money, month } = useI18n()
+    return (
+        <>
+            <PageTop title={t("cashOnHand")} subtitle={month(cash.year, cash.month)} backHref="/loans" />
+            <div className="space-y-4 px-4 pt-4">
+                <section className="rounded-[26px] bg-ink p-5 text-paper">
+                    <p className="text-[15px] text-paper/70">{t("shouldHave")}</p>
+                    <p className="mt-1 text-[40px] font-semibold leading-none tabular">{money(cash.shouldHave)}</p>
+                </section>
+                <section className="space-y-3 rounded-[24px] bg-card p-5 ring-1 ring-line text-[17px]">
+                    <Line label={t("collectedThisMonth")} value={`+ ${money(cash.collected)}`} className="text-ink" />
+                    <Line label={t("lentOut")} value={`- ${money(cash.lentThisMonth)}`} className="text-miss" />
+                    <Line label={t("returnedThisMonth")} value={`+ ${money(cash.returnedThisMonth)}`} className="text-paid" />
+                    <div className="border-t border-line pt-3">
+                        <Line label={t("shouldHave")} value={money(cash.shouldHave)} className="font-semibold text-ink" />
+                    </div>
+                </section>
+                <section className="rounded-[24px] bg-saffron-soft p-5 text-[16px] text-[#7a3d10]">
+                    <Line label={t("principalLeft")} value={money(cash.stillOut)} />
+                    <div className="mt-2">
+                        <Line label={t("interestDue")} value={money(cash.stillOutInterest)} />
+                    </div>
+                </section>
+            </div>
+        </>
+    )
+}
+
+function Line({ label, value, className }: { label: string; value: string; className?: string }) {
+    return (
+        <div className={`flex items-baseline justify-between gap-3 ${className ?? ""}`}>
+            <span className="text-ink-2">{label}</span>
+            <span className="font-semibold tabular">{value}</span>
+        </div>
+    )
+}

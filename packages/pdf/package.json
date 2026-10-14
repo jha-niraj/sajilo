@@ -1,0 +1,52 @@
+{
+    "name": "@repo/pdf",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        "./acknowledgement-receipt": "./src/acknowledgement-receipt.ts",
+        "./admit-card": "./src/admit-card.ts",
+        "./assessment-report": "./src/assessment-report.ts",
+        "./attendance-report": "./src/attendance-report.ts",
+        "./bill-invoice": "./src/bill-invoice.ts",
+        "./credit-invoice": "./src/credit-invoice.ts",
+        "./diagram": "./src/diagram.ts",
+        "./exam-analytics-report": "./src/exam-analytics-report.ts",
+        "./fee-collection-summary": "./src/fee-collection-summary.ts",
+        "./fee-receipt": "./src/fee-receipt.ts",
+        "./grant-certificate": "./src/grant-certificate.ts",
+        "./id-card": "./src/id-card.ts",
+        "./income-expense": "./src/income-expense.ts",
+        "./layout": "./src/layout.ts",
+        "./lesson-plan": "./src/lesson-plan.ts",
+        "./check-sheet": "./src/check-sheet.ts",
+        "./print-questions": "./src/print-questions.ts",
+        "./lesson-register": "./src/lesson-register.ts",
+        "./marksheet-list": "./src/marksheet-list.ts",
+        "./payslip": "./src/payslip.ts",
+        "./question-paper": "./src/question-paper.ts",
+        "./report-card": "./src/report-card.ts",
+        "./report-card-bundle": "./src/report-card-bundle.ts",
+        "./seating-plan": "./src/seating-plan.ts",
+        "./staff-certificate": "./src/staff-certificate.ts",
+        "./student-statement": "./src/student-statement.ts",
+        "./tabulation-sheet": "./src/tabulation-sheet.ts",
+        "./transfer-certificate": "./src/transfer-certificate.ts",
+        "./types": "./src/types.ts"
+    },
+    "scripts": {
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@pdf-lib/fontkit": "^1.1.1",
+        "@repo/calendar": "workspace:*",
+        "@repo/core": "workspace:*",
+        "@repo/storage": "workspace:*",
+        "pdf-lib": "^1.17.1"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^22.10.5",
+        "typescript": "^5.7.3"
+    }
+}

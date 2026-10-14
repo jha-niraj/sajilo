@@ -1,13 +1,53 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* ===== Accordion animations ===== */
+@theme inline {
+    --animate-accordion-down: accordion-down 0.2s ease-out;
+    --animate-accordion-up: accordion-up 0.2s ease-out;
+    --animate-collapsible-down: collapsible-down 0.2s ease-out;
+    --animate-collapsible-up: collapsible-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+}
+
+/* Collapsible needs its own pair: Radix publishes the measured height on a per-primitive custom
+   property, so the accordion keyframes above cannot be reused - `--radix-accordion-content-height`
+   is simply undefined inside a Collapsible, and the height would animate to nothing. */
+@keyframes collapsible-down {
+    from { height: 0; }
+    to { height: var(--radix-collapsible-content-height); }
+}
+@keyframes collapsible-up {
+    from { height: var(--radix-collapsible-content-height); }
+    to { height: 0; }
+}
+
 /* ===== Tell Tailwind where to find class names ===== */
 @source "../components/**/*.tsx";
 @source "../lib/**/*.ts";
 
 @custom-variant dark (&:is(.dark *));
 
+
 :root {
+    /* Tells the browser which theme its OWN surfaces are in: the page canvas painted before any
+       CSS arrives, scrollbars, and the default rendering of form controls. Without it those stay
+       light in dark mode until our stylesheet applies - a white flash that the next-themes
+       blocking script cannot prevent, because it is the user agent painting, not us. */
+    color-scheme: light;
+
+    /* ── Brand accent: warm beige used for silk, accents, and highlights ── */
+    --brand: #EDE8D0;
+    --brand-dark: #141414;
+
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -23,7 +63,19 @@
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
     --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
+    /*
+     * WHITE, not the red again.
+     *
+     * This was `oklch(0.577 0.245 27.325)` - character for character the same value as
+     * `--destructive` directly above it. Every consumer pairs the two (`bg-destructive
+     * text-destructive-foreground`: the Badge, the Button, two AlertDialog delete actions in
+     * apps/main), so in light mode the label was red on the identical red and measured **1.00:1**.
+     * Not low contrast - no contrast. An "Overdue" badge with no readable word in it.
+     *
+     * White on #E7000B measures 4.76:1, which clears AA for normal text with the badge set at
+     * 12px. Verified by calculation rather than by eye, because that is how this got shipped.
+     */
+    --destructive-foreground: oklch(1 0 0);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);
@@ -44,6 +96,9 @@
 }
 
 .dark {
+    /* Pairs with the `color-scheme: light` on :root - see the note there. */
+    color-scheme: dark;
+
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.145 0 0);
@@ -55,11 +110,13 @@
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
+    --muted-foreground: oklch(0.78 0 0);
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
+    /* Same bug in the other direction: a brighter red on a dark red measured 2.63:1, which is the
+       "way too darkish" in the report. White on #82181A is 10.06:1. */
+    --destructive-foreground: oklch(1 0 0);
     --border: oklch(0.269 0 0);
     --input: oklch(0.269 0 0);
     --ring: oklch(0.439 0 0);
@@ -76,9 +133,98 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(0.269 0 0);
     --sidebar-ring: oklch(0.439 0 0);
+
+    /* ══ THE DARK PALETTE ══════════════════════════════════════════════════
+       Sampled pixel by pixel from a reference Niraj chose, not picked by eye.
+
+       Three things make it calmer than near-black, and none of them is "darker":
+
+       1. THE GROUND IS NOT BLACK. #121314 is about 7% lightness. Pure black under
+          white text causes halation - the glow where light type bleeds into the
+          dark - and the eye reads that as strain long before anyone names it.
+          Material landed on #121212 after the same argument.
+       2. IT IS VERY SLIGHTLY COOL. rgb(18,19,20): blue one point over red.
+          Invisible as colour, but it is the difference between a grey that reads
+          as deliberate and one that reads as muddy.
+       3. DEPTH IS FILL, NOT OUTLINE. #121314 -> #1C1C1C -> #333333 is three flat
+          steps, and borders sit barely above the surface they are on. Nothing is
+          drawn around anything; the surfaces separate themselves.
+
+       The page ground itself is NOT here - it is painted by each app's shell, on
+       the scrolling container. Grep `#121314` to find it.                       */
+
+    /* ── Surfaces ──
+       950 and 900 are BOTH "the raised surface" in practice, and that is not a
+       mistake to clean up later - it is what 480 call sites already say. An audit
+       of every `dark:bg-neutral-950` found 434 of them paired with `bg-white` or
+       `bg-neutral-50` in light mode: the convention is "the surface is the
+       extreme", so light takes the lightest and dark takes the darkest.
+
+       That convention BREAKS the moment the ground stops being black. At #121314,
+       a #0A0A0A surface is darker than the page it sits on, and 434 raised
+       surfaces would have silently become sunken wells. So 950 comes UP, and sits
+       a hair under 900 so a 950-inside-900 nesting still reads. */
+    --color-neutral-950: #1A1B1C;
+    --color-neutral-900: #1C1C1C;
+
+    /* ── Lines and the raised step ──
+       800 does double duty across the app - borders AND filled chips - so it has
+       to work as both. Tailwind's #262626 sits almost exactly on the card, which
+       is why our cards currently read as edgeless. */
+    --color-neutral-800: #2A2A2A;
+    /* 700 is the genuinely raised step: a tile or control meant to be seen as
+       sitting ON the card rather than drawn onto it. */
+    --color-neutral-700: #333333;
+
+    /* ── Type ──
+       These are LIGHTER than the values they replace, and that is required rather
+       than taste: on a ground that is no longer black, secondary text has to come
+       up with it or the contrast bought by lifting the ground is given straight
+       back. (The previous comment here said the same thing about near-black, with
+       oklch values tuned for #0A0A0A.) */
+    --color-neutral-300: #C7C7C7;   /* body copy            10.1 on a card */
+    --color-neutral-400: #ADACAC;   /* captions, meta        7.5 on a card */
+    --color-neutral-500: #9C9C9C;   /* the quietest step     6.2 on a card, 4.6 on a tile */
+    --color-neutral-600: #8E8E8E;   /* dark-mode secondary   5.2 on a card */
+
+    /* WHY 500/600 ARE NOT the reference's #8A8A8A and #717171.
+       Those two were measured off huge DISPLAY figures - "80%" at 60px - where the
+       bar is 3:1, and they clear it easily. Dropped onto a text token they are
+       something else entirely: #717171 is 3.49 on a card, which FAILS AA body text
+       at 4.5, and these two steps carry real sentences all over the app.
+
+       `text-neutral-600` unprefixed is also extremely common as the light-mode
+       secondary, and inside `.dark` it resolves to THIS variable - which is the
+       whole reason the block it replaced lifted 300-600 in the first place. Setting
+       it to #717171 would have quietly darkened that text everywhere rather than
+       lifting it.
+
+       So the two ends are the reference's and the middle is ours. Both 500 and 600
+       are LIGHTER than the oklch values they replace (~#9A9A9A and ~#858585), so
+       nothing gets dimmer anywhere; 300 and 400 come down a little and stay above
+       7.5 on every surface.
+
+       Measured, on the four grounds these actually sit on:
+
+                     card     page     tile   sidebar
+         300 #C7C7C7 10.08    11.00     7.47    11.71
+         400 #ADACAC  7.53     8.21     5.58     8.74
+         500 #9C9C9C  6.21     6.78     4.60     7.21
+         600 #8E8E8E  5.20     5.68     3.86     6.04
+
+       Every step clears 4.5 on a card, the page and the sidebar. The one number
+       under it is 600 on a raised #333333 TILE - which is a 32px chip that holds an
+       icon, not a place sentences go. Put a caption on a tile and use 400.
+
+       If a de-emphasised display figure wants the reference's #717171, that is a
+       choice at the call site, not a step in the text scale. */
 }
 
 @theme inline {
+    /* Brand color available as bg-brand, text-brand, border-brand etc */
+    --color-brand: var(--brand);
+    --color-brand-dark: var(--brand-dark);
+
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --color-card: var(--card);
@@ -117,39 +263,40 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* ─── Auth design tokens (--so-*) ────────────────────────────────────────── */
-:root {
-    --so-bg: #F6F4EE;
-    --so-bg-2: #ECEAE2;
-    --so-surface: #FFFFFF;
-    --so-ink: #111211;
-    --so-ink-2: #3A3C38;
-    --so-ink-3: #6B6E67;
-    --so-ink-4: #9B9E97;
-    --so-ink-5: #C5C8C0;
-    --so-line: #E2E0DA;
-    --so-line-2: #D0CEC8;
-    --so-accent: #111211;
-    --so-accent-soft: #EDECEB;
-    --so-ok: #111211;
-    --so-warn: #F5A623;
-}
+/* The display face - Bricolage Grotesque, loaded by each app's root layout via next/font/google
+   as `--font-bricolage`.
 
-.dark {
-    --so-bg: #0F0F0E;
-    --so-bg-2: #1A1A18;
-    --so-surface: #1F1F1D;
-    --so-ink: #ECEAE2;
-    --so-ink-2: #C5C8C0;
-    --so-ink-3: #9B9E97;
-    --so-ink-4: #6B6E67;
-    --so-ink-5: #3A3C38;
-    --so-line: #2A2A28;
-    --so-line-2: #1F1F1D;
-    --so-accent: #ECEAE2;
-    --so-accent-soft: #1A1A18;
-    --so-ok: #ECEAE2;
-    --so-warn: #FFB74D;
+   This is a plain `@theme`, NOT `@theme inline`, and the difference is load-bearing. `inline`
+   folds a token's value straight into the utilities it generates and never emits the custom
+   property, which is why nothing in this file reads `var(--color-background)` - only the raw
+   `--background` on :root. A font token has to work BOTH ways: as the `font-display` utility for
+   components, and as `var(--font-display)` for the h1-h6 base rule below. A plain @theme emits
+   the property and generates the utility, so both resolve.
+
+   The fallbacks are what renders on any surface that has not set --font-bricolage, so a missing
+   font degrades to the previous look rather than to Times.
+
+   `static` IS REQUIRED and its absence was a silent, total failure. Tailwind v4 tree-shakes theme
+   variables: a token nothing in the scanned SOURCE references is never emitted, and a reference
+   from inside this stylesheet - which is exactly what the h1-h6 rule below is - does not count as
+   a use. So `--font-display` was not in the output at all, `var(--font-display)` resolved to
+   nothing on every heading in every app, and they all fell through to the body face. Nothing
+   failed loudly, because a font chain degrading quietly is the whole point of a font chain.
+   Measured in a browser on 2026-09-20: a probe element set to `font-family: var(--font-display)`
+   computed to `"Space Grotesk"`, and a stylesheet walk for `--font-display:` returned ZERO rules.
+   `static` opts this block out of the tree-shaking, which is correct here precisely because the
+   consumer is a base rule rather than a utility. */
+@theme static {
+    /* EVERY `var()` IN THIS CHAIN CARRIES A FALLBACK, and that is the bug this line used to have.
+       A bare `var(--x)` naming a property that does not exist does NOT get skipped so the next
+       family can be tried - it makes the WHOLE declaration invalid at computed-value time, so
+       `--font-display` becomes the guaranteed-invalid value, `font-family: var(--font-display)`
+       is dropped, and the element simply inherits its parent's font. `apps/main` declared
+       `--font-space-grotesk` on its Space_Grotesk font but only ever applied `.className`, never
+       `.variable`, so that one property was missing - and it silently took Bricolage down with it
+       on every h1-h6 in the app. It reads as "the headings are just the body face", which is not
+       a symptom anyone traces back to a font token. */
+    --font-display: var(--font-bricolage, "Bricolage Grotesque"), var(--font-space-grotesk, "Space Grotesk"), ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -157,15 +304,498 @@
         @apply border-border outline-ring/50;
     }
 
+    /* Every heading on the platform is Bricolage Grotesque. This is a base rule rather than a
+       class on each heading on purpose: there are several hundred headings across six apps, and
+       any list of them would be wrong the first time someone adds a screen. Body copy,
+       descriptions and small print are untouched - they stay on the app's sans face. */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-display);
+    }
+
+    html {
+        /* PHONES GET 16px, EVERYTHING ELSE 17px.
+         *
+         * 17px was chosen for a desktop reading distance and it does not travel: on a 390px
+         * screen the same lift makes every label, button and heading 6.25% wider, and because
+         * Tailwind's spacing scale is rem-based it inflates every p-4 and gap-3 too. The page
+         * is bounded on mobile now, so that inflation comes directly out of the list.
+         *
+         * The base is set here, once, rather than by re-tagging components with sm: sizes -
+         * one rule moves the whole scale and it stays self-consistent: h-16 on the bottom nav
+         * and the 4rem this subtracts in --gk-page-h shrink together, so the arithmetic still
+         * balances.
+         *
+         * 16px, not lower: at 15px a h-10 control is 37.5px, and 44px is the floor for a
+         * comfortable tap target - the scale is already leaning on that budget. Going smaller
+         * means auditing control heights first, not just changing this number.
+         */
+        font-size: 100%;
+    }
+
+    @media (min-width: 640px) {
+        html {
+            font-size: 106.25%;
+        }
+    }
+
+    /* ── The full app never paints inside the INSTALLED window ──────────────────────────────
+     *
+     * `data-standalone` is set by a render-blocking script in the root layout, so this applies
+     * before the first frame. The runtime guard then hands the URL to the browser and returns the
+     * installed window to /m - but the guard needs React, and on a slow phone hydration is long
+     * enough to paint the desktop sidebar first. Painting it is the whole complaint: a drawer that
+     * fills a screen with no browser chrome to escape from.
+     *
+     * Scoped to the class the main app shell carries, so `/m` and the auth pages are untouched -
+     * they are the routes that MUST keep working inside the installed app.
+     *
+     * `visibility` rather than `display: none`: the tree still lays out, so nothing inside it
+     * measures itself at zero and caches a wrong size for the browser tab it is about to open in.
+     */
+    html[data-standalone='1'] .gk-full-app-shell {
+        visibility: hidden;
+    }
+
     body {
         @apply bg-background text-foreground;
+        /* Sharper text rendering on both platforms */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
     }
 
-    button {
+    /* Every interactive button shows a pointer cursor; disabled ones don't. Covers raw
+       <button> / role="button" elements that don't use the shared <Button> component (which
+       already sets cursor-pointer). Links and inputs are unaffected. */
+    button:not(:disabled),
+    [role="button"]:not([aria-disabled="true"]) {
         cursor: pointer;
     }
-
-    button:disabled {
+    button:disabled,
+    [role="button"][aria-disabled="true"] {
         cursor: not-allowed;
     }
 }
+@keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+    animation: marquee 40s linear infinite;
+}
+
+.animate-marquee:hover {
+    animation-play-state: paused;
+}
+
+/* ── Skeleton shimmer ────────────────────────────────────────────────────────
+   A highlight that sweeps across each block, rather than a whole-page opacity
+   pulse. A screenful of blocks fading in unison reads as a stalled screen; a
+   sweep reads as work in progress. The highlight is an ::after overlay so the
+   block keeps its own background colour in both themes, and each block can be
+   given its own animation-delay to make a group ripple instead of blink. */
+@keyframes gk-shimmer-sweep {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+}
+
+.gk-shimmer {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.gk-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--foreground) 8%, transparent) 50%,
+        transparent 100%
+    );
+    animation: gk-shimmer-sweep 1.6s ease-in-out infinite;
+}
+
+/* Real content settling in behind the skeleton once data arrives. */
+@keyframes gk-rise {
+    from { opacity: 0; transform: translate3d(0, 8px, 0); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+.gk-rise {
+    animation: gk-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Motion here is decoration, never a signal, so it all drops out cleanly. */
+@media (prefers-reduced-motion: reduce) {
+    .gk-shimmer::after { animation: none; opacity: 0.45; }
+    .gk-rise { animation: none; }
+
+    /* tw-animate-css does NOT honour reduced-motion on its own, so every `animate-in` /
+       `animate-out` surface (Select, DropdownMenu, Popover, Tooltip, Dialog, Sheet) would keep
+       zooming and sliding for a user who asked it not to.
+
+       Collapsed to a near-instant fade rather than `animation: none`, and that distinction is
+       load-bearing: Radix keeps an exiting element MOUNTED until its animation ends, reading the
+       computed style to know when. Remove the animation outright and the close never reports
+       completion in some browsers, leaving a dismissed menu on screen. A 1ms animation still
+       fires animationend, so the element unmounts correctly while no motion is perceived.
+
+       The transform helpers are zeroed so nothing slides or scales; only opacity moves. */
+    .animate-in,
+    .animate-out {
+        animation-duration: 1ms !important;
+        animation-delay: 0ms !important;
+        --tw-enter-translate-x: 0 !important;
+        --tw-enter-translate-y: 0 !important;
+        --tw-exit-translate-x: 0 !important;
+        --tw-exit-translate-y: 0 !important;
+        --tw-enter-scale: 1 !important;
+        --tw-exit-scale: 1 !important;
+        --tw-enter-rotate: 0 !important;
+        --tw-exit-rotate: 0 !important;
+    }
+
+    /* Height disclosures land open/closed instead of sliding. */
+    [data-state][class*="animate-accordion"],
+    [data-state][class*="animate-collapsible"] {
+        animation-duration: 1ms !important;
+    }
+}
+
+/* ===== Blog Article Content Styles ===== */
+.blog-content {
+    color: #404040;
+    font-size: 17px;
+    line-height: 1.8;
+}
+.dark .blog-content { color: #d4d4d4; }
+
+.blog-content p {
+    margin-top: 0;
+    margin-bottom: 1.625rem;
+}
+
+.blog-content h1, .blog-content h2,
+.blog-content h3, .blog-content h4, .blog-content h5 {
+    color: #0a0a0a;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+}
+.dark .blog-content h1, .dark .blog-content h2,
+.dark .blog-content h3, .dark .blog-content h4,
+.dark .blog-content h5 { color: #fafafa; }
+
+.blog-content h2 {
+    font-size: 1.5rem;
+    margin-top: 3.5rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e5e5;
+}
+.dark .blog-content h2 { border-bottom-color: #262626; }
+
+.blog-content h3 {
+    font-size: 1.25rem;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.blog-content h4 {
+    font-size: 1.05rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.blog-content ul, .blog-content ol {
+    margin-top: 0;
+    margin-bottom: 1.625rem;
+    padding-left: 1.625rem;
+}
+.blog-content li {
+    margin-top: 0.375rem;
+    margin-bottom: 0.375rem;
+    line-height: 1.75;
+}
+.blog-content ul > li { list-style-type: disc; }
+.blog-content ol > li { list-style-type: decimal; }
+.blog-content li > p { margin-bottom: 0.5rem; }
+.blog-content li::marker { color: #a3a3a3; }
+
+.blog-content strong, .blog-content b {
+    font-weight: 600;
+    color: #0a0a0a;
+}
+.dark .blog-content strong, .dark .blog-content b { color: #fafafa; }
+
+.blog-content a {
+    color: #0a0a0a;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: #d4d4d4;
+    transition: text-decoration-color 0.15s ease;
+}
+.dark .blog-content a { color: #fafafa; text-decoration-color: #525252; }
+.blog-content a:hover { text-decoration-color: #0a0a0a; }
+.dark .blog-content a:hover { text-decoration-color: #fafafa; }
+
+.blog-content blockquote {
+    border-left: 3px solid #0a0a0a;
+    padding: 0.25rem 0 0.25rem 1.5rem;
+    margin: 2rem 0;
+    font-style: italic;
+    font-size: 1.125rem;
+    color: #525252;
+}
+.dark .blog-content blockquote { border-left-color: #fafafa; color: #a3a3a3; }
+.blog-content blockquote p { margin-bottom: 0; }
+
+.blog-content code:not(pre code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8125em;
+    background-color: #f5f5f5;
+    border: 1px solid #e5e5e5;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.3rem;
+    color: #0a0a0a;
+}
+.dark .blog-content code:not(pre code) {
+    background-color: #1a1a1a;
+    border-color: #2a2a2a;
+    color: #e5e5e5;
+}
+
+.blog-content pre {
+    background-color: #0a0a0a;
+    border-radius: 0.875rem;
+    padding: 1.5rem 1.75rem;
+    overflow-x: auto;
+    margin: 2rem 0;
+    border: 1px solid #1a1a1a;
+}
+.dark .blog-content pre { background-color: #111111; border-color: #2a2a2a; }
+.blog-content pre code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.875rem;
+    color: #e5e5e5;
+    line-height: 1.7;
+}
+
+.blog-content img {
+    border-radius: 0.875rem;
+    margin: 2rem auto;
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.blog-content hr {
+    border: none;
+    border-top: 1px solid #e5e5e5;
+    margin: 3rem 0;
+}
+.dark .blog-content hr { border-top-color: #262626; }
+
+.blog-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2rem 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+.blog-content th, .blog-content td {
+    padding: 0.625rem 1rem;
+    border: 1px solid #e5e5e5;
+    text-align: left;
+}
+.dark .blog-content th, .dark .blog-content td { border-color: #262626; }
+.blog-content th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #525252;
+}
+.dark .blog-content th { background-color: #1a1a1a; color: #a3a3a3; }
+.blog-content td { color: #404040; }
+.dark .blog-content td { color: #d4d4d4; }
+
+/* ── Rich Text Editor content ───────────────────────────────────────────── */
+.rich-editor-content { font-size: 0.9375rem; line-height: 1.7; color: inherit; }
+.rich-editor-content p { margin: 0 0 0.75rem; }
+.rich-editor-content p:last-child { margin-bottom: 0; }
+.rich-editor-content p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: #a3a3a3;
+    pointer-events: none;
+    float: left;
+    height: 0;
+}
+.rich-editor-content h2 { font-size: 1.25rem; font-weight: 700; margin: 1.25rem 0 0.5rem; line-height: 1.3; }
+.rich-editor-content h3 { font-size: 1.0625rem; font-weight: 600; margin: 1rem 0 0.4rem; line-height: 1.35; }
+.rich-editor-content ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0 0.75rem; }
+.rich-editor-content ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0 0.75rem; }
+.rich-editor-content li { margin: 0.25rem 0; }
+.rich-editor-content blockquote {
+    border-left: 3px solid #e5e5e5;
+    padding: 0.25rem 0.75rem;
+    margin: 0.75rem 0;
+    color: #737373;
+    font-style: italic;
+}
+.dark .rich-editor-content blockquote { border-left-color: #404040; color: #a3a3a3; }
+.rich-editor-content hr { border: none; border-top: 1px solid #e5e5e5; margin: 1.25rem 0; }
+.dark .rich-editor-content hr { border-top-color: #262626; }
+.rich-editor-content a { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
+.rich-editor-content strong { font-weight: 600; }
+.rich-editor-content em { font-style: italic; }
+
+/* ─── Print: show only the page content, never the app chrome ──────────────────
+   Hides anything marked .no-print / [data-no-print], expands the main scroll
+   viewport so multi-row content isn't clipped to one screen, and flattens the
+   bordered "card" shell so reports print full-width. Add `no-print` (or the
+   Tailwind `print:hidden`) to any element that must not appear on paper. */
+@media print {
+    .no-print,
+    [data-no-print] { display: none !important; }
+
+    /* The main content lives inside a Radix ScrollArea — let it expand fully. */
+    [data-radix-scroll-area-viewport] {
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+
+    html, body { background: #fff !important; }
+    @page { margin: 14mm; }
+}
+
+/* ── Animated theme switch (View Transitions API) ─────────────────────────────
+   The new theme is revealed by a CSS-keyframe horizontal wipe. `startThemeTransition`
+   (@repo/ui/components/themeprovider) sets the start clip (--vt-clip-from) by direction and
+   flags `data-theme-transition` on <html>: light->dark wipes LEFT-to-RIGHT, dark->light wipes
+   RIGHT-to-LEFT. A straight inset wipe (no corner-origin circle) avoids the diagonal glitch.
+   Binding the clip via CSS (not a JS `.animate()` after `transition.ready`) means the new
+   snapshot is clipped from its FIRST frame - no flash-then-jump. */
+@keyframes vt-theme-reveal {
+    /* inset(top right bottom left): the far edge starts collapsed at 100% and animates to 0. */
+    from { clip-path: var(--vt-clip-from, inset(0 100% 0 0)); }
+    to   { clip-path: inset(0 0 0 0); }
+}
+
+/* Reveal mode: new theme wipes in over a static old snapshot underneath.
+   The UA stylesheet blends the old/new root snapshots with `mix-blend-mode: plus-lighter`
+   (for its default cross-fade). In reveal mode the opaque old snapshot stays underneath while
+   the new one wipes on top, so plus-lighter ADDS the two colours inside the revealed area -
+   a bright flash, worst on dark->light. Forcing `mix-blend-mode: normal` makes the new snapshot
+   simply paint over the old, so the wipe reveals the new theme cleanly. */
+html[data-theme-transition="reveal"]::view-transition-old(root),
+html[data-theme-transition="reveal"]::view-transition-new(root) {
+    mix-blend-mode: normal;
+}
+html[data-theme-transition="reveal"]::view-transition-old(root) {
+    animation: none;
+    z-index: 0;
+}
+html[data-theme-transition="reveal"]::view-transition-new(root) {
+    /* Reveal duration - the wipe sweep across the viewport. */
+    animation: vt-theme-reveal 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+    z-index: 1;
+}
+
+/* Fade mode (no click origin, e.g. a programmatic switch): gentle default cross-fade. */
+html[data-theme-transition="fade"]::view-transition-old(root),
+html[data-theme-transition="fade"]::view-transition-new(root) {
+    animation-duration: 0.3s;
+}
+
+/* ── Anti-flash: glass surfaces during the switch ────────────────────────────
+   `backdrop-filter` cannot be captured by a View-Transition snapshot, so it renders
+   live over both the old and new snapshots and produces a hard flash of the sharp
+   content behind every translucent surface. Two rules fix it, and both are needed:
+   (1) strip the blur for the duration of the transition, and (2) force any tagged
+   glass surface to its solid per-theme background so stripping the blur does not
+   bleed the content behind it. `--background` resolves to the correct solid color
+   in each theme, so each snapshot captures the right opaque surface. */
+html[data-theme-transition] *,
+html[data-theme-transition] *::before,
+html[data-theme-transition] *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+html[data-theme-transition] .theme-vt-glass {
+    background-color: var(--background) !important;
+}
+
+/* Honour reduced-motion: the switch still happens, just without the sweep. */
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none !important;
+    }
+}
+
+/* ── Safe area: keep bottom-anchored chrome off the iOS home indicator ───────
+   `safe-area-bottom` was in use in four places in apps/main - the /m bottom nav, the
+   attendance action bar, the quick-view intro and the PWA install banner - and was
+   never defined anywhere. It was a no-op class, so on an iPhone with a gesture bar
+   every one of those sat underneath it: the install banner's dismiss button was the
+   worst of them, since the home indicator swallowed the tap.
+
+   Two halves are required and neither works alone. `env(safe-area-inset-*)` resolves
+   to 0 unless the document opts in with `viewport-fit=cover` (set via the `viewport`
+   export in each app's root layout), and opting in without padding for the inset is
+   what puts content under the indicator in the first place.
+
+   It ADDS to the element's own bottom padding rather than replacing it. A bare
+   `padding-bottom: env(...)` on the same element would win over Tailwind's `pb-2`/`py-3`
+   (same specificity, declared later in this file), so a bar that wanted 0.75rem of
+   breathing room would silently lose it on every phone without an inset. Each call site
+   states its own floor with `[--gk-safe-pb:0.75rem]`, and the inset is added on top. */
+.safe-area-bottom {
+    padding-bottom: calc(var(--gk-safe-pb, 0px) + env(safe-area-inset-bottom));
+}
+
+/* The top half of the same problem: the /m shell header sits under the notch / status bar on a
+   notched phone once `viewport-fit=cover` is on. Same composing trick - the call site states its own
+   floor with `[--gk-safe-pt:1rem]` and the inset is added to it. */
+.safe-area-top {
+    padding-top: calc(var(--gk-safe-pt, 0px) + env(safe-area-inset-top));
+}
+
+/* ── Native textarea scrollbars ──────────────────────────────────────────────
+ * The house rule is "never a native scrollbar, always ScrollArea". A <textarea>
+ * is the one place that rule cannot be followed: it scrolls inside its own
+ * shadow box, and no wrapper element can take that over - putting a ScrollArea
+ * around one scrolls the BOX, not the text in it.
+ *
+ * So the bar is themed instead of replaced, which is the closest honest thing.
+ * Applies only to textarea, so no app container can quietly opt back into a
+ * native bar by borrowing this.
+ */
+textarea {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(212 212 212) transparent;
+}
+.dark textarea {
+    scrollbar-color: rgb(64 64 64) transparent;
+}
+textarea::-webkit-scrollbar { width: 8px; height: 8px; }
+textarea::-webkit-scrollbar-track { background: transparent; }
+textarea::-webkit-scrollbar-thumb {
+    background-color: rgb(212 212 212);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+.dark textarea::-webkit-scrollbar-thumb { background-color: rgb(64 64 64); }

@@ -1,12 +1,8 @@
-import type { Metadata } from 'next'
-import SignUpClient from './signup-client'
+import type { Metadata } from "next"
+import { SignupClient } from "./signup-client"
 
-export const metadata: Metadata = {
-    title: 'Create Account',
-    description: 'Create your account to get started.',
-    robots: { index: false, follow: false },
-}
+export const metadata: Metadata = { title: "Sign up" }
 
-export default function SignUpPage() {
-    return <SignUpClient />
+export default function SignupPage() {
+    return <SignupClient />
 }

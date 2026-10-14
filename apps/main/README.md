@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/create-next-app).
+# Sajilo app (`apps/main`)
 
-## Getting Started
+The collector's PWA. See the root `README.md` for setup and `CLAUDE.md` for architecture rules.
 
-First, run the development server:
+## Screens
+
+| Route | What it does |
+|---|---|
+| `/login`, `/signup` | Phone number + 4-digit PIN |
+| `/today` | Today's route list: tick, shop closed, no money, different amount (works offline) |
+| `/today/finish` | Mark the rest, count cash, match, close the day |
+| `/month` | BS month totals by customer and by day; print/PDF, share, CSV |
+| `/print/month` | Print-ready bank report |
+| `/customers/[id]` | One customer's month as a calendar: paid, paid late, missed |
+| `/manage` | Add, edit, reorder (drag), stop customers; paste a list |
+| `/scan` | Photo import for customer lists, old collection pages and old loan notes |
+| `/loans`, `/loans/new`, `/loans/[id]` | Lending book, repayments, breakdown |
+| `/loans/calculator`, `/cash` | "How much to take?" and cash in hand |
+| `/settings` | Language, collection days, holidays, bank deposit day, lending defaults, PIN |
+
+## Scripts
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm dev            # next dev on :3000
+pnpm test           # vitest (lib/**/*.test.ts)
+pnpm build          # next build
+pnpm deploy:build   # OpenNext Cloudflare build
+pnpm preview        # build + run in local workerd
+pnpm deploy         # build + deploy to Cloudflare
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Key code
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `lib/money/ledger.ts` - dues, oldest-first catch-up, advance credit
+- `lib/money/interest.ts` - Rs X per 100 per month on real BS months
+- `lib/collection/` - day snapshots, sync of marks, holidays
+- `lib/offline/` - IndexedDB store + outbox sync
+- `public/sw.js` - service worker (app shell + pages)

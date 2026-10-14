@@ -20,11 +20,17 @@
 		"R2_ACCESS_KEY_ID",
 		"R2_SECRET_ACCESS_KEY",
 		"R2_BUCKET_NAME",
-		"R2_PUBLIC_URL"
+		"R2_PUBLIC_URL",
+		"SARVAM_API_KEY",
+		"OPENAI_API_KEY",
+		"AUTH_COOKIE_PREFIX",
+		"NODE_ENV"
 	],
 	"tasks": {
 		"build": {
-			"dependsOn": ["^build"],
+			"dependsOn": [
+				"^build"
+			],
 			"env": [
 				"DATABASE_URL",
 				"BETTER_AUTH_SECRET",
@@ -44,20 +50,40 @@
 				"R2_ACCESS_KEY_ID",
 				"R2_SECRET_ACCESS_KEY",
 				"R2_BUCKET_NAME",
-				"R2_PUBLIC_URL"
+				"R2_PUBLIC_URL",
+				"SARVAM_API_KEY",
+				"OPENAI_API_KEY",
+				"AUTH_COOKIE_PREFIX",
+				"NODE_ENV"
 			],
-			"inputs": ["$TURBO_DEFAULT$", ".env*"],
-			"outputs": [".next/**", "!.next/cache/**"]
+			"inputs": [
+				"$TURBO_DEFAULT$",
+				".env*"
+			],
+			"outputs": [
+				".next/**",
+				"!.next/cache/**"
+			]
 		},
 		"lint": {
-			"dependsOn": ["^lint"]
+			"dependsOn": [
+				"^lint"
+			]
 		},
 		"check-types": {
-			"dependsOn": ["^check-types"]
+			"dependsOn": [
+				"^check-types"
+			]
 		},
 		"dev": {
 			"cache": false,
 			"persistent": true
+		},
+		"test": {
+			"dependsOn": [
+				"^build"
+			],
+			"outputs": []
 		}
 	}
 }

@@ -1,112 +1,50 @@
-import type { Metadata } from "next";
-import "@repo/ui/styles/globals.css";
-import "@/lib/env";
-import { ThemeProvider } from "@repo/ui/components/themeprovider";
-import { Geist, Space_Grotesk, Geist_Mono } from "next/font/google";
-import { Toaster as SonnerToaster } from "@repo/ui/components/ui/sonner";
-import { Providers } from "./providers";
+import type { Metadata, Viewport } from "next"
+import { cookies } from "next/headers"
+import { Mukta } from "next/font/google"
+import "./sajilo.css"
+import "@/lib/env"
+import { Providers } from "./providers"
+import type { Lang } from "@/lib/dict"
 
-const geistSans = Geist({
-	variable: "--font-geist-sans",
-	subsets: ["latin"],
-});
-const spaceGrotesk = Space_Grotesk({
-	subsets: ['latin'],
-	weight: ['300', '400', '500', '600', '700'],
-	display: 'swap',
-	variable: '--font-space-grotesk',
+const mukta = Mukta({
+    subsets: ["devanagari", "latin"],
+    weight: ["400", "500", "600", "700"],
+    variable: "--font-mukta",
+    display: "swap",
 })
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
-	subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
-	title: {
-		default: "The Coder'z",
-		template: "%s | The Coder'z"
-	},
-	description: "The Engineering Intelligence Platform for Computer Science Students",
-	keywords: ["Learn", "Build Projects", "Computer Science", "Programming", "Coding", "Developer", "Tech Community", "Coding Resources", "Tech Articles", "Coding Tutorials"],
-	authors: [{ name: "Niraj Jha" }],
-	creator: "Shunya Tech",
-	publisher: "Shunya Tech",
-	metadataBase: new URL("https://www.coderzai.xyz"),
-	alternates: {
-		canonical: "/",
-	},
-	openGraph: {
-		type: "website",
-		locale: "en_US",
-		url: "https://www.coderzai.xyz",
-		siteName: "The Coder'z",
-		title: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
-		description: "The Engineering Intelligence Platform for Computer Science Students",
-		images: [
-			{
-				url: "/mainlogo.jpeg",
-				width: 1024,
-				height: 1024,
-				alt: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
-			},
-		],
-	},
-	twitter: {
-		card: "summary_large_image",
-		title: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
-		description: "The Engineering Intelligence Platform for Computer Science Students",
-		images: ["/mainlogo.jpeg"],
-		creator: "@thecoderz",
-	},
-	icons: {
-		icon: [
-			{ url: "/mainlogo.ico", sizes: "any" },
-			{ url: "/mainlogo.jpeg", type: "image/jpeg", sizes: "512x512" },
-		],
-		apple: [
-			{ url: "/mainlogo.jpeg", sizes: "180x180", type: "image/jpeg" },
-		],
-	},
-	robots: {
-		index: true,
-		follow: true,
-		googleBot: {
-			index: true,
-			follow: true,
-			"max-video-preview": -1,
-			"max-image-preview": "large",
-			"max-snippet": -1,
-		},
-	},
-	verification: {
-		// Add your verification codes here when you have them
-		// google: "your-google-verification-code",
-		// yandex: "your-yandex-verification-code",
-	},
-};
+    title: { default: "Sajilo", template: "%s · Sajilo" },
+    description: "दैनिक बचत संकलन, सजिलै। Daily savings collection made easy.",
+    applicationName: "Sajilo",
+    appleWebApp: { capable: true, title: "Sajilo", statusBarStyle: "default" },
+    formatDetection: { telephone: false },
+    icons: {
+        icon: [
+            { url: "/icons/favicon-48.png", sizes: "48x48", type: "image/png" },
+            { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+        ],
+        apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+    },
+    robots: { index: false, follow: false },
+}
 
-export default function RootLayout({
-	children,
-}: Readonly<{
-	children: React.ReactNode;
-}>) {
-	return (
-		<html lang="en">
-			<body className={`
-				${spaceGrotesk.className} ${geistSans.variable} ${geistMono.variable} antialiased 
-			`}>
-				<Providers>
-					<ThemeProvider
-						attribute="class"
-						defaultTheme="system"
-						enableSystem
-						disableTransitionOnChange
-					>
-						{children}
-						<SonnerToaster position="top-center" closeButton richColors />
-					</ThemeProvider>
-				</Providers>
-			</body>
-		</html>
-	);
+export const viewport: Viewport = {
+    themeColor: "#faf6ee",
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    viewportFit: "cover",
+}
+
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+    const jar = await cookies()
+    const lang: Lang = jar.get("sajilo.lang")?.value === "ne" ? "ne" : "en"
+    return (
+        <html lang={lang} className={mukta.variable}>
+            <body className="min-h-dvh bg-paper text-ink antialiased">
+                <Providers lang={lang}>{children}</Providers>
+            </body>
+        </html>
+    )
 }

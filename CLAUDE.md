@@ -1,4 +1,4 @@
-# Basecodebase - Starter Monorepo
+# Sajilo (on the Basecodebase starter monorepo)
 
 Production-ready Next.js monorepo. Clone, fill `.env` files, run `pnpm --filter @repo/db db:push && pnpm --filter @repo/db db:seed`, then `pnpm dev`.
 
@@ -13,8 +13,8 @@ Production-ready Next.js monorepo. Clone, fill `.env` files, run `pnpm --filter 
 | Layer | Tool |
 |---|---|
 | Monorepo | Turborepo + pnpm workspaces |
-| Framework | Next.js 15 App Router |
-| Database ORM | Drizzle ORM (`@repo/db`) |
+| Framework | Next.js 16.3 App Router |
+| Database ORM | Drizzle ORM (`@repo/db`, Neon HTTP driver) |
 | Authentication | Better Auth (`@repo/auth`) |
 | File storage | Cloudflare R2 (`@repo/storage`) |
 | Image hosting | Cloudinary (unsigned for avatars, signed API for bulk) |
@@ -23,7 +23,7 @@ Production-ready Next.js monorepo. Clone, fill `.env` files, run `pnpm --filter 
 | Loaders | `DotmSquare11` (inline), `PageLoader` (full-page) |
 | Styling | Tailwind CSS v4 |
 | Language | TypeScript 5.9 |
-| DB driver | postgres.js |
+| DB driver | @neondatabase/serverless (neon-http) |
 | Package manager | pnpm 9 |
 
 ## Workspace layout
@@ -89,7 +89,7 @@ pnpm dev   # main :3000, admin :3001
 
 ## Database (`packages/db`)
 
-Schema at `packages/db/src/schema.ts`.
+Schema in `packages/db/src/schema/` - `auth.ts`, `admin.ts`, `collection.ts`, `settings.ts`, `lending.ts`, `scan.ts`, `ai.ts`, `relations.ts`.
 
 ### Tables
 
@@ -185,86 +185,39 @@ const { data: session, isPending } = useSession()
 
 Emails silently skip when `RESEND_API_KEY` is not set.
 
-## Main App (`apps/main`) - port 3000
+## Main App (`apps/main`) - Sajilo, port 3000
 
-### Route map
+Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: daily collection) and his lending book (Phase 2). Plans and task lists: `plan/phase-1-daily-collection.md`, `plan/phase-2-lending.md`. DB choice rationale: `plan/database-hyperdrive-vs-neon.pdf`.
 
-| Route | Type | Access |
-|---|---|---|
-| `/` | server | public - landing page |
-| `/signin` | server+client | public (auth) |
-| `/signup` | server+client | public (auth) |
-| `/forgotpassword` | server+client | public (auth) |
-| `/resetpassword` | server+client | public (auth) - reads `?token=` |
-| `/verifyemail` | server+client | public (auth) - reads `?email=` |
-| `/terms` | server | public - Terms of Service |
-| `/privacy` | server | public - Privacy Policy |
-| `/home` | server | **protected** - dashboard |
-| `/profile` | server+client | **protected** - profile management |
-| `/robots.txt` | auto | SEO - disallows /home, /profile |
-| `/sitemap.xml` | auto | SEO - landing + auth pages |
-| `/manifest.webmanifest` | auto | PWA manifest |
-| `/opengraph-image` | edge | OG image (1200x630) |
+### Rules
+- English by default, Nepali toggle (`lib/dict.ts`, `useI18n()`); every user-facing string goes through the dictionary in both languages.
+- No native form controls: use `components/choice.tsx` (shadcn Select), `@repo/ui` Textarea/Input, `components/pin-input.tsx` (InputOTP), `NepaliDatePicker`, `useConfirm`. Never `<select>`, `type="date"`, `window.confirm`.
+- All dates are Nepal-local AD strings `YYYY-MM-DD` in the DB; Bikram Sambat comes from `@repo/calendar` (`adToBs`, `bsToAd`, `bsMonthRange`). Never use `new Date('YYYY-MM-DD')` for calendar maths.
+- Money logic is pure and tested: `lib/money/ledger.ts` (dues, catch-up oldest-first, advance) and `lib/money/interest.ts` (Rs X per 100 per month, real BS month lengths, compounding toggle, interest-first repayments). Run `pnpm --filter main test`.
+- DB driver is Neon HTTP (no interactive transactions). Multi-row writes use `db.batch([...])`; ticks are single-row upserts guarded by `markedAt`.
+- Keep the file name `middleware.ts` (edge). OpenNext on Workers does not run Node "proxy" yet. Next is pinned to 16.3.x until OpenNext supports 16.4.
 
-### Middleware (`apps/main/middleware.ts`)
+### Routes
+`/login`, `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month`, `/customers/[id]`, `/manage`, `/scan`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/more`, `/settings`, `/offline`.
 
-Cookie-based route protection. `protectedRoutes` array controls what's guarded.
-Logged-in users hitting auth pages (`/signin`, `/signup`, etc.) redirect to `/home`.
+### Offline
+`lib/offline/store.ts` (Dexie: day snapshots + outbox) and `lib/offline/sync.ts` (flush on online/visibility/30s). `public/sw.js` caches the app shell and pages (network-first). Server actions in `actions/` are the only API.
 
-### Server actions
+### Scan import
+Photo -> `@repo/sarvamai` digitise (ne-IN, handwritten, md) -> `lib/scan/structure.ts` (gpt-4o-mini JSON; falls back to a line parser without `OPENAI_API_KEY`) -> review screen -> `applyScan`. Photo kept in R2 when `R2_*` is set.
 
-**`apps/main/actions/profile.action.ts`**
-- `updateProfile({ name })` - update display name
-- `updateAvatar(imageUrl)` - save Cloudinary URL to user.image
-- `notifyPasswordChanged()` - send password-changed email
-- `deleteAccount()` - permanently delete user + all data
+### Env (`apps/main/.env`)
+`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `AUTH_COOKIE_PREFIX=sajilo`, `SARVAM_API_KEY`, optional `OPENAI_API_KEY`, `R2_*`, `RESEND_*`.
 
-**`apps/main/actions/notification.action.ts`**
-- `getNotifications(page, limit)` - paginated notifications for current user
-- `getUnreadCount()` - badge count
-- `markAsRead(id)` - mark one read
-- `markAllAsRead()` - mark all read
-- `deleteNotification(id)` - delete one
-- `createNotification(input)` - internal, create a notification for a user
-
-**`apps/main/actions/cloudinary.action.ts`**
-- `getSignedUploadParams(options)` - for large/bulk client-side uploads (returns signature)
-- `uploadMedia(source, options)` - server-side upload from data URI or URL
-- `uploadMediaFromFormData(formData, options)` - upload File from a form action (max 100 MB)
-- `deleteMedia(publicId, resourceType)` - delete an asset
-
-### `apps/main/lib/`
-
-- `cloudinary.ts` - Cloudinary SDK config + `uploadFromServer`, `destroyAsset`, `buildUrl`, `thumbnailUrl`, `signUploadParams`
-- `constants.ts` - app-wide constants (pagination, upload limits, auth config)
-- `env.ts` - startup env validation (throws on missing required vars)
-
-### Profile page tabs
-
-1. **Profile** - edit name, upload avatar (Cloudinary unsigned)
-2. **Security** - change password (Better Auth `changePassword`), active sessions list with revoke
-3. **Account** - account info + Danger Zone (delete account with ConfirmDialog)
-
-### Image uploads (Cloudinary)
-
-- **Small/profile pics** - unsigned upload direct from browser (no server round-trip)
-  - Needs `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` + `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`
-  - Create an "Unsigned" preset in Cloudinary dashboard
-- **Large/bulk files** - call `getSignedUploadParams()` server action, client uploads with signature
-  - Needs `CLOUDINARY_API_KEY` + `CLOUDINARY_API_SECRET`
-
-### File uploads (Cloudflare R2)
-
-Everything except images goes to R2. `@repo/storage` package is wired up in main app.
-
-```typescript
-import { getUploadUrl, getDownloadUrl, deleteFile, getPublicUrl, generateKey } from '@repo/storage'
-
-// In a server action:
-const key = generateKey('uploads', userId, file.name)
-const uploadUrl = await getUploadUrl(key, file.type)
-// Return uploadUrl to client - client does PUT directly to R2
+### Deploy (Cloudflare Workers via OpenNext)
+```bash
+cd apps/main
+pnpm deploy:build                      # opennextjs-cloudflare build
+npx wrangler dev --port 8787 --local   # run in workerd locally (uses .dev.vars)
+npx wrangler secret put DATABASE_URL   # repeat for BETTER_AUTH_SECRET, SARVAM_API_KEY, OPENAI_API_KEY, R2_*
+pnpm deploy
 ```
+Set the real domain in `wrangler.jsonc` `vars` (BETTER_AUTH_URL etc.) before deploying.
 
 ## Admin App (`apps/admin`) - port 3001
 

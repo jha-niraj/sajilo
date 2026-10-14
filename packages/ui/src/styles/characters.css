@@ -1,0 +1,43 @@
+/*
+ * Motion for Vidya and friends (components/playful/characters.tsx). UNSCOPED on purpose: the same
+ * characters float on the public pages (`.gk-playful`) and inside the signed-in portal
+ * (`.gk-portal`), and a keyframe class that only worked under one scope would leave them frozen
+ * under the other. The class names carry the `pl-` prefix, so they collide with nothing.
+ *
+ * `translate` / `rotate` / `scale` are the individual transform properties, so a character can float
+ * while its wrapper is positioned with a normal `transform` and neither clobbers the other. Negative
+ * `animation-delay` values at the call sites desynchronise a group so they never bob in unison.
+ */
+@keyframes pl-float {
+    from { translate: 0 -5px; }
+    to   { translate: 0 9px; }
+}
+@keyframes pl-wiggle {
+    0%, 100% { rotate: 0deg; }
+    25%      { rotate: -5deg; }
+    75%      { rotate: 5deg; }
+}
+@keyframes pl-breathe {
+    0%, 100% { scale: 1; }
+    50%      { scale: 1.03; }
+}
+@keyframes pl-drift {
+    from { translate: 0 0; rotate: 0deg; }
+    to   { translate: 6px -10px; rotate: 4deg; }
+}
+@keyframes pl-twinkle {
+    0%, 100% { opacity: 0.3; scale: 0.8; }
+    50%      { opacity: 1; scale: 1.1; }
+}
+
+.pl-float   { animation: pl-float 3.2s ease-in-out infinite alternate; }
+.pl-wiggle  { animation: pl-wiggle 4s ease-in-out infinite; }
+.pl-breathe { animation: pl-breathe 5s ease-in-out infinite; }
+.pl-drift   { animation: pl-drift 3.6s ease-in-out infinite alternate; }
+.pl-twinkle { animation: pl-twinkle 2.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+    .pl-float, .pl-wiggle, .pl-breathe, .pl-drift, .pl-twinkle {
+        animation: none;
+    }
+}

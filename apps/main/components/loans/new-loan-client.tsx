@@ -1,0 +1,156 @@
+"use client"
+
+import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { cn } from "@repo/ui/lib/utils"
+import { Switch } from "@repo/ui/components/ui/switch"
+import { NepaliDatePicker } from "@repo/ui/components/ui/nepali-date-picker"
+import { PageTop } from "@/components/shell/page-top"
+import { useI18n } from "@/lib/i18n"
+import { toAsciiDigits } from "@/lib/phone"
+import { calculateLoan } from "@/lib/money/interest"
+import { createLoan } from "@/actions/loan.action"
+import { StatementTotals } from "./breakdown"
+import { Choice } from "@/components/choice"
+
+interface Props {
+    borrowers: { id: string; name: string; phone: string | null }[]
+    today: string
+    defaultRate: number
+    defaultCompounding: boolean
+    basis: "balance" | "principal"
+    suggestedDue: string
+}
+
+export function NewLoanClient({ borrowers, today, defaultRate, defaultCompounding, basis, suggestedDue }: Props) {
+    const { t } = useI18n()
+    const router = useRouter()
+    const [borrowerId, setBorrowerId] = useState<string>(borrowers.length ? "" : "new")
+    const [name, setName] = useState("")
+    const [phone, setPhone] = useState("")
+    const [amount, setAmount] = useState("")
+    const [rate, setRate] = useState(String(defaultRate))
+    const [startDate, setStartDate] = useState(today)
+    const [dueDate, setDueDate] = useState<string>(suggestedDue)
+    const [compounding, setCompounding] = useState(defaultCompounding)
+    const [busy, setBusy] = useState(false)
+
+    const principal = Number(amount) || 0
+    const valid = principal > 0 && (borrowerId === "new" ? name.trim().length > 0 : borrowerId !== "")
+
+    const preview = useMemo(() => {
+        if (!principal || !dueDate || dueDate <= startDate) return null
+        return calculateLoan({ principal, ratePer100: Number(rate) || 0, startDate, compounding, basis }, [], dueDate)
+    }, [principal, rate, startDate, dueDate, compounding, basis])
+
+    const save = async () => {
+        setBusy(true)
+        try {
+            const res = await createLoan({
+                borrowerId: borrowerId !== "new" ? borrowerId : undefined,
+                borrowerName: borrowerId === "new" ? name : undefined,
+                borrowerPhone: borrowerId === "new" ? phone || null : undefined,
+                principal,
+                ratePer100: Number(rate) || 0,
+                startDate,
+                dueDate: dueDate || null,
+                compounding: compounding === defaultCompounding ? null : compounding,
+            })
+            toast.success(t("saved"))
+            router.replace(`/loans/${res.id}`)
+        } catch {
+            toast.error(t("somethingWrong"))
+            setBusy(false)
+        }
+    }
+
+    return (
+        <>
+            <PageTop title={t("newLoan")} backHref="/loans" />
+            <div className="space-y-4 px-4 pt-4">
+                <section className="space-y-3 rounded-[24px] bg-card p-4 ring-1 ring-line">
+                    <Label text={t("borrower")}>
+                        <Choice
+                            value={borrowerId}
+                            onChange={setBorrowerId}
+                            placeholder={t("chooseBorrower")}
+                            options={[
+                                ...(borrowers.length > 0 ? [{ value: "", label: t("chooseBorrower") }] : []),
+                                ...borrowers.map((b) => ({ value: b.id, label: b.name })),
+                                { value: "new", label: `+ ${t("newBorrower")}` },
+                            ]}
+                        />
+                    </Label>
+                    {borrowerId === "new" && (
+                        <div className="grid grid-cols-2 gap-2">
+                            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={t("name")} className={inputCls} />
+                            <input inputMode="tel" value={phone} onChange={(e) => setPhone(toAsciiDigits(e.target.value))} placeholder={t("phone")} className={inputCls} />
+                        </div>
+                    )}
+                </section>
+
+                <section className="space-y-3 rounded-[24px] bg-card p-4 ring-1 ring-line">
+                    <Label text={t("loanAmount")}>
+                        <div className="flex items-center rounded-xl bg-paper ring-1 ring-line focus-within:ring-2 focus-within:ring-saffron">
+                            <span className="pl-3 text-lg text-ink-3">{t("rupeePrefix")}</span>
+                            <input
+                                inputMode="numeric"
+                                value={amount}
+                                onChange={(e) => setAmount(toAsciiDigits(e.target.value).replace(/\D/g, "").slice(0, 9))}
+                                className="h-14 w-full bg-transparent px-2 text-[24px] font-semibold text-ink outline-none"
+                            />
+                        </div>
+                    </Label>
+                    <Label text={t("rate")}>
+                        <input
+                            inputMode="decimal"
+                            value={rate}
+                            onChange={(e) => setRate(toAsciiDigits(e.target.value).replace(/[^\d.]/g, ""))}
+                            className={cn(inputCls, "text-[18px] font-semibold")}
+                        />
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <Label text={t("givenOn")}>
+                            <NepaliDatePicker value={startDate} onChange={setStartDate} maxDate={today} className="h-12 w-full rounded-xl" />
+                        </Label>
+                        <Label text={`${t("returnBy")} (${t("optional")})`}>
+                            <NepaliDatePicker value={dueDate} onChange={setDueDate} minDate={startDate} className="h-12 w-full rounded-xl" />
+                        </Label>
+                    </div>
+                    <label className="flex items-center justify-between gap-4 pt-1">
+                        <span className="text-[15px] text-ink">{t("compounding")}</span>
+                        <Switch checked={compounding} onCheckedChange={setCompounding} />
+                    </label>
+                </section>
+
+                {preview && (
+                    <section className="rounded-[24px] bg-saffron-soft p-4">
+                        <p className="mb-2 text-[15px] font-medium text-[#7a3d10]">{t("calcOn")}</p>
+                        <StatementTotals statement={preview} />
+                    </section>
+                )}
+
+                <button
+                    type="button"
+                    disabled={!valid || busy}
+                    onClick={save}
+                    className="flex h-16 w-full items-center justify-center rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-30"
+                >
+                    {t("save")}
+                </button>
+            </div>
+        </>
+    )
+}
+
+const inputCls = "h-12 w-full rounded-xl bg-paper px-3 text-[17px] text-ink outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
+
+function Label({ text, children }: { text: string; children: React.ReactNode }) {
+    return (
+        <div>
+            <p className="mb-1.5 text-[14px] font-medium text-ink-2">{text}</p>
+            {children}
+        </div>
+    )
+}

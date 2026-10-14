@@ -1,7 +1,21 @@
 "use client"
 
-import React from "react"
+import { useEffect } from "react"
+import { Toaster } from "@repo/ui/components/ui/sonner"
+import { I18nProvider } from "@/lib/i18n"
+import type { Lang } from "@/lib/dict"
 
-export function Providers({ children }: { children: React.ReactNode }) {
-    return <>{children}</>
+export function Providers({ lang, children }: { lang: Lang; children: React.ReactNode }) {
+    useEffect(() => {
+        if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+            navigator.serviceWorker.register("/sw.js").catch(() => {})
+        }
+    }, [])
+
+    return (
+        <I18nProvider initialLang={lang}>
+            {children}
+            <Toaster position="top-center" />
+        </I18nProvider>
+    )
 }

@@ -1,0 +1,103 @@
+@import "@repo/ui/styles/globals.css";
+
+@source "../app";
+@source "../components";
+
+/* Sajilo palette: warm paper, deep ink, one saffron accent. Status colours are fixed meanings
+   across every screen so he learns them once: green = got it, amber = check this,
+   violet = paid late, rose = missed. */
+@theme {
+    --color-paper: #faf6ee;
+    --color-paper-2: #f3ecdf;
+    --color-card: #ffffff;
+    --color-line: #ebe2d2;
+    --color-ink: #2a2118;
+    --color-ink-2: #5c5145;
+    --color-ink-3: #8a7f72;
+    --color-saffron: #c8611f;
+    --color-saffron-soft: #fbeadb;
+    --color-paid: #2f8a57;
+    --color-paid-soft: #e3f3e9;
+    --color-flag: #d88a12;
+    --color-flag-soft: #fdf1d8;
+    --color-late: #6c55c9;
+    --color-late-soft: #ece8fb;
+    --color-miss: #c2453a;
+    --color-miss-soft: #fbe6e3;
+
+    --font-sajilo: var(--font-mukta), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+    color-scheme: light;
+    --background: #faf6ee;
+    --foreground: #2a2118;
+    --primary: #2a2118;
+    --primary-foreground: #faf6ee;
+    --ring: #c8611f;
+    --border: #ebe2d2;
+    --input: #ebe2d2;
+}
+
+html,
+body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sajilo);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+}
+
+button,
+[role="button"],
+a {
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.tabular {
+    font-variant-numeric: tabular-nums;
+}
+
+.pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+.pt-safe {
+    padding-top: max(env(safe-area-inset-top), 0px);
+}
+
+@keyframes tick-pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    60% { transform: scale(1.12); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+.animate-tick {
+    animation: tick-pop 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes flag-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(216 138 18 / 0); }
+    50% { box-shadow: 0 0 0 4px rgb(216 138 18 / 0.25); }
+}
+
+.animate-flag {
+    animation: flag-glow 1.8s ease-in-out infinite;
+}
+
+@media print {
+    html,
+    body {
+        background: #fff;
+    }
+    .no-print {
+        display: none !important;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}

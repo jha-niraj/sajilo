@@ -1,0 +1,33 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "sajilo",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2026-10-01",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"minify": true,
+
+	// Smart placement: Cloudflare moves the Worker toward Neon (ap-southeast-1) once it has seen
+	// enough traffic. With one user it may stay near Kathmandu, which is fine for these few-query
+	// pages. Switch to { "region": "aws:ap-southeast-1" } to pin it if pages ever feel slow.
+	"placement": { "mode": "smart" },
+
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+
+	// Non-secret config. Secrets (DATABASE_URL, BETTER_AUTH_SECRET, SARVAM_API_KEY, OPENAI_API_KEY,
+	// R2_*, RESEND_API_KEY) go in with `wrangler secret put` or `pnpm deploy` (see DEPLOY.md).
+	"vars": {
+		"BETTER_AUTH_URL": "https://sajilo.example.com",
+		"NEXT_PUBLIC_SITE_URL": "https://sajilo.example.com",
+		"MAIN_APP_URL": "https://sajilo.example.com",
+		"ADMIN_APP_URL": "https://admin.sajilo.example.com",
+		"AUTH_COOKIE_PREFIX": "sajilo",
+		"R2_BUCKET_NAME": "sajilo-uploads"
+	},
+
+	"observability": {
+		"logs": { "enabled": true }
+	}
+}
