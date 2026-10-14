@@ -8,6 +8,7 @@ import { ArrowUp, Camera, Keyboard, Mic, RotateCcw, Square, UserPlus, AudioLines
 import { cn } from "@repo/ui/lib/utils"
 import { Loader } from "@repo/ui/components/ui/loader"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { useI18n } from "@/lib/i18n"
 import { refreshDay } from "@/lib/offline/sync"
 import { confirmProposal, munshiSpeak } from "@/actions/munshi.action"
@@ -16,6 +17,8 @@ import type { DictKey } from "@/lib/dict"
 import { Orb, type OrbState } from "./orb"
 import { ProposalCard } from "./proposal-card"
 import { useVoiceSession } from "./use-voice-session"
+import { useDictation } from "./use-dictation"
+import { TypingDots, Waveform } from "./waveform"
 
 const STORE_KEY = "sajilo.munshi.v1"
 const SUGGESTIONS: DictKey[] = ["suggest1", "suggest2", "suggest3", "suggest4"]
@@ -38,6 +41,7 @@ export function MunshiClient({ userName, hasCustomers: initialHasCustomers, welc
     const [busy, setBusy] = useState(false)
     const [confirming, setConfirming] = useState<string | null>(null)
     const [hasCustomers, setHasCustomers] = useState(initialHasCustomers)
+    const [transcribing, setTranscribing] = useState(false)
     const messagesRef = useRef(messages)
     messagesRef.current = messages
 
@@ -158,7 +162,7 @@ export function MunshiClient({ userName, hasCustomers: initialHasCustomers, welc
     const empty = messages.filter((m) => m.role === "user").length === 0
 
     return (
-        <div className="relative flex min-h-[calc(100dvh-5rem-env(safe-area-inset-bottom))] flex-col">
+        <div className="relative flex h-[calc(100dvh-5rem-env(safe-area-inset-bottom))] flex-col overflow-hidden">
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
                 <div className="absolute -top-32 left-1/2 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgb(232_140_70/0.22),transparent_65%)] blur-2xl" />
                 <div className="absolute bottom-0 right-[-120px] h-[360px] w-[360px] rounded-full bg-[radial-gradient(circle,rgb(123_97_255/0.12),transparent_65%)] blur-2xl" />
@@ -223,12 +227,15 @@ export function MunshiClient({ userName, hasCustomers: initialHasCustomers, welc
                     onSend={(text) => void sendText(text, false)}
                     onAudio={async (blob) => {
                         setBusy(true)
+                        setTranscribing(true)
                         try {
                             await sendAudio(blob, false)
                         } finally {
+                            setTranscribing(false)
                             setBusy(false)
                         }
                     }}
+                    transcribing={transcribing}
                     empty={empty}
                     hasCustomers={hasCustomers}
                 />
@@ -356,6 +363,7 @@ function StartCards() {
 function ChatView(props: {
     messages: MunshiMessage[]
     busy: boolean
+    transcribing: boolean
     confirming: string | null
     onConfirm: (p: Proposal) => void
     onCancel: (p: Proposal) => void
@@ -366,32 +374,18 @@ function ChatView(props: {
 }) {
     const { t } = useI18n()
     const [text, setText] = useState("")
-    const [recording, setRecording] = useState(false)
-    const recRef = useRef<MediaRecorder | null>(null)
-    const endRef = useRef<HTMLDivElement>(null)
+    const viewportRef = useRef<HTMLDivElement>(null)
+    const dictation = useDictation((blob) => void props.onAudio(blob))
 
     useEffect(() => {
-        endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
-    }, [props.messages.length, props.busy])
+        const el = viewportRef.current
+        if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+    }, [props.messages.length, props.busy, props.transcribing])
 
     const toggleMic = async () => {
-        if (recording) {
-            recRef.current?.stop()
-            return
-        }
+        if (dictation.recording) return dictation.stop()
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
-            const rec = new MediaRecorder(stream)
-            const chunks: BlobPart[] = []
-            rec.ondataavailable = (e) => e.data.size && chunks.push(e.data)
-            rec.onstop = () => {
-                stream.getTracks().forEach((tr) => tr.stop())
-                setRecording(false)
-                void props.onAudio(new Blob(chunks, { type: rec.mimeType || "audio/webm" }))
-            }
-            recRef.current = rec
-            rec.start()
-            setRecording(true)
+            await dictation.start()
         } catch {
             toast.error(t("micDenied"))
         }
@@ -404,86 +398,110 @@ function ChatView(props: {
     }
 
     return (
-        <div className="flex flex-1 flex-col">
-            <div className="flex-1 space-y-3 px-4 pb-4 pt-4">
-                {props.messages.map((m) => (
-                    <div key={m.id} className={cn("flex flex-col gap-2", m.role === "user" ? "items-end" : "items-start")}>
-                        {m.content && (
-                            <div
-                                className={cn(
-                                    "max-w-[85%] whitespace-pre-wrap rounded-[22px] px-4 py-3 text-[16px] leading-relaxed",
-                                    m.role === "user" ? "rounded-br-md bg-ink text-paper" : "rounded-bl-md bg-card text-ink ring-1 ring-line",
-                                )}
-                            >
-                                {m.role === "assistant" && (
-                                    <span className="mb-1 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-saffron">
-                                        <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#ffb36b] to-[#7b61ff]" /> {t("munshi")}
-                                    </span>
-                                )}
-                                {m.content}
-                            </div>
-                        )}
-                        {m.proposals?.map((p) => (
-                            <div key={p.id} className="w-full max-w-[92%]">
-                                <ProposalCard p={p} compact busy={props.confirming === p.id} onConfirm={() => props.onConfirm(p)} onCancel={() => props.onCancel(p)} />
-                            </div>
-                        ))}
-                    </div>
-                ))}
-                {props.busy && (
-                    <div className="flex items-center gap-2 px-1 text-[14px] text-ink-3">
-                        <Loader size={18} dotSize={2} /> {t("thinking")}
-                    </div>
-                )}
-                {!props.hasCustomers && <StartCards />}
-                {props.empty && props.hasCustomers && (
-                    <div className="flex flex-wrap gap-2 pt-2">
-                        {SUGGESTIONS.map((k) => (
-                            <button
-                                key={k}
-                                type="button"
-                                onClick={() => props.onSend(t(k))}
-                                className="rounded-full bg-card px-4 py-2.5 text-[14px] font-medium text-ink ring-1 ring-line active:bg-paper-2"
-                            >
-                                {t(k)}
-                            </button>
-                        ))}
-                    </div>
-                )}
-                <div ref={endRef} />
-            </div>
+        <div className="flex min-h-0 flex-1 flex-col">
+            <ScrollArea orientation="vertical" viewportRef={viewportRef} className="min-h-0 flex-1">
+                <div className="space-y-3 px-4 pb-4 pt-4">
+                    {props.messages.map((m) => (
+                        <div key={m.id} className={cn("flex flex-col gap-2", m.role === "user" ? "items-end" : "items-start")}>
+                            {m.content && (
+                                <div
+                                    className={cn(
+                                        "whitespace-pre-wrap rounded-[22px] px-4 py-3 text-[16px] leading-relaxed",
+                                        m.role === "user" ? "max-w-[85%] rounded-br-md bg-ink text-paper" : "w-full rounded-bl-md bg-card text-ink ring-1 ring-line",
+                                    )}
+                                >
+                                    {m.role === "assistant" && (
+                                        <span className="mb-1 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-saffron">
+                                            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#ffb36b] to-[#7b61ff]" /> {t("munshi")}
+                                        </span>
+                                    )}
+                                    {m.content}
+                                </div>
+                            )}
+                            {m.proposals?.map((p) => (
+                                <div key={p.id} className="w-full">
+                                    <ProposalCard p={p} compact busy={props.confirming === p.id} onConfirm={() => props.onConfirm(p)} onCancel={() => props.onCancel(p)} />
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                    {props.transcribing && (
+                        <div className="flex justify-end">
+                            <span className="rounded-[22px] rounded-br-md bg-ink px-5 py-4 text-paper">
+                                <TypingDots />
+                            </span>
+                        </div>
+                    )}
+                    {props.busy && !props.transcribing && (
+                        <div className="flex items-center gap-2 px-1 text-[14px] text-ink-3">
+                            <Loader size={18} dotSize={2} /> {t("thinking")}
+                        </div>
+                    )}
+                    {!props.hasCustomers && <StartCards />}
+                    {props.empty && props.hasCustomers && (
+                        <div className="flex flex-wrap gap-2 pt-2">
+                            {SUGGESTIONS.map((k) => (
+                                <button
+                                    key={k}
+                                    type="button"
+                                    onClick={() => props.onSend(t(k))}
+                                    className="rounded-full bg-card px-4 py-2.5 text-[14px] font-medium text-ink ring-1 ring-line active:bg-paper-2"
+                                >
+                                    {t(k)}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </ScrollArea>
 
-            <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] bg-gradient-to-t from-paper via-paper to-paper/0 px-4 pb-3 pt-4">
-                <div className="flex items-end gap-2 rounded-[26px] bg-card p-2 pl-4 shadow-[0_10px_30px_-16px_rgb(42_33_24/0.4)] ring-1 ring-line focus-within:ring-2 focus-within:ring-saffron">
-                    <Textarea
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                                e.preventDefault()
-                                submit()
-                            }
-                        }}
-                        rows={1}
-                        placeholder={recording ? t("listening") : t("typeMessage")}
-                        className="max-h-32 min-h-11 flex-1 resize-none [resize:none] border-0 bg-transparent px-0 py-2.5 text-[17px] text-ink shadow-none outline-none placeholder:text-ink-3 focus-visible:ring-0"
-                    />
-                    {text.trim() ? (
-                        <button type="button" onClick={submit} disabled={props.busy} aria-label={t("send")} className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-paper disabled:opacity-40">
-                            <ArrowUp className="h-5 w-5" />
-                        </button>
-                    ) : (
+            <div className="shrink-0 border-t border-line/60 bg-paper/95 px-4 pb-3 pt-3 backdrop-blur">
+                {dictation.recording ? (
+                    <div className="flex items-center gap-3 rounded-[26px] bg-card p-2 pl-4 shadow-[0_10px_30px_-16px_rgb(200_97_31/0.5)] ring-2 ring-saffron/50">
+                        <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-miss" />
+                        <Waveform levelRef={dictation.level} className="min-w-0 flex-1 justify-center" />
                         <button
                             type="button"
                             onClick={toggleMic}
-                            disabled={props.busy}
-                            aria-label={recording ? t("tapToStop") : t("modeVoice")}
-                            className={cn("flex h-11 w-11 items-center justify-center rounded-full transition-colors disabled:opacity-40", recording ? "animate-pulse bg-miss text-white" : "bg-saffron-soft text-saffron")}
+                            aria-label={t("tapToStop")}
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-miss text-white"
                         >
-                            {recording ? <Square className="h-4 w-4 fill-white" /> : <Mic className="h-5 w-5" />}
+                            <Square className="h-4 w-4 fill-white" />
                         </button>
-                    )}
-                </div>
+                    </div>
+                ) : (
+                    <div className="flex items-end gap-2 rounded-[26px] bg-card p-2 pl-4 shadow-[0_10px_30px_-16px_rgb(42_33_24/0.4)] ring-1 ring-line focus-within:ring-2 focus-within:ring-saffron">
+                        <Textarea
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault()
+                                    submit()
+                                }
+                            }}
+                            rows={1}
+                            placeholder={t("typeMessage")}
+                            className="max-h-32 min-h-11 flex-1 resize-none sm:resize-none border-0 bg-transparent px-0 py-2.5 text-[17px] text-ink shadow-none outline-none placeholder:text-ink-3 focus-visible:ring-0"
+                        />
+                        {text.trim() ? (
+                            <button type="button" onClick={submit} disabled={props.busy} aria-label={t("send")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-paper disabled:opacity-40">
+                                <ArrowUp className="h-5 w-5" />
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={toggleMic}
+                                disabled={props.busy}
+                                aria-label={t("modeVoice")}
+                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-saffron-soft text-saffron transition-colors active:bg-saffron active:text-white disabled:opacity-40"
+                            >
+                                <Mic className="h-5 w-5" />
+                            </button>
+                        )}
+                    </div>
+                )}
+                {dictation.recording && <p className="mt-2 text-center text-[13px] text-ink-3">{t("listening")}</p>}
             </div>
         </div>
     )
