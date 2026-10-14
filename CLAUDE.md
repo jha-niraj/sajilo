@@ -7,6 +7,7 @@ Production-ready Next.js monorepo. Clone, fill `.env` files, run `pnpm --filter 
 - Use hyphens (`-`) not em-dashes (`—`) everywhere in copy, comments, and JSX text.
 - No comments unless explaining a non-obvious WHY.
 - All buttons must have `cursor-pointer` (global CSS rule in globals.css handles this).
+- Git: never add Claude as co-author. No `Co-Authored-By: Claude` trailer and no "Generated with Claude Code" line in commits or PRs.
 
 ## Stack
 
