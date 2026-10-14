@@ -12,6 +12,7 @@ import { useI18n } from "@/lib/i18n"
 import { fetchMonthReport, type MonthReport } from "@/actions/report.action"
 import { MonthPicker } from "./month-picker"
 import { ProgressiveList } from "@/components/progressive-list"
+import { isOnline } from "@/lib/offline/network"
 
 export function MonthClient({
     initial,
@@ -28,6 +29,7 @@ export function MonthClient({
     const [pending, startTransition] = useTransition()
 
     const change = (v: { year: number; month: number }) => {
+        if (!isOnline()) return void toast(t("needsInternet"))
         startTransition(async () => {
             try {
                 setReport(await fetchMonthReport(v.year, v.month))

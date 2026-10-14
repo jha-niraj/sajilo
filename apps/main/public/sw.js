@@ -1,10 +1,12 @@
 /* Sajilo service worker.
  * - Static build files (hashed): cache first, forever.
  * - Pages: network first (4s), then the last copy saved on the phone, then /offline.
+ *   The app also asks for its main screens to be saved ahead ("warm"), so they open offline
+ *   even if he never visited them on this phone.
  * - Everything else (server actions, auth): straight to the network. Marks made offline are
  *   kept in IndexedDB by the app and sent later, not by this worker.
  */
-const VERSION = "v1"
+const VERSION = "v3"
 const STATIC_CACHE = `sajilo-static-${VERSION}`
 const PAGE_CACHE = `sajilo-pages-${VERSION}`
 const PRECACHE = ["/offline", "/icons/icon-192.png", "/icons/icon-512.png", "/manifest.webmanifest"]
@@ -78,6 +80,26 @@ self.addEventListener("fetch", (event) => {
     }
 })
 
+async function warm(urls) {
+    const cache = await caches.open(PAGE_CACHE)
+    for (const path of urls) {
+        try {
+            const url = new URL(path, self.location.origin)
+            const res = await fetch(url, { credentials: "same-origin", headers: { Accept: "text/html" } })
+            if (!res.ok || res.redirected) continue
+            const html = await res.clone().text()
+            await cache.put(url.origin + url.pathname, res)
+            // A saved page is useless offline if its scripts never downloaded: fetch those too.
+            const assets = new Set(html.match(/\/_next\/static\/[^"'\s)]+/g) || [])
+            await Promise.all([...assets].map((a) => cacheFirst(new Request(a)).catch(() => {})))
+        } catch {
+            // offline again; whatever is cached stays
+        }
+    }
+}
+
 self.addEventListener("message", (event) => {
     if (event.data === "skip-waiting") self.skipWaiting()
+    if (event.data && event.data.type === "warm" && Array.isArray(event.data.urls)) event.waitUntil(warm(event.data.urls))
+    if (event.data && event.data.type === "clear") event.waitUntil(caches.delete(PAGE_CACHE))
 })

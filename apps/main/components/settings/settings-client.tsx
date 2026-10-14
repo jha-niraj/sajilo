@@ -17,6 +17,7 @@ import { toAsciiDigits } from "@/lib/phone"
 import { refreshDay } from "@/lib/offline/sync"
 import { addHoliday, removeHoliday, updateSettings, type SettingsView } from "@/actions/settings.action"
 import { Choice } from "@/components/choice"
+import { isOnline } from "@/lib/offline/network"
 
 export function SettingsClient({ initial, today }: { initial: SettingsView; today: string }) {
     const { t, lang, num, date } = useI18n()
@@ -30,6 +31,7 @@ export function SettingsClient({ initial, today }: { initial: SettingsView; toda
     const [pinBusy, setPinBusy] = useState(false)
 
     const patch = (p: Partial<SettingsView>) => {
+        if (!isOnline()) return void toast(t("needsInternet"))
         setS((prev) => ({ ...prev, ...p }))
         startTransition(async () => {
             try {
@@ -48,21 +50,21 @@ export function SettingsClient({ initial, today }: { initial: SettingsView; toda
     }
 
     const addH = () =>
-        startTransition(async () => {
+        isOnline() ? startTransition(async () => {
             await addHoliday(holidayDate, holidayLabel)
             setHolidayLabel("")
             void refreshDay()
             router.refresh()
             toast.success(t("saved"))
-        })
+        }) : toast(t("needsInternet"))
 
     const removeH = (id: string) =>
-        startTransition(async () => {
+        isOnline() ? startTransition(async () => {
             setS((prev) => ({ ...prev, holidays: prev.holidays.filter((h) => h.id !== id) }))
             await removeHoliday(id)
             void refreshDay()
             router.refresh()
-        })
+        }) : toast(t("needsInternet"))
 
     const changePin = async () => {
         setPinBusy(true)

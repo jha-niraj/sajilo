@@ -9,8 +9,7 @@ import { PageTop } from "@/components/shell/page-top"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { Keypad } from "@/components/keypad"
 import { useI18n } from "@/lib/i18n"
-import { closeDay, reopenDay } from "@/actions/collection.action"
-import { flush, refreshDay } from "@/lib/offline/sync"
+import { queueOp } from "@/lib/offline/sync"
 import { useDay, useNepalToday } from "./use-day"
 
 export function FinishClient() {
@@ -34,10 +33,8 @@ export function FinishClient() {
     const lock = async () => {
         setBusy(true)
         try {
-            await flush()
-            await closeDay(today, counted ?? snapshot?.countedCash ?? null)
-            await refreshDay(today)
-            toast.success(t("dayClosedMsg"))
+            const { synced } = await queueOp({ kind: "closeDay", date: today, countedCash: counted ?? snapshot?.countedCash ?? null }, { wait: 5000 })
+            toast.success(synced ? t("dayClosedMsg") : t("savedOffline"))
             router.push("/today")
         } catch {
             toast.error(t("somethingWrong"))
@@ -49,8 +46,8 @@ export function FinishClient() {
     const unlock = async () => {
         setBusy(true)
         try {
-            await reopenDay(today)
-            await refreshDay(today)
+            const { synced } = await queueOp({ kind: "reopenDay", date: today }, { wait: 5000 })
+            if (!synced) toast(t("savedOffline"))
         } finally {
             setBusy(false)
         }

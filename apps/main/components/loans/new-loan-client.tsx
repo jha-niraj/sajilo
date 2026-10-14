@@ -10,7 +10,7 @@ import { PageTop } from "@/components/shell/page-top"
 import { useI18n } from "@/lib/i18n"
 import { toAsciiDigits } from "@/lib/phone"
 import { calculateLoan } from "@/lib/money/interest"
-import { createLoan } from "@/actions/loan.action"
+import { newOpId, queueOp } from "@/lib/offline/sync"
 import { StatementTotals } from "./breakdown"
 import { Choice } from "@/components/choice"
 
@@ -47,18 +47,31 @@ export function NewLoanClient({ borrowers, today, defaultRate, defaultCompoundin
     const save = async () => {
         setBusy(true)
         try {
-            const res = await createLoan({
-                borrowerId: borrowerId !== "new" ? borrowerId : undefined,
-                borrowerName: borrowerId === "new" ? name : undefined,
-                borrowerPhone: borrowerId === "new" ? phone || null : undefined,
-                principal,
-                ratePer100: Number(rate) || 0,
-                startDate,
-                dueDate: dueDate || null,
-                compounding: compounding === defaultCompounding ? null : compounding,
-            })
-            toast.success(t("saved"))
-            router.replace(`/loans/${res.id}`)
+            const loanId = newOpId()
+            const isNew = borrowerId === "new"
+            const { synced } = await queueOp(
+                {
+                    kind: "newLoan",
+                    loanId,
+                    borrowerId: isNew ? newOpId() : borrowerId,
+                    borrowerName: isNew ? name.trim() : (borrowers.find((b) => b.id === borrowerId)?.name ?? ""),
+                    newBorrower: isNew ? { name: name.trim(), phone: phone.trim() || null } : null,
+                    principal,
+                    ratePer100: Number(rate) || 0,
+                    startDate,
+                    dueDate: dueDate || null,
+                    compounding: compounding === defaultCompounding ? null : compounding,
+                    note: null,
+                },
+                { wait: 6000 },
+            )
+            if (synced) {
+                toast.success(t("saved"))
+                router.replace(`/loans/${loanId}`)
+            } else {
+                toast.success(t("savedOffline"))
+                router.replace("/loans")
+            }
         } catch {
             toast.error(t("somethingWrong"))
             setBusy(false)

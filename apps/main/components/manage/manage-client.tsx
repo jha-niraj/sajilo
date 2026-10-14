@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { Camera, ClipboardPaste, GripVertical, Plus, Users } from "lucide-react"
+import { Camera, ClipboardPaste, CloudUpload, GripVertical, Plus, Users } from "lucide-react"
 import {
     DndContext,
     KeyboardSensor,
@@ -22,15 +22,10 @@ import { PageTop } from "@/components/shell/page-top"
 import { BottomSheet } from "@/components/bottom-sheet"
 import { useI18n } from "@/lib/i18n"
 import { parseCustomerList } from "@/lib/parse-list"
-import { refreshDay } from "@/lib/offline/sync"
-import {
-    createCustomers,
-    reorderCustomers,
-    setCustomerActive,
-    updateCustomer,
-    type CustomerInput,
-    type CustomerRow,
-} from "@/actions/customer.action"
+import { newOpId, queueOp } from "@/lib/offline/sync"
+import { usePendingCustomerOps, withPendingCustomers } from "@/lib/offline/pending-customers"
+import type { CustomerFields } from "@/lib/offline/ops"
+import type { CustomerInput, CustomerRow } from "@/actions/customer.action"
 import { CustomerForm } from "./customer-form"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
@@ -39,13 +34,15 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
     const { t, money, num } = useI18n()
     const router = useRouter()
     const params = useSearchParams()
-    const [items, setItems] = useState(initial)
+    const [base, setBase] = useState(initial)
+    const ops = usePendingCustomerOps()
+    const { rows: items, pendingIds } = useMemo(() => withPendingCustomers(base, ops, today), [base, ops, today])
     const [editing, setEditing] = useState<CustomerRow | "new" | null>(null)
     const [pasteOpen, setPasteOpen] = useState(false)
     const [pasteText, setPasteText] = useState("")
     const [busy, startTransition] = useTransition()
 
-    useEffect(() => setItems(initial), [initial])
+    useEffect(() => setBase(initial), [initial])
 
     useEffect(() => {
         const id = params.get("edit")
@@ -64,10 +61,10 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
     const active = useMemo(() => items.filter((c) => c.isActive), [items])
     const stopped = useMemo(() => items.filter((c) => !c.isActive), [items])
 
-    const afterChange = (msg?: string) => {
-        if (msg) toast.success(msg)
-        void refreshDay()
-        router.refresh()
+    const afterChange = (synced: boolean, msg?: string) => {
+        if (!synced) toast.success(t("savedOffline"))
+        else if (msg) toast.success(msg)
+        if (synced) router.refresh()
     }
 
     const onDragEnd = (e: DragEndEvent) => {
@@ -76,20 +73,25 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
         const from = active.findIndex((c) => c.id === a.id)
         const to = active.findIndex((c) => c.id === over.id)
         const next = arrayMove(active, from, to)
-        setItems([...next, ...stopped])
-        startTransition(async () => {
-            await reorderCustomers(next.map((c) => c.id))
-            afterChange()
+        setBase((b) => {
+            const pos = new Map(next.map((c, i) => [c.id, i + 1]))
+            return b.map((c) => ({ ...c, routeOrder: pos.get(c.id) ?? c.routeOrder }))
         })
+        void queueOp({ kind: "reorder", orderedIds: next.map((c) => c.id) })
     }
 
     const save = (input: CustomerInput) =>
         startTransition(async () => {
             try {
-                if (editing === "new") await createCustomers([input])
-                else if (editing) await updateCustomer(editing.id, input)
+                const fields = toFields(input)
+                const res =
+                    editing === "new"
+                        ? await queueOp({ kind: "addCustomers", customers: [{ ...fields, startDate: fields.startDate ?? today, id: newOpId() }] }, { wait: 4000 })
+                        : editing
+                          ? await queueOp({ kind: "editCustomer", id: editing.id, fields }, { wait: 4000 })
+                          : null
                 setEditing(null)
-                afterChange(t("saved"))
+                if (res) afterChange(res.synced, t("saved"))
             } catch {
                 toast.error(t("somethingWrong"))
             }
@@ -98,9 +100,9 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
     const toggleActive = () =>
         startTransition(async () => {
             if (!editing || editing === "new") return
-            await setCustomerActive(editing.id, !editing.isActive)
+            const res = await queueOp({ kind: "customerActive", id: editing.id, isActive: !editing.isActive }, { wait: 4000 })
             setEditing(null)
-            afterChange(t("saved"))
+            afterChange(res.synced, t("saved"))
         })
 
     const parsed = useMemo(() => parseCustomerList(pasteText), [pasteText])
@@ -108,12 +110,11 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
 
     const savePaste = () =>
         startTransition(async () => {
-            const res = await createCustomers(
-                pasteValid.map((p) => ({ name: p.name, defaultAmount: p.defaultAmount!, phone: p.phone, bankAccountNo: p.bankAccountNo, startDate: today })),
-            )
+            const customers = pasteValid.map((p) => ({ id: newOpId(), name: p.name, defaultAmount: p.defaultAmount!, phone: p.phone ?? null, bankAccountNo: p.bankAccountNo ?? null, startDate: today }))
+            const res = await queueOp({ kind: "addCustomers", customers }, { wait: 5000 })
             setPasteOpen(false)
             setPasteText("")
-            afterChange(t("customersAdded", { count: res.count }))
+            afterChange(res.synced, t("customersAdded", { count: customers.length }))
         })
 
     return (
@@ -143,7 +144,7 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                     <SortableContext items={active.map((c) => c.id)} strategy={verticalListSortingStrategy}>
                         <ul className={cn("space-y-2", busy && "opacity-80")}>
                             {active.map((c, i) => (
-                                <SortableRow key={c.id} c={c} index={i} onOpen={() => setEditing(c)} money={money} num={num} />
+                                <SortableRow key={c.id} c={c} index={i} pending={pendingIds.has(c.id)} onOpen={() => setEditing(c)} money={money} num={num} />
                             ))}
                         </ul>
                     </SortableContext>
@@ -230,12 +231,14 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
 function SortableRow({
     c,
     index,
+    pending,
     onOpen,
     money,
     num,
 }: {
     c: CustomerRow
     index: number
+    pending?: boolean
     onOpen: () => void
     money: (n: number) => string
     num: (n: number) => string
@@ -261,6 +264,7 @@ function SortableRow({
             <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                 <span className="w-7 text-[14px] text-ink-3 tabular">{num(index + 1)}</span>
                 <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{c.name}</span>
+                {pending && <CloudUpload aria-label="Waiting to sync" className="h-4 w-4 shrink-0 text-[#b07a10]" />}
                 <span className="text-[16px] font-semibold text-ink-2 tabular">{money(c.defaultAmount)}</span>
             </button>
         </li>
@@ -297,4 +301,15 @@ function ActionTile({
             {label}
         </button>
     )
+}
+
+function toFields(input: CustomerInput): CustomerFields {
+    return {
+        name: input.name.trim(),
+        defaultAmount: Number(input.defaultAmount),
+        phone: input.phone || null,
+        bankAccountNo: input.bankAccountNo || null,
+        startDate: input.startDate,
+        note: input.note || null,
+    }
 }

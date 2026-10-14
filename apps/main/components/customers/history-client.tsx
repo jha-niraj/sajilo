@@ -10,6 +10,8 @@ import { MonthPicker } from "@/components/month/month-picker"
 import { useI18n } from "@/lib/i18n"
 import { displayPhone } from "@/lib/phone"
 import { fetchCustomerHistory, type CustomerHistory, type CustomerHistoryDay } from "@/actions/collection.action"
+import { isOnline } from "@/lib/offline/network"
+import { toast } from "sonner"
 
 type Tone = "paid" | "late" | "miss" | "holiday" | "today" | "future" | "part" | "none"
 
@@ -49,12 +51,18 @@ export function HistoryClient({ initial, today, max }: { initial: CustomerHistor
         cells.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`)
     }
 
-    const change = (v: { year: number; month: number }) =>
+    const change = (v: { year: number; month: number }) => {
+        if (!isOnline()) return void toast(t("needsInternet"))
         startTransition(async () => {
-            const next = await fetchCustomerHistory(h.customer.id, v.year, v.month)
-            if (next) setH(next)
-            setPicked(null)
+            try {
+                const next = await fetchCustomerHistory(h.customer.id, v.year, v.month)
+                if (next) setH(next)
+                setPicked(null)
+            } catch {
+                toast.error(t("somethingWrong"))
+            }
         })
+    }
 
     const pickedDay = picked ? byDate.get(picked) : undefined
 

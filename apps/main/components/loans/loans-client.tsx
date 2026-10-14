@@ -7,10 +7,27 @@ import { cn } from "@repo/ui/lib/utils"
 import { PageTop } from "@/components/shell/page-top"
 import { useI18n } from "@/lib/i18n"
 import type { LoanView } from "@/lib/lending/server"
+import { pendingNewLoans, usePendingLoanOps, withPendingRepayments, type ShownLoan } from "@/lib/offline/pending-loans"
+import { PendingBadge } from "@/components/shell/pending-badge"
 
-export function LoansClient({ loans }: { loans: LoanView[] }) {
+export function LoansClient({
+    loans: serverLoans,
+    today,
+    basis,
+    defaultCompounding,
+}: {
+    loans: LoanView[]
+    today: string
+    basis: "balance" | "principal"
+    defaultCompounding: boolean
+}) {
     const { t, money } = useI18n()
     const [tab, setTab] = useState<"active" | "closed">("active")
+    const ops = usePendingLoanOps()
+    const loans: ShownLoan[] = useMemo(
+        () => [...pendingNewLoans(serverLoans, ops, today, basis, defaultCompounding), ...serverLoans.map((l) => withPendingRepayments(l, ops, today, basis))],
+        [serverLoans, ops, today, basis, defaultCompounding],
+    )
 
     const active = useMemo(
         () =>
@@ -83,43 +100,49 @@ export function LoansClient({ loans }: { loans: LoanView[] }) {
     )
 }
 
-function LoanCard({ loan }: { loan: LoanView }) {
+function LoanCard({ loan }: { loan: ShownLoan }) {
     const { t, money, date } = useI18n()
     const overdue = loan.status === "active" && loan.dueInDays !== null && loan.dueInDays < 0
     const soon = loan.status === "active" && loan.dueInDays !== null && loan.dueInDays >= 0 && loan.dueInDays <= 7
     const e = loan.statement.elapsed
+    const unsynced = loan.pending || (loan.pendingRepaymentIds?.length ?? 0) > 0
+    const className = cn("block rounded-[22px] bg-card p-4 ring-1 active:bg-paper-2", overdue ? "ring-2 ring-miss/50" : soon ? "ring-2 ring-flag/60" : "ring-line")
+    const body = (
+        <>
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="truncate text-[16px] font-semibold text-ink">{loan.borrowerName}</p>
+                    <p className="text-[14px] text-ink-3">
+                        {money(loan.principal)} · {date(loan.startDate, true)} · {t("rateShort", { rate: loan.ratePer100 })}
+                    </p>
+                </div>
+                <div className="shrink-0 whitespace-nowrap text-right">
+                    <p className="text-[16px] font-semibold text-ink tabular">{money(loan.statement.total)}</p>
+                    <p className="text-[13px] text-saffron tabular">+ {money(loan.statement.interestDue)}</p>
+                </div>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
+                <span className="rounded-full bg-paper-2 px-2.5 py-1 text-ink-2">{t("running", { months: e.months, days: e.days })}</span>
+                {overdue && <span className="rounded-full bg-miss-soft px-2.5 py-1 font-semibold text-miss">{t("overdue")}</span>}
+                {soon && (
+                    <span className="rounded-full bg-flag-soft px-2.5 py-1 font-semibold text-[#8a5a08]">
+                        {t("dueSoon")} · {date(loan.dueDate!)}
+                    </span>
+                )}
+                {loan.status === "closed" && <span className="rounded-full bg-paid-soft px-2.5 py-1 font-semibold text-paid">{t("closed")}</span>}
+                {unsynced && <PendingBadge />}
+            </div>
+        </>
+    )
     return (
         <li>
-            <Link
-                href={`/loans/${loan.id}`}
-                className={cn(
-                    "block rounded-[22px] bg-card p-4 ring-1 active:bg-paper-2",
-                    overdue ? "ring-2 ring-miss/50" : soon ? "ring-2 ring-flag/60" : "ring-line",
-                )}
-            >
-                <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                        <p className="truncate text-[16px] font-semibold text-ink">{loan.borrowerName}</p>
-                        <p className="text-[14px] text-ink-3">
-                            {money(loan.principal)} · {date(loan.startDate, true)} · {t("rateShort", { rate: loan.ratePer100 })}
-                        </p>
-                    </div>
-                    <div className="shrink-0 whitespace-nowrap text-right">
-                        <p className="text-[16px] font-semibold text-ink tabular">{money(loan.statement.total)}</p>
-                        <p className="text-[13px] text-saffron tabular">+ {money(loan.statement.interestDue)}</p>
-                    </div>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
-                    <span className="rounded-full bg-paper-2 px-2.5 py-1 text-ink-2">{t("running", { months: e.months, days: e.days })}</span>
-                    {overdue && <span className="rounded-full bg-miss-soft px-2.5 py-1 font-semibold text-miss">{t("overdue")}</span>}
-                    {soon && (
-                        <span className="rounded-full bg-flag-soft px-2.5 py-1 font-semibold text-[#8a5a08]">
-                            {t("dueSoon")} · {date(loan.dueDate!)}
-                        </span>
-                    )}
-                    {loan.status === "closed" && <span className="rounded-full bg-paid-soft px-2.5 py-1 font-semibold text-paid">{t("closed")}</span>}
-                </div>
-            </Link>
+            {loan.pending ? (
+                <div className={className}>{body}</div>
+            ) : (
+                <Link href={`/loans/${loan.id}`} className={className}>
+                    {body}
+                </Link>
+            )}
         </li>
     )
 }

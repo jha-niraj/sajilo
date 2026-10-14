@@ -1,27 +1,13 @@
 "use client"
 
 import { useEffect, useState, useSyncExternalStore } from "react"
+import { useOnline } from "@/lib/offline/network"
 import { useLiveQuery } from "dexie-react-hooks"
-import { CloudCheck, CloudOff, RefreshCw } from "lucide-react"
+import { CloudCheck, RefreshCw } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { useI18n } from "@/lib/i18n"
 import { idb } from "@/lib/offline/store"
 import { flush, getSyncState, startSyncLoop, subscribeSync } from "@/lib/offline/sync"
-
-function useOnline() {
-    return useSyncExternalStore(
-        (cb) => {
-            window.addEventListener("online", cb)
-            window.addEventListener("offline", cb)
-            return () => {
-                window.removeEventListener("online", cb)
-                window.removeEventListener("offline", cb)
-            }
-        },
-        () => navigator.onLine,
-        () => true,
-    )
-}
 
 /** Small, calm status: never technical, never red unless money is waiting to be saved. */
 export function SyncPill({ className }: { className?: string }) {
@@ -44,12 +30,7 @@ export function SyncPill({ className }: { className?: string }) {
     let content: React.ReactNode = null
     let tone = "bg-paper-2 text-ink-2"
     if (!online) {
-        content = (
-            <>
-                <CloudOff className="h-4 w-4" /> {pending ? t("unsaved", { count: pending }) : t("offline")}
-            </>
-        )
-        tone = "bg-flag-soft text-[#8a5a08]"
+        return null
     } else if (syncing || pending > 0) {
         content = (
             <button type="button" onClick={() => void flush()} className="inline-flex items-center gap-1.5">

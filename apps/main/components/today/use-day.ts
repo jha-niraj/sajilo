@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { toNepalDateStr } from "@repo/calendar"
 import { idb } from "@/lib/offline/store"
-import { recordMark, refreshDay } from "@/lib/offline/sync"
+import { ensureLocalDay, recordMark, refreshDay } from "@/lib/offline/sync"
+import { isOnline } from "@/lib/offline/network"
 import { computeTodayView, type TodayView } from "@/lib/collection/today-view"
 import type { DaySnapshot, EntryStatus, SnapshotCustomer, SnapshotEntry } from "@/lib/collection/types"
 
@@ -35,7 +36,8 @@ export function useDay(date: string) {
     const reload = useCallback(async () => {
         setLoading(true)
         const res = await refreshDay(date)
-        setFailed(res === null && navigator.onLine)
+        if (!res) await ensureLocalDay(date)
+        setFailed(res === null && isOnline())
         setLoading(false)
     }, [date])
 

@@ -7,6 +7,7 @@ import { actionCollectorId } from "@/lib/session"
 import { nepalToday } from "@/lib/today"
 
 const customerInput = z.object({
+    id: z.string().uuid().optional(),
     name: z.string().trim().min(1).max(120),
     defaultAmount: z.coerce.number().int().min(1).max(10_000_000),
     phone: z.string().trim().max(20).optional().nullable(),
@@ -65,18 +66,22 @@ export async function createCustomers(inputs: CustomerInput[]): Promise<{ count:
     if (parsed.length === 0) return { count: 0 }
     const start = await nextRouteOrder(collectorId)
     const today = nepalToday()
-    await db.insert(customer).values(
-        parsed.map((p, i) => ({
-            collectorId,
-            name: p.name,
-            defaultAmount: p.defaultAmount,
-            phone: p.phone || null,
-            bankAccountNo: p.bankAccountNo || null,
-            note: p.note || null,
-            startDate: p.startDate ?? today,
-            routeOrder: start + i,
-        })),
-    )
+    await db
+        .insert(customer)
+        .values(
+            parsed.map((p, i) => ({
+                ...(p.id ? { id: p.id } : {}),
+                collectorId,
+                name: p.name,
+                defaultAmount: p.defaultAmount,
+                phone: p.phone || null,
+                bankAccountNo: p.bankAccountNo || null,
+                note: p.note || null,
+                startDate: p.startDate ?? today,
+                routeOrder: start + i,
+            })),
+        )
+        .onConflictDoNothing()
     return { count: parsed.length }
 }
 

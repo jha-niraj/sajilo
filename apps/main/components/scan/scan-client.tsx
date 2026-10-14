@@ -20,6 +20,7 @@ import type { DictKey } from "@/lib/dict"
 import type { ScanKind } from "@/lib/scan/structure"
 import { compressImage } from "./compress"
 import { Choice } from "@/components/choice"
+import { isOnline } from "@/lib/offline/network"
 
 type Phase = "pick" | "uploading" | "reading" | "structuring" | "review" | "failed"
 
@@ -151,6 +152,7 @@ export function ScanClient({
 
     const onFile = async (file: File | undefined) => {
         if (!file) return
+        if (!isOnline()) return void toast(t("needsInternet"))
         setPhase("uploading")
         setPreview(URL.createObjectURL(file))
         const small = await compressImage(file)

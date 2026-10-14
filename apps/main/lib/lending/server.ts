@@ -2,6 +2,7 @@ import "server-only"
 import { db, and, eq, inArray, asc, desc, gte, lte } from "@repo/db"
 import { borrower, loan, loanRepayment } from "@repo/db/schema"
 import { adToBs, bsMonthRange, diffAdDays } from "@repo/calendar"
+import { NotFoundError } from "@/lib/errors"
 import { calculateLoan, type LoanStatement } from "@/lib/money/interest"
 import { getSettings, receivedBetween } from "@/lib/collection/server"
 
@@ -99,18 +100,22 @@ export async function getLoan(collectorId: string, id: string, asOf: string): Pr
     return toView(l, b!, reps, asOf, settings)
 }
 
-export async function findOrCreateBorrower(collectorId: string, input: { id?: string; name?: string; phone?: string | null }): Promise<string> {
+export async function findOrCreateBorrower(
+    collectorId: string,
+    input: { id?: string; newId?: string; name?: string; phone?: string | null },
+): Promise<string> {
     if (input.id) {
         const b = await db.query.borrower.findFirst({ where: and(eq(borrower.id, input.id), eq(borrower.collectorId, collectorId)) })
         if (b) return b.id
     }
     const name = input.name?.trim()
-    if (!name) throw new Error("borrower name required")
-    const [created] = await db
+    if (!name) throw new NotFoundError("borrower")
+    const id = input.newId ?? crypto.randomUUID()
+    await db
         .insert(borrower)
-        .values({ collectorId, name, phone: input.phone || null })
-        .returning({ id: borrower.id })
-    return created!.id
+        .values({ id, collectorId, name, phone: input.phone || null })
+        .onConflictDoNothing()
+    return id
 }
 
 export async function listBorrowers(collectorId: string) {

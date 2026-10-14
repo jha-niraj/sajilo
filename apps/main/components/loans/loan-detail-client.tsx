@@ -12,12 +12,21 @@ import { BottomSheet } from "@/components/bottom-sheet"
 import { useI18n } from "@/lib/i18n"
 import { toAsciiDigits } from "@/lib/phone"
 import { calculateLoan } from "@/lib/money/interest"
-import { addRepayment, deleteLoan, deleteRepayment, setLoanStatus } from "@/actions/loan.action"
+import { deleteLoan, deleteRepayment, setLoanStatus } from "@/actions/loan.action"
+import { useOnline } from "@/lib/offline/network"
+import { usePendingLoanOps, withPendingRepayments } from "@/lib/offline/pending-loans"
+import { idb } from "@/lib/offline/store"
+import { newOpId, queueOp } from "@/lib/offline/sync"
+import { PendingBadge } from "@/components/shell/pending-badge"
 import type { LoanView } from "@/lib/lending/server"
 import { Breakdown, StatementTotals } from "./breakdown"
 
-export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today: string; basis: "balance" | "principal" }) {
+export function LoanDetailClient({ loan: serverLoan, today, basis }: { loan: LoanView; today: string; basis: "balance" | "principal" }) {
     const { t, money, date } = useI18n()
+    const online = useOnline()
+    const ops = usePendingLoanOps()
+    const loan = useMemo(() => withPendingRepayments(serverLoan, ops, today, basis), [serverLoan, ops, today, basis])
+    const pendingReps = new Set(loan.pendingRepaymentIds ?? [])
     const router = useRouter()
     const { confirm, confirmDialog } = useConfirm()
     const [repayOpen, setRepayOpen] = useState(false)
@@ -46,6 +55,7 @@ export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today
     const overdue = loan.status === "active" && loan.dueInDays !== null && loan.dueInDays < 0
 
     const run = async (fn: () => Promise<unknown>, msg = t("saved")) => {
+        if (!online) return void toast(t("needsInternet"))
         setBusy(true)
         try {
             await fn()
@@ -130,13 +140,19 @@ export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today
                                 <li key={r.id} className="flex items-center justify-between py-2.5">
                                     <span className="text-[15px] text-ink">{date(r.date, true)}</span>
                                     <span className="flex items-center gap-2">
+                                        {pendingReps.has(r.id) && <PendingBadge />}
                                         <span className="font-semibold text-paid tabular">{money(r.amount)}</span>
                                         <button
                                             type="button"
                                             aria-label={t("delete")}
                                             onClick={async () => {
-                                                if (await confirm({ title: `${t("delete")}: ${money(r.amount)}?`, destructive: true, confirmText: t("yes"), cancelText: t("no") }))
-                                                    void run(() => deleteRepayment(r.id))
+                                                if (!(await confirm({ title: `${t("delete")}: ${money(r.amount)}?`, destructive: true, confirmText: t("yes"), cancelText: t("no") }))) return
+                                                if (pendingReps.has(r.id)) {
+                                                    const op = ops.find((o) => o.kind === "repayment" && o.repaymentId === r.id)
+                                                    if (op) await idb().outbox.delete(op.opId)
+                                                    return
+                                                }
+                                                void run(() => deleteRepayment(r.id))
                                             }}
                                             className="rounded-full p-2 text-ink-3 active:text-miss"
                                         >
@@ -163,6 +179,7 @@ export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today
                         type="button"
                         disabled={busy}
                         onClick={async () => {
+                            if (!online) return void toast(t("needsInternet"))
                             if (!(await confirm({ title: `${t("delete")}: ${loan.borrowerName}?`, destructive: true, confirmText: t("yes"), cancelText: t("no") }))) return
                             await deleteLoan(loan.id)
                             router.replace("/loans")
@@ -201,10 +218,19 @@ export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today
                         disabled={busy || !(Number(repayAmount) > 0)}
                         onClick={async () => {
                             setRepayOpen(false)
-                            await run(async () => {
-                                const res = await addRepayment(loan.id, { date: repayDate, amount: Number(repayAmount) })
-                                if (res.closed) toast.success(t("closed"))
-                            })
+                            setBusy(true)
+                            try {
+                                const { synced } = await queueOp(
+                                    { kind: "repayment", repaymentId: newOpId(), loanId: loan.id, date: repayDate, amount: Number(repayAmount), note: null },
+                                    { wait: 5000 },
+                                )
+                                toast.success(synced ? t("saved") : t("savedOffline"))
+                                if (synced) router.refresh()
+                            } catch {
+                                toast.error(t("somethingWrong"))
+                            } finally {
+                                setBusy(false)
+                            }
                         }}
                         className="flex h-12 w-full items-center justify-center rounded-2xl bg-ink text-[16px] font-semibold text-paper disabled:opacity-30"
                     >

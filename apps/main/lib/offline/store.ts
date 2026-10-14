@@ -1,9 +1,10 @@
 "use client"
 
 import Dexie, { type Table } from "dexie"
-import type { DaySnapshot, MarkOp } from "@/lib/collection/types"
+import type { DaySnapshot } from "@/lib/collection/types"
+import type { QueuedOp } from "./ops"
 
-export interface OutboxOp extends MarkOp {
+export type OutboxOp = QueuedOp & {
     createdAt: number
     tries: number
 }
@@ -25,6 +26,11 @@ class SajiloDB extends Dexie {
             outbox: "opId, createdAt, date",
             meta: "key",
         })
+        this.version(2).stores({
+            snapshots: "date",
+            outbox: "opId, createdAt, date, kind",
+            meta: "key",
+        })
     }
 }
 
@@ -35,26 +41,6 @@ export function idb(): SajiloDB {
     return instance
 }
 
-/** Apply a mark to a snapshot in place (used both locally and when replaying the outbox). */
-export function applyMarkToSnapshot(snap: DaySnapshot, op: MarkOp): DaySnapshot {
-    if (snap.date !== op.date) return snap
-    const entries = [...snap.entries]
-    const i = entries.findIndex((e) => e.customerId === op.customerId)
-    const c = snap.customers.find((x) => x.id === op.customerId)
-    const next = {
-        customerId: op.customerId,
-        date: op.date,
-        expectedAmount: i >= 0 ? entries[i]!.expectedAmount : (c?.defaultAmount ?? 0),
-        status: op.status,
-        amountReceived: op.amountReceived,
-        markedAt: op.markedAt,
-        note: op.note ?? null,
-    }
-    if (i >= 0) entries[i] = next
-    else entries.push(next)
-    return { ...snap, entries }
-}
-
 /** Remove everything stored on this phone (used on sign out). */
 export async function clearLocalData() {
     try {
@@ -63,4 +49,11 @@ export async function clearLocalData() {
         // already gone
     }
     instance = null
+    // Saved pages hold his numbers too.
+    try {
+        const keys = await caches.keys()
+        await Promise.all(keys.filter((k) => k.startsWith("sajilo-pages")).map((k) => caches.delete(k)))
+    } catch {
+        // no cache storage (private mode)
+    }
 }

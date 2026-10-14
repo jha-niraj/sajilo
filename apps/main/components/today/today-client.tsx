@@ -118,7 +118,7 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
                 </div>
             )}
 
-            <section className="sticky top-0 z-30 bg-paper/95 px-4 pb-3 pt-3 backdrop-blur">
+            <section className="sticky top-[var(--offline-bar,0px)] z-30 bg-paper/95 px-4 pb-3 pt-3 backdrop-blur">
                 <div className="rounded-[22px] bg-ink p-4 text-paper shadow-[0_10px_30px_-12px_rgb(42_33_24/0.5)]">
                     <div className="flex items-end justify-between gap-3">
                         <div>

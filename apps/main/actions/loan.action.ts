@@ -5,6 +5,7 @@ import { db, and, eq } from "@repo/db"
 import { loan, loanRepayment } from "@repo/db/schema"
 import { actionCollectorId } from "@/lib/session"
 import { nepalToday } from "@/lib/today"
+import { NotFoundError } from "@/lib/errors"
 import { cashOnHand, findOrCreateBorrower, getLoan, listBorrowers, listLoans, type CashOnHand, type LoanView } from "@/lib/lending/server"
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -29,8 +30,13 @@ export async function fetchCashOnHand(): Promise<CashOnHand> {
     return cashOnHand(id, nepalToday())
 }
 
+const clientId = z.string().uuid()
+
 const newLoanInput = z.object({
+    id: clientId.optional(),
     borrowerId: z.string().optional(),
+    /** Id for a borrower typed in on the phone, so a resend doesn't create them twice */
+    newBorrowerId: clientId.optional(),
     borrowerName: z.string().trim().max(120).optional(),
     borrowerPhone: z.string().trim().max(20).optional().nullable(),
     principal: z.coerce.number().positive().max(100_000_000),
@@ -44,10 +50,12 @@ const newLoanInput = z.object({
 export async function createLoan(input: z.input<typeof newLoanInput>): Promise<{ id: string }> {
     const collectorId = await actionCollectorId()
     const p = newLoanInput.parse(input)
-    const borrowerId = await findOrCreateBorrower(collectorId, { id: p.borrowerId, name: p.borrowerName, phone: p.borrowerPhone })
-    const [row] = await db
+    const borrowerId = await findOrCreateBorrower(collectorId, { id: p.borrowerId, newId: p.newBorrowerId, name: p.borrowerName, phone: p.borrowerPhone })
+    const id = p.id ?? crypto.randomUUID()
+    await db
         .insert(loan)
         .values({
+            id,
             collectorId,
             borrowerId,
             principal: p.principal,
@@ -57,17 +65,21 @@ export async function createLoan(input: z.input<typeof newLoanInput>): Promise<{
             compounding: p.compounding ?? null,
             note: p.note ?? null,
         })
-        .returning({ id: loan.id })
-    return { id: row!.id }
+        .onConflictDoNothing()
+    return { id }
 }
 
-export async function addRepayment(loanId: string, input: { date: string; amount: number; note?: string | null }): Promise<{ ok: true; closed: boolean }> {
+export async function addRepayment(
+    loanId: string,
+    input: { date: string; amount: number; note?: string | null; id?: string },
+): Promise<{ ok: true; closed: boolean }> {
     const collectorId = await actionCollectorId()
     const date = isoDate.parse(input.date)
     const amount = z.coerce.number().positive().max(100_000_000).parse(input.amount)
+    const id = input.id ? clientId.parse(input.id) : crypto.randomUUID()
     const l = await db.query.loan.findFirst({ where: and(eq(loan.id, loanId), eq(loan.collectorId, collectorId)) })
-    if (!l) throw new Error("not found")
-    await db.insert(loanRepayment).values({ collectorId, loanId, date, amount, note: input.note ?? null })
+    if (!l) throw new NotFoundError("loan")
+    await db.insert(loanRepayment).values({ id, collectorId, loanId, date, amount, note: input.note ?? null }).onConflictDoNothing()
 
     const view = await getLoan(collectorId, loanId, date)
     const closed = !!view && view.statement.total <= 0
