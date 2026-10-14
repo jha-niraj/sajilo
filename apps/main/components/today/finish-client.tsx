@@ -63,12 +63,12 @@ export function FinishClient() {
             <div className="space-y-4 px-4 pt-4">
                 <section className="rounded-[24px] bg-card p-4 ring-1 ring-line">
                     {pending.length === 0 ? (
-                        <p className="flex items-center gap-2 text-[17px] font-semibold text-paid">
+                        <p className="flex items-center gap-2 text-[15px] font-semibold text-paid">
                             <CheckCircle2 className="h-6 w-6" /> {t("allMarked")}
                         </p>
                     ) : (
                         <>
-                            <p className="text-[17px] font-semibold text-ink">
+                            <p className="text-[15px] font-semibold text-ink">
                                 {t("notMarked")} · {pending.length}
                             </p>
                             <ScrollArea orientation="vertical" className="mt-2" viewportClassName="max-h-[248px]">
@@ -123,11 +123,11 @@ export function FinishClient() {
                 <section className="rounded-[24px] bg-card p-4 ring-1 ring-line">
                     <div className="flex items-center justify-between text-[16px] text-ink-2">
                         <span>{t("appSays")}</span>
-                        <span className="text-[22px] font-semibold text-ink tabular">{money(totals.collected)}</span>
+                        <span className="text-[19px] font-semibold text-ink tabular">{money(totals.collected)}</span>
                     </div>
                     <div className="mt-3">
                         <p className="text-[16px] text-ink-2">{t("countedCash")}</p>
-                        <p className={cn("text-[38px] font-semibold leading-tight tabular", cash ? "text-ink" : "text-ink-3/40")}>
+                        <p className={cn("text-[30px] font-semibold leading-tight tabular", cash ? "text-ink" : "text-ink-3/40")}>
                             {money(counted ?? snapshot?.countedCash ?? 0)}
                         </p>
                     </div>
@@ -153,7 +153,7 @@ export function FinishClient() {
                         type="button"
                         disabled={busy}
                         onClick={unlock}
-                        className="flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-paper-2 text-lg font-semibold text-ink disabled:opacity-50"
+                        className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-paper-2 text-[16px] font-semibold text-ink disabled:opacity-50"
                     >
                         <LockOpen className="h-5 w-5" /> {t("unlockDay")}
                     </button>
@@ -162,7 +162,7 @@ export function FinishClient() {
                         type="button"
                         disabled={busy}
                         onClick={lock}
-                        className="flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-50"
+                        className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-ink text-[16px] font-semibold text-paper disabled:opacity-50"
                     >
                         <Lock className="h-5 w-5" /> {t("lockDay")}
                     </button>

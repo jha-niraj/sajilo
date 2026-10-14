@@ -74,11 +74,11 @@ export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today
             />
 
             <div className="space-y-4 px-4 pt-4">
-                <section className={cn("rounded-[26px] bg-card p-5 ring-1", overdue ? "ring-2 ring-miss/40" : "ring-line")}>
+                <section className={cn("rounded-[22px] bg-card p-4 ring-1", overdue ? "ring-2 ring-miss/40" : "ring-line")}>
                     <p className="text-[15px] text-ink-2">
                         {t("owedToday")} · {t("running", { months: loan.statement.elapsed.months, days: loan.statement.elapsed.days })}
                     </p>
-                    <p className="mt-1 text-[38px] font-semibold leading-none text-ink tabular">{money(loan.statement.total)}</p>
+                    <p className="mt-1 text-[30px] font-semibold leading-none text-ink tabular">{money(loan.statement.total)}</p>
                     <div className="mt-4">
                         <StatementTotals statement={loan.statement} />
                     </div>
@@ -95,7 +95,7 @@ export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today
                                 setRepayDate(today)
                                 setRepayOpen(true)
                             }}
-                            className="mt-4 flex h-14 w-full items-center justify-center rounded-2xl bg-paid text-[17px] font-semibold text-white"
+                            className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-paid text-[15px] font-semibold text-white"
                         >
                             {t("addRepayment")}
                         </button>
@@ -183,7 +183,7 @@ export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today
                             inputMode="numeric"
                             value={repayAmount}
                             onChange={(e) => setRepayAmount(toAsciiDigits(e.target.value).replace(/\D/g, "").slice(0, 9))}
-                            className="h-16 w-full bg-transparent px-3 text-[28px] font-semibold text-ink outline-none"
+                            className="h-12 w-full bg-transparent px-3 text-[24px] font-semibold text-ink outline-none"
                         />
                     </div>
                     <DateField value={repayDate} onChange={setRepayDate} min={loan.startDate} max={today} />
@@ -206,7 +206,7 @@ export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today
                                 if (res.closed) toast.success(t("closed"))
                             })
                         }}
-                        className="flex h-16 w-full items-center justify-center rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-30"
+                        className="flex h-12 w-full items-center justify-center rounded-2xl bg-ink text-[16px] font-semibold text-paper disabled:opacity-30"
                     >
                         {t("save")}
                     </button>

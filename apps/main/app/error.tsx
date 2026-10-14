@@ -12,10 +12,10 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             <h1 className="text-2xl font-semibold text-ink">केही गडबड भयो</h1>
             <p className="text-ink-3">Something went wrong</p>
             <div className="mt-4 flex gap-3">
-                <button onClick={reset} className="rounded-2xl bg-ink px-6 py-4 text-lg font-semibold text-paper">
+                <button onClick={reset} className="rounded-2xl bg-ink px-6 py-4 text-[16px] font-semibold text-paper">
                     फेरि प्रयास · Retry
                 </button>
-                <a href="/today" className="rounded-2xl bg-paper-2 px-6 py-4 text-lg font-semibold text-ink">
+                <a href="/today" className="rounded-2xl bg-paper-2 px-6 py-4 text-[16px] font-semibold text-ink">
                     आज · Today
                 </a>
             </div>

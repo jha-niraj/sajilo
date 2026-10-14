@@ -48,12 +48,12 @@ export function CustomerForm({
             </Field>
             <Field label={t("dailyAmount")}>
                 <div className="flex items-center rounded-2xl bg-card ring-1 ring-line focus-within:ring-2 focus-within:ring-saffron">
-                    <span className="pl-4 text-lg text-ink-3">{t("rupeePrefix")}</span>
+                    <span className="pl-4 text-[16px] text-ink-3">{t("rupeePrefix")}</span>
                     <input
                         inputMode="numeric"
                         value={amount}
                         onChange={(e) => setAmount(toAsciiDigits(e.target.value).replace(/\D/g, "").slice(0, 7))}
-                        className="h-14 w-full bg-transparent px-3 text-xl font-semibold text-ink outline-none"
+                        className="h-12 w-full bg-transparent px-3 text-xl font-semibold text-ink outline-none"
                     />
                 </div>
             </Field>
@@ -66,13 +66,13 @@ export function CustomerForm({
                 </Field>
             </div>
             <Field label={t("startDate")}>
-                <DateField value={startDate} onChange={setStartDate} max={today} className="h-14 rounded-2xl bg-card" />
+                <DateField value={startDate} onChange={setStartDate} max={today} className="h-12 rounded-2xl bg-card" />
             </Field>
 
             <button
                 type="submit"
                 disabled={!valid || busy}
-                className="flex h-16 w-full items-center justify-center rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-30"
+                className="flex h-12 w-full items-center justify-center rounded-2xl bg-ink text-[16px] font-semibold text-paper disabled:opacity-30"
             >
                 {t("save")}
             </button>
@@ -95,7 +95,7 @@ export function CustomerForm({
 }
 
 const inputCls =
-    "h-14 w-full rounded-2xl bg-card px-4 text-[18px] text-ink outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
+    "h-12 w-full rounded-2xl bg-card px-4 text-[16px] text-ink outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (

@@ -39,7 +39,7 @@ export function PhoneInput({
             <InputOTPGroup className="w-full rounded-2xl shadow-[0_1px_0_rgb(42_33_24/0.06)]">
                 <div
                     className={cn(
-                        "flex h-14 shrink-0 items-center justify-center rounded-l-2xl border border-line bg-paper-2 px-2.5 text-[17px] font-semibold text-ink-2",
+                        "flex h-12 shrink-0 items-center justify-center rounded-l-2xl border border-line bg-paper-2 px-2.5 text-[15px] font-semibold text-ink-2",
                         error && "border-miss bg-miss-soft text-miss",
                     )}
                 >
@@ -59,7 +59,7 @@ function DigitSlot({ index, error }: { index: number; error?: boolean }) {
     return (
         <div
             className={cn(
-                "relative flex h-14 min-w-0 flex-1 items-center justify-center border-y border-r border-line bg-card text-[20px] font-semibold text-ink tabular transition-colors",
+                "relative flex h-12 min-w-0 flex-1 items-center justify-center border-y border-r border-line bg-card text-[18px] font-semibold text-ink tabular transition-colors",
                 "last:rounded-r-2xl",
                 isActive && "z-10 rounded-lg ring-2 ring-saffron ring-offset-2 ring-offset-paper last:rounded-r-2xl",
                 error && "border-miss bg-miss-soft",

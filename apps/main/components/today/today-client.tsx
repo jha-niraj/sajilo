@@ -119,11 +119,11 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
             )}
 
             <section className="sticky top-0 z-30 bg-paper/95 px-4 pb-3 pt-3 backdrop-blur">
-                <div className="rounded-[26px] bg-ink p-4 text-paper shadow-[0_10px_30px_-12px_rgb(42_33_24/0.5)]">
+                <div className="rounded-[22px] bg-ink p-4 text-paper shadow-[0_10px_30px_-12px_rgb(42_33_24/0.5)]">
                     <div className="flex items-end justify-between gap-3">
                         <div>
                             <p className="text-[14px] text-paper/70">{t("collected")}</p>
-                            <p className="text-[34px] font-semibold leading-none tabular">{money(totals.collected)}</p>
+                            <p className="text-[28px] font-semibold leading-none tabular">{money(totals.collected)}</p>
                         </div>
                         <div className="text-right text-[14px] text-paper/70">
                             <p className="tabular">
@@ -171,7 +171,7 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={t("searchCustomer")}
-                            className="h-full w-full bg-transparent text-[17px] outline-none placeholder:text-ink-3"
+                            className="h-full w-full bg-transparent text-[15px] outline-none placeholder:text-ink-3"
                         />
                     </label>
                 </div>
@@ -186,15 +186,15 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
                     ))}
                 </ul>
             ) : !snapshot ? (
-                <div className="mx-4 rounded-2xl bg-miss-soft p-5 text-center text-miss">{t("somethingWrong")}</div>
+                <div className="mx-4 rounded-2xl bg-miss-soft p-4 text-center text-miss">{t("somethingWrong")}</div>
             ) : rows.length === 0 ? (
-                <div className="mx-4 mt-6 flex flex-col items-center rounded-[26px] bg-card px-6 py-10 text-center ring-1 ring-line">
-                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-saffron-soft text-saffron">
+                <div className="mx-4 mt-6 flex flex-col items-center rounded-[22px] bg-card px-6 py-10 text-center ring-1 ring-line">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-saffron-soft text-saffron">
                         <UserPlus className="h-8 w-8" />
                     </span>
                     <h2 className="mt-4 text-xl font-semibold text-ink">{t("noCustomersYet")}</h2>
                     <p className="mt-1 text-ink-2">{t("addFirstCustomers")}</p>
-                    <Link href="/manage" className="mt-5 rounded-2xl bg-ink px-6 py-4 text-lg font-semibold text-paper">
+                    <Link href="/manage" className="mt-5 rounded-2xl bg-ink px-6 py-4 text-[16px] font-semibold text-paper">
                         {t("addCustomers")}
                     </Link>
                 </div>

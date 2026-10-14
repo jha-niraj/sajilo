@@ -236,23 +236,23 @@ export function ScanClient({
                                 </button>
                             ))}
                         </div>
-                        <div className="rounded-[26px] bg-card p-6 text-center ring-1 ring-line">
-                            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-saffron-soft text-saffron">
+                        <div className="rounded-[22px] bg-card p-6 text-center ring-1 ring-line">
+                            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-saffron-soft text-saffron">
                                 <Sparkles className="h-8 w-8" />
                             </span>
-                            <p className="mt-3 text-[17px] text-ink-2">{t(KIND_LABEL[kind])}</p>
+                            <p className="mt-3 text-[15px] text-ink-2">{t(KIND_LABEL[kind])}</p>
                             <div className="mt-5 grid gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => cameraRef.current?.click()}
-                                    className="flex h-16 items-center justify-center gap-2 rounded-2xl bg-ink text-lg font-semibold text-paper"
+                                    className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-ink text-[16px] font-semibold text-paper"
                                 >
                                     <Camera className="h-6 w-6" /> {t("takePhoto")}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => galleryRef.current?.click()}
-                                    className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-paper-2 text-[17px] font-semibold text-ink"
+                                    className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-paper-2 text-[15px] font-semibold text-ink"
                                 >
                                     <Images className="h-5 w-5" /> {t("choosePhoto")}
                                 </button>
@@ -264,21 +264,21 @@ export function ScanClient({
                 )}
 
                 {(phase === "uploading" || phase === "reading" || phase === "structuring") && (
-                    <div className="overflow-hidden rounded-[26px] bg-card ring-1 ring-line">
+                    <div className="overflow-hidden rounded-[22px] bg-card ring-1 ring-line">
                         {preview && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={preview} alt="" className="max-h-72 w-full object-cover opacity-60" />
                         )}
                         <div className="flex flex-col items-center gap-3 p-6">
                             <Loader size={32} dotSize={4} />
-                            <p className="text-[17px] font-medium text-ink">{phase === "structuring" ? t("structuring") : t("reading")}</p>
+                            <p className="text-[15px] font-medium text-ink">{phase === "structuring" ? t("structuring") : t("reading")}</p>
                         </div>
                     </div>
                 )}
 
                 {phase === "failed" && (
-                    <div className="rounded-[26px] bg-miss-soft p-6 text-center text-miss">
-                        <p className="text-[17px] font-medium">{t("scanFailed")}</p>
+                    <div className="rounded-[22px] bg-miss-soft p-6 text-center text-miss">
+                        <p className="text-[15px] font-medium">{t("scanFailed")}</p>
                         <button type="button" onClick={reset} className="mt-4 rounded-2xl bg-ink px-6 py-3 font-semibold text-paper">
                             {t("tryAgain")}
                         </button>
@@ -356,7 +356,7 @@ export function ScanClient({
                             type="button"
                             disabled={saving || rows.length === 0}
                             onClick={save}
-                            className="flex h-16 w-full items-center justify-center rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-30"
+                            className="flex h-12 w-full items-center justify-center rounded-2xl bg-ink text-[16px] font-semibold text-paper disabled:opacity-30"
                         >
                             {t("saveAll")} · {rows.length}
                             {kind !== "customers" && rows.length > 0 && ` · ${money(rows.reduce((s, r) => s + (Number(r.amount) || 0), 0))}`}

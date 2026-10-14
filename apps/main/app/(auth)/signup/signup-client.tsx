@@ -112,8 +112,8 @@ export function SignupClient() {
                     >
                         <Check className="h-12 w-12" strokeWidth={3} />
                     </motion.span>
-                    <h1 className="mt-7 text-[28px] font-semibold text-ink">{t("allSet", { name: name.trim().split(" ")[0] ?? "" })}</h1>
-                    <p className="mt-2 text-[17px] text-ink-2">{t("meetMunshi")}</p>
+                    <h1 className="mt-7 text-[24px] font-semibold text-ink">{t("allSet", { name: name.trim().split(" ")[0] ?? "" })}</h1>
+                    <p className="mt-2 text-[15px] text-ink-2">{t("meetMunshi")}</p>
                 </div>
             </AuthFrame>
         )
@@ -149,7 +149,7 @@ export function SignupClient() {
                         onChange={(e) => setName(e.target.value)}
                         autoComplete="name"
                         placeholder={t("namePlaceholder")}
-                        className="mt-9 h-16 w-full rounded-2xl border border-line bg-card px-5 text-[22px] font-medium text-ink outline-none transition-shadow placeholder:text-ink-3/50 focus:ring-2 focus:ring-saffron"
+                        className="mt-9 h-12 w-full rounded-2xl border border-line bg-card px-5 text-[19px] font-medium text-ink outline-none transition-shadow placeholder:text-ink-3/50 focus:ring-2 focus:ring-saffron"
                     />
                     <PrimaryButton disabled={!name.trim()} label={t("continue")} />
                 </form>
@@ -248,7 +248,7 @@ function PrimaryButton({ disabled, label }: { disabled?: boolean; label: string 
             <button
                 type="submit"
                 disabled={disabled}
-                className="flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-ink text-lg font-semibold text-paper shadow-[0_12px_30px_-14px_rgb(42_33_24/0.6)] transition-opacity disabled:opacity-25 disabled:shadow-none"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-ink text-[16px] font-semibold text-paper shadow-[0_12px_30px_-14px_rgb(42_33_24/0.6)] transition-opacity disabled:opacity-25 disabled:shadow-none"
             >
                 {label} <ArrowRight className="h-5 w-5" />
             </button>

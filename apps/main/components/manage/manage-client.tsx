@@ -131,10 +131,10 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
 
                 {items.length === 0 && (
                     <div className="flex flex-col items-center rounded-[24px] bg-card px-6 py-10 text-center ring-1 ring-line">
-                        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-saffron-soft text-saffron">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-saffron-soft text-saffron">
                             <Users className="h-7 w-7" />
                         </span>
-                        <p className="mt-3 text-[17px] font-semibold text-ink">{t("noCustomersYet")}</p>
+                        <p className="mt-3 text-[15px] font-semibold text-ink">{t("noCustomersYet")}</p>
                         <p className="mt-1 max-w-xs text-[14px] text-ink-2">{t("manageEmptySub")}</p>
                     </div>
                 )}
@@ -160,7 +160,7 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                                         onClick={() => setEditing(c)}
                                         className="flex w-full items-center justify-between rounded-2xl bg-paper-2 px-4 py-3 text-left text-ink-3"
                                     >
-                                        <span className="truncate text-[17px]">{c.name}</span>
+                                        <span className="truncate text-[15px]">{c.name}</span>
                                         <span className="tabular">{money(c.defaultAmount)}</span>
                                     </button>
                                 </li>
@@ -198,7 +198,7 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                     onChange={(e) => setPasteText(e.target.value)}
                     rows={7}
                     placeholder={"Ram Kirana, 200, 9841234567\nराम मेडिकल, ५००"}
-                    className="w-full rounded-2xl border-line bg-card p-4 text-[17px] leading-relaxed text-ink focus-visible:ring-2 focus-visible:ring-saffron"
+                    className="w-full rounded-2xl border-line bg-card p-4 text-[15px] leading-relaxed text-ink focus-visible:ring-2 focus-visible:ring-saffron"
                 />
                 {parsed.length > 0 && (
                     <ScrollArea orientation="vertical" className="mt-3 rounded-2xl bg-card ring-1 ring-line" viewportClassName="max-h-56">
@@ -218,7 +218,7 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                     type="button"
                     disabled={pasteValid.length === 0 || busy}
                     onClick={savePaste}
-                    className="mt-4 flex h-16 w-full items-center justify-center rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-30"
+                    className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-ink text-[16px] font-semibold text-paper disabled:opacity-30"
                 >
                     {t("saveAll")} {pasteValid.length > 0 && `(${num(pasteValid.length)})`}
                 </button>
@@ -260,7 +260,7 @@ function SortableRow({
             </span>
             <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                 <span className="w-7 text-[14px] text-ink-3 tabular">{num(index + 1)}</span>
-                <span className="min-w-0 flex-1 truncate text-[17px] font-semibold text-ink">{c.name}</span>
+                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{c.name}</span>
                 <span className="text-[16px] font-semibold text-ink-2 tabular">{money(c.defaultAmount)}</span>
             </button>
         </li>

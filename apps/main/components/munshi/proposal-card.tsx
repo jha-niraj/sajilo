@@ -46,7 +46,7 @@ export function ProposalCard({
                     {p.status === "done" ? <Check className="h-5 w-5" strokeWidth={3} /> : p.status === "failed" ? <CircleAlert className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                 </span>
                 <div className="min-w-0 flex-1">
-                    <p className={cn("text-[17px] font-semibold leading-snug text-ink", p.status === "cancelled" && "text-ink-3 line-through")}>{p.title}</p>
+                    <p className={cn("text-[15px] font-semibold leading-snug text-ink", p.status === "cancelled" && "text-ink-3 line-through")}>{p.title}</p>
                     {p.lines.length > 0 && <p className="mt-0.5 text-[14px] text-ink-3">{p.lines.join(" · ")}</p>}
                     {!pending && (
                         <p className={cn("mt-1 text-[13px] font-semibold", p.status === "done" ? "text-paid" : p.status === "failed" ? "text-miss" : "text-ink-3")}>

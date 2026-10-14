@@ -93,12 +93,13 @@ export function NewLoanClient({ borrowers, today, defaultRate, defaultCompoundin
                 <section className="space-y-3 rounded-[24px] bg-card p-4 ring-1 ring-line">
                     <Label text={t("loanAmount")}>
                         <div className="flex items-center rounded-xl bg-paper ring-1 ring-line focus-within:ring-2 focus-within:ring-saffron">
-                            <span className="pl-3 text-lg text-ink-3">{t("rupeePrefix")}</span>
+                            <span className="pl-3 text-[16px] text-ink-3">{t("rupeePrefix")}</span>
                             <input
                                 inputMode="numeric"
                                 value={amount}
                                 onChange={(e) => setAmount(toAsciiDigits(e.target.value).replace(/\D/g, "").slice(0, 9))}
-                                className="h-14 w-full bg-transparent px-2 text-[24px] font-semibold text-ink outline-none"
+                                placeholder="20,000"
+                                className="h-12 w-full bg-transparent px-2 text-[21px] font-semibold text-ink outline-none"
                             />
                         </div>
                     </Label>
@@ -107,10 +108,11 @@ export function NewLoanClient({ borrowers, today, defaultRate, defaultCompoundin
                             inputMode="decimal"
                             value={rate}
                             onChange={(e) => setRate(toAsciiDigits(e.target.value).replace(/[^\d.]/g, ""))}
-                            className={cn(inputCls, "text-[18px] font-semibold")}
+                            placeholder="2"
+                            className={cn(inputCls, "text-[16px] font-semibold")}
                         />
                     </Label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 min-[400px]:gap-2">
                         <Label text={t("givenOn")}>
                             <DateField value={startDate} onChange={setStartDate} max={today} />
                         </Label>
@@ -135,7 +137,7 @@ export function NewLoanClient({ borrowers, today, defaultRate, defaultCompoundin
                     type="button"
                     disabled={!valid || busy}
                     onClick={save}
-                    className="flex h-16 w-full items-center justify-center rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-30"
+                    className="flex h-12 w-full items-center justify-center rounded-2xl bg-ink text-[16px] font-semibold text-paper disabled:opacity-30"
                 >
                     {t("save")}
                 </button>
@@ -144,7 +146,7 @@ export function NewLoanClient({ borrowers, today, defaultRate, defaultCompoundin
     )
 }
 
-const inputCls = "h-12 w-full rounded-xl bg-paper px-3 text-[17px] text-ink outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
+const inputCls = "h-12 w-full rounded-xl bg-paper px-3 text-[15px] text-ink outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
 
 function Label({ text, children }: { text: string; children: React.ReactNode }) {
     return (

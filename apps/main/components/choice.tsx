@@ -36,7 +36,7 @@ export function Choice({
             <SelectTrigger
                 className={cn(
                     "rounded-xl border-line bg-paper text-ink shadow-none focus:ring-2 focus:ring-saffron",
-                    size === "lg" ? "h-12 text-[18px] font-semibold" : "h-12 text-[16px]",
+                    size === "lg" ? "h-12 text-[16px] font-semibold" : "h-12 text-[16px]",
                     tone === "warn" && "border-miss/40 text-miss",
                     className,
                 )}

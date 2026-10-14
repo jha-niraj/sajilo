@@ -40,7 +40,7 @@ export function Keypad({
                         }}
                         aria-label={key === "del" ? "Delete" : key}
                         className={cn(
-                            compact ? "flex h-12 items-center justify-center rounded-xl text-[22px] font-medium text-ink transition-colors select-none" : "flex h-16 items-center justify-center rounded-2xl text-[28px] font-medium text-ink transition-colors select-none",
+                            compact ? "flex h-12 items-center justify-center rounded-xl text-[19px] font-medium text-ink transition-colors select-none" : "flex h-12 items-center justify-center rounded-2xl text-[24px] font-medium text-ink transition-colors select-none",
                             "bg-card shadow-[0_1px_0_rgb(42_33_24/0.06)] ring-1 ring-line active:bg-paper-2 disabled:opacity-40",
                             key === "del" && "bg-transparent shadow-none ring-0 active:bg-paper-2",
                         )}

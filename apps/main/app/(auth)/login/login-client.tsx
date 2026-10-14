@@ -138,7 +138,7 @@ function Footer() {
         <div className="mt-auto pb-8 pt-10">
             <Link
                 href="/signup"
-                className="flex h-14 w-full items-center justify-center rounded-2xl bg-card text-[16px] font-semibold text-ink ring-1 ring-line transition-colors active:bg-paper-2"
+                className="flex h-12 w-full items-center justify-center rounded-2xl bg-card text-[16px] font-semibold text-ink ring-1 ring-line transition-colors active:bg-paper-2"
             >
                 {t("noAccount")} <span className="ml-1.5 text-saffron">{t("createAccount")}</span>
             </Link>

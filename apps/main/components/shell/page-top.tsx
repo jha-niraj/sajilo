@@ -28,7 +28,7 @@ export function PageTop({
                             <ChevronLeft className="h-6 w-6" />
                         </Link>
                     )}
-                    <h1 className="truncate text-[24px] font-semibold leading-tight tracking-[-0.01em] text-ink">{title}</h1>
+                    <h1 className="truncate text-[21px] font-semibold leading-tight tracking-[-0.01em] text-ink">{title}</h1>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                     <SyncPill />

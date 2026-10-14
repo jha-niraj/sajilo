@@ -65,13 +65,14 @@ export function CalculatorClient({
                     )}
                     {!picked && (
                         <>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-2 items-end gap-2">
                                 <Field label={t("loanAmount")}>
                                     <input
                                         inputMode="numeric"
                                         value={amount}
                                         onChange={(e) => setAmount(toAsciiDigits(e.target.value).replace(/\D/g, "").slice(0, 9))}
-                                        className={`${inputCls} text-[18px] font-semibold`}
+                                        placeholder={t("amountPlaceholder")}
+                                        className={`${inputCls} text-[16px] font-semibold`}
                                     />
                                 </Field>
                                 <Field label={t("rate")}>
@@ -79,7 +80,8 @@ export function CalculatorClient({
                                         inputMode="decimal"
                                         value={rate}
                                         onChange={(e) => setRate(toAsciiDigits(e.target.value).replace(/[^\d.]/g, ""))}
-                                        className={`${inputCls} text-[18px] font-semibold`}
+                                        placeholder="2"
+                                        className={`${inputCls} text-[16px] font-semibold`}
                                     />
                                 </Field>
                             </div>
@@ -99,11 +101,11 @@ export function CalculatorClient({
 
                 {statement && (
                     <>
-                        <section className="rounded-[26px] bg-ink p-5 text-paper">
+                        <section className="rounded-[22px] bg-ink p-4 text-paper">
                             <p className="text-[15px] text-paper/70">
                                 {t("totalOwed")} · {t("running", { months: statement.elapsed.months, days: statement.elapsed.days })}
                             </p>
-                            <p className="mt-1 text-[40px] font-semibold leading-none tabular">{money(statement.total)}</p>
+                            <p className="mt-1 text-[30px] font-semibold leading-none tabular">{money(statement.total)}</p>
                         </section>
                         <section className="rounded-[24px] bg-card p-4 ring-1 ring-line">
                             <StatementTotals statement={statement} />
@@ -119,7 +121,7 @@ export function CalculatorClient({
     )
 }
 
-const inputCls = "h-12 w-full rounded-xl bg-paper px-3 text-[17px] text-ink outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
+const inputCls = "h-12 w-full rounded-xl bg-paper px-3 text-[15px] text-ink outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (

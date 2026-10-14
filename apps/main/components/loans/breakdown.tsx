@@ -60,15 +60,15 @@ export function StatementTotals({ statement, big }: { statement: LoanStatement; 
         <div className="space-y-1.5">
             <div className="flex items-baseline justify-between">
                 <span className="text-[15px] text-ink-2">{t("principalLeft")}</span>
-                <span className="text-[17px] font-semibold text-ink tabular">{money(statement.principalLeft)}</span>
+                <span className="text-[15px] font-semibold text-ink tabular">{money(statement.principalLeft)}</span>
             </div>
             <div className="flex items-baseline justify-between">
                 <span className="text-[15px] text-ink-2">{t("interestDue")}</span>
-                <span className="text-[17px] font-semibold text-saffron tabular">{money(statement.interestDue)}</span>
+                <span className="text-[15px] font-semibold text-saffron tabular">{money(statement.interestDue)}</span>
             </div>
             <div className="flex items-baseline justify-between border-t border-line pt-2">
                 <span className="text-[16px] font-semibold text-ink">{t("totalOwed")}</span>
-                <span className={cn("font-semibold text-ink tabular", big ? "text-[28px]" : "text-[20px]")}>{money(statement.total)}</span>
+                <span className={cn("font-semibold text-ink tabular", big ? "text-[24px]" : "text-[18px]")}>{money(statement.total)}</span>
             </div>
         </div>
     )

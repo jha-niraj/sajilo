@@ -78,6 +78,8 @@ const en = {
     suggest3: "Who owes the most?",
     suggest4: "How much is out on loans?",
     newConversation: "New conversation",
+    chatWelcomeTitle: "Ask Munshi",
+    chatWelcomeSub: "Type or tap the mic. Munshi reads your books and can mark payments for you.",
     you: "You",
 
     // today
@@ -225,10 +227,12 @@ const en = {
     // loans
     loansTitle: "Loans given",
     newLoan: "Give a loan",
+    newLoanShort: "New loan",
     borrower: "Borrower",
     newBorrower: "New borrower",
     chooseBorrower: "Choose borrower",
     loanAmount: "Amount given",
+    amountPlaceholder: "e.g. 20,000",
     rate: "Rate (per 100 per month)",
     rateShort: "Rs {rate}/100/month",
     givenOn: "Given on",
@@ -363,6 +367,8 @@ const ne: Record<DictKey, string> = {
     suggest3: "सबैभन्दा धेरै बाँकी कसको छ?",
     suggest4: "ऋणमा कति पैसा बाहिर छ?",
     newConversation: "नयाँ कुराकानी",
+    chatWelcomeTitle: "मुन्शीलाई सोध्नुहोस्",
+    chatWelcomeSub: "लेख्नुहोस् वा माइक थिच्नुहोस्। मुन्शीले हिसाब हेर्छ र भुक्तानी पनि चढाउन सक्छ।",
     you: "तपाईं",
 
     todayTitle: "आजको संकलन",
@@ -501,10 +507,12 @@ const ne: Record<DictKey, string> = {
 
     loansTitle: "दिएको ऋण",
     newLoan: "ऋण दिनुहोस्",
+    newLoanShort: "नयाँ ऋण",
     borrower: "ऋणी",
     newBorrower: "नयाँ ऋणी",
     chooseBorrower: "ऋणी छान्नुहोस्",
     loanAmount: "दिएको रकम",
+    amountPlaceholder: "जस्तै २०,०००",
     rate: "ब्याज (सयकडा मासिक)",
     rateShort: "सयकडा रु {rate}",
     givenOn: "दिएको मिति",

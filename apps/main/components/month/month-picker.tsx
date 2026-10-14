@@ -42,12 +42,12 @@ export function MonthPicker({
             <NavButton label="Previous month" disabled={disabled || atMin} onClick={() => onChange(shiftMonth(year, month, -1))}>
                 <ChevronLeft className="h-5 w-5" />
             </NavButton>
-            <div className="grid flex-1 grid-cols-[1.4fr_1fr] gap-2">
+            <div className="flex min-w-0 flex-1 justify-center gap-2">
                 <Choice
                     value={String(month)}
                     disabled={disabled}
                     onChange={(v) => pick(year, Number(v))}
-                    className="rounded-2xl bg-card text-[16px] font-semibold"
+                    className="h-11 w-auto min-w-[7.5rem] gap-3 rounded-2xl bg-card text-[15px] font-semibold"
                     options={Array.from({ length: 12 }, (_, i) => ({
                         value: String(i + 1),
                         label: bsMonthName(i + 1, lang),
@@ -58,7 +58,7 @@ export function MonthPicker({
                     value={String(year)}
                     disabled={disabled}
                     onChange={(v) => pick(Number(v), month)}
-                    className="rounded-2xl bg-card text-[16px] font-semibold"
+                    className="h-11 w-auto gap-3 rounded-2xl bg-card text-[15px] font-semibold"
                     options={years.map((y) => ({ value: String(y), label: yearLabel(y) }))}
                 />
             </div>
@@ -76,7 +76,7 @@ function NavButton({ children, label, disabled, onClick }: { children: React.Rea
             disabled={disabled}
             onClick={onClick}
             aria-label={label}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-card text-ink ring-1 ring-line transition-colors active:bg-paper-2 disabled:opacity-30"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-card text-ink ring-1 ring-line transition-colors active:bg-paper-2 disabled:opacity-30"
         >
             {children}
         </button>

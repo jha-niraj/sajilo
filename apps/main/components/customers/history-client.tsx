@@ -168,7 +168,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "la
     return (
         <div className="rounded-[22px] bg-card p-4 ring-1 ring-line">
             <p className="text-[14px] text-ink-3">{label}</p>
-            <p className={cn("mt-0.5 text-[24px] font-semibold tabular", tone === "late" ? "text-late" : tone === "paid" ? "text-paid" : "text-ink")}>
+            <p className={cn("mt-0.5 text-[21px] font-semibold tabular", tone === "late" ? "text-late" : tone === "paid" ? "text-paid" : "text-ink")}>
                 {value}
             </p>
         </div>

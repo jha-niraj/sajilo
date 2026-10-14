@@ -47,7 +47,7 @@ export function MoreClient({ name, phone }: { name: string; phone: string | null
                 <div className="flex items-center gap-3 rounded-[24px] bg-card p-4 ring-1 ring-line">
                     <BrandMark size={48} />
                     <div className="min-w-0">
-                        <p className="truncate text-[19px] font-semibold text-ink">{name}</p>
+                        <p className="truncate text-[16px] font-semibold text-ink">{name}</p>
                         {phone && <p className="text-[15px] text-ink-3">+977 {displayPhone(phone)}</p>}
                     </div>
                 </div>
@@ -62,7 +62,7 @@ export function MoreClient({ name, phone }: { name: string; phone: string | null
                         className="flex w-full items-center gap-3 rounded-[24px] bg-saffron p-4 text-left text-white"
                     >
                         <Download className="h-6 w-6" />
-                        <span className="flex-1 text-[17px] font-semibold">{t("installApp")}</span>
+                        <span className="flex-1 text-[15px] font-semibold">{t("installApp")}</span>
                         <span className="rounded-full bg-white/20 px-3 py-1 text-[14px] font-semibold">{t("install")}</span>
                     </button>
                 )}
@@ -74,7 +74,7 @@ export function MoreClient({ name, phone }: { name: string; phone: string | null
                                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-paper-2 text-ink-2">
                                     <Icon className="h-5 w-5" />
                                 </span>
-                                <span className="flex-1 text-[17px] font-medium text-ink">{t(label)}</span>
+                                <span className="flex-1 text-[15px] font-medium text-ink">{t(label)}</span>
                                 <ChevronRight className="h-5 w-5 text-ink-3" />
                             </Link>
                         </li>

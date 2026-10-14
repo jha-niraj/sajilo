@@ -6,7 +6,7 @@ export default function NotFound() {
             <p className="text-6xl font-semibold text-ink-3">४०४</p>
             <h1 className="text-2xl font-semibold text-ink">पाना भेटिएन</h1>
             <p className="text-ink-3">Page not found</p>
-            <Link href="/today" className="mt-4 rounded-2xl bg-ink px-6 py-4 text-lg font-semibold text-paper">
+            <Link href="/today" className="mt-4 rounded-2xl bg-ink px-6 py-4 text-[16px] font-semibold text-paper">
                 आज · Today
             </Link>
         </main>

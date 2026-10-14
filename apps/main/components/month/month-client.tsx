@@ -92,7 +92,7 @@ export function MonthClient({
                     <p className="text-[13px] text-paper/70">
                         {t("grandTotal")} · {title}
                     </p>
-                    <p className="mt-1 text-[32px] font-semibold leading-none tabular">{money(report.grandTotal)}</p>
+                    <p className="mt-1 text-[26px] font-semibold leading-none tabular">{money(report.grandTotal)}</p>
                     {report.totalDueNow > 0 && (
                         <p className="mt-2.5 text-[13px] text-paper/80">
                             {t("totalDue")}: <span className="font-semibold tabular">{money(report.totalDueNow)}</span>

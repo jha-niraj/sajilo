@@ -28,21 +28,21 @@ export function LoansClient({ loans }: { loans: LoanView[] }) {
         <>
             <PageTop title={t("loansTitle")} />
             <div className="space-y-4 px-4 pt-4">
-                <section className="rounded-[26px] bg-ink p-5 text-paper">
+                <section className="rounded-[22px] bg-ink p-4 text-paper">
                     <p className="text-[15px] text-paper/70">{t("owedToday")}</p>
-                    <p className="mt-1 text-[36px] font-semibold leading-none tabular">{money(out + interest)}</p>
+                    <p className="mt-1 text-[28px] font-semibold leading-none tabular">{money(out + interest)}</p>
                     <p className="mt-2 text-[15px] text-paper/80">
                         {t("principalLeft")} {money(out)} · {t("interestDue")} <span className="text-[#ffc58f]">{money(interest)}</span>
                     </p>
                     <div className="mt-4 grid grid-cols-3 gap-2">
-                        <Link href="/loans/new" className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-saffron text-[14px] font-semibold text-white">
-                            <Plus className="h-5 w-5" /> {t("newLoan")}
+                        <Link href="/loans/new" className="flex h-11 items-center justify-center gap-1 rounded-2xl bg-saffron whitespace-nowrap px-1 text-[13px] font-semibold text-white">
+                            <Plus className="h-4 w-4 shrink-0" /> {t("newLoanShort")}
                         </Link>
-                        <Link href="/loans/calculator" className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-paper/10 text-[14px] font-semibold">
-                            <Calculator className="h-5 w-5" /> {t("calcShort")}
+                        <Link href="/loans/calculator" className="flex h-11 items-center justify-center gap-1 rounded-2xl bg-paper/10 whitespace-nowrap px-1 text-[13px] font-semibold">
+                            <Calculator className="h-4 w-4 shrink-0" /> {t("calcShort")}
                         </Link>
-                        <Link href="/cash" className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-paper/10 text-[14px] font-semibold">
-                            <Wallet className="h-5 w-5" /> {t("cashShort")}
+                        <Link href="/cash" className="flex h-11 items-center justify-center gap-1 rounded-2xl bg-paper/10 whitespace-nowrap px-1 text-[13px] font-semibold">
+                            <Wallet className="h-4 w-4 shrink-0" /> {t("cashShort")}
                         </Link>
                     </div>
                 </section>
@@ -61,8 +61,8 @@ export function LoansClient({ loans }: { loans: LoanView[] }) {
                 </div>
 
                 {list.length === 0 ? (
-                    <div className="flex flex-col items-center rounded-[26px] bg-card px-6 py-10 text-center ring-1 ring-line">
-                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-saffron-soft text-saffron">
+                    <div className="flex flex-col items-center rounded-[22px] bg-card px-6 py-10 text-center ring-1 ring-line">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-saffron-soft text-saffron">
                             <HandCoins className="h-8 w-8" />
                         </span>
                         <h2 className="mt-4 text-xl font-semibold text-ink">{t("noLoans")}</h2>
@@ -99,13 +99,13 @@ function LoanCard({ loan }: { loan: LoanView }) {
             >
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <p className="truncate text-[19px] font-semibold text-ink">{loan.borrowerName}</p>
+                        <p className="truncate text-[16px] font-semibold text-ink">{loan.borrowerName}</p>
                         <p className="text-[14px] text-ink-3">
                             {money(loan.principal)} · {date(loan.startDate, true)} · {t("rateShort", { rate: loan.ratePer100 })}
                         </p>
                     </div>
-                    <div className="text-right">
-                        <p className="text-[19px] font-semibold text-ink tabular">{money(loan.statement.total)}</p>
+                    <div className="shrink-0 whitespace-nowrap text-right">
+                        <p className="text-[16px] font-semibold text-ink tabular">{money(loan.statement.total)}</p>
                         <p className="text-[13px] text-saffron tabular">+ {money(loan.statement.interestDue)}</p>
                     </div>
                 </div>

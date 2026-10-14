@@ -33,7 +33,7 @@ export function DayPicker({
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>{children}</PopoverTrigger>
-            <PopoverContent align="start" className="z-[90] w-auto rounded-[22px] border-line bg-paper p-3 shadow-xl">
+            <PopoverContent align="start" className="z-[75] w-auto rounded-[22px] border-line bg-paper p-3 shadow-xl">
                 <NepaliCalendar
                     selected={value ? toDate(value) : null}
                     minDate={min ? toDate(min) : null}

@@ -96,7 +96,7 @@ export function RowSheet({
             <div className="mt-3 rounded-[20px] bg-card px-4 py-3 ring-1 ring-line">
                 <div className="flex items-baseline justify-between gap-3">
                     <p className="text-[14px] font-medium text-ink-2">{t("otherAmount")}</p>
-                    <p className={cn("text-[28px] font-semibold leading-tight tabular", amount ? "text-ink" : "text-ink-3/50")}>{money(typed)}</p>
+                    <p className={cn("text-[24px] font-semibold leading-tight tabular", amount ? "text-ink" : "text-ink-3/50")}>{money(typed)}</p>
                 </div>
                 {/* Fixed height: the keypad must not move under his thumb while he types. */}
                 <div className="mt-1.5 flex h-10 flex-wrap content-start gap-x-3 gap-y-0.5 overflow-hidden text-[12px] leading-tight">
@@ -121,7 +121,7 @@ export function RowSheet({
                 type="button"
                 disabled={locked || typed <= 0}
                 onClick={() => done("paid", typed)}
-                className="mt-3 flex h-14 w-full items-center justify-center rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-30"
+                className="mt-3 flex h-12 w-full items-center justify-center rounded-2xl bg-ink text-[16px] font-semibold text-paper disabled:opacity-30"
             >
                 {t("save")}
             </button>

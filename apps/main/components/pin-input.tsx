@@ -50,7 +50,7 @@ function PinSlot({ index, error }: { index: number; error?: boolean }) {
         <div
             data-active={isActive}
             className={cn(
-                "relative flex h-16 w-16 items-center justify-center border-y border-r border-line bg-card text-3xl text-ink transition-colors",
+                "relative flex h-12 w-12 items-center justify-center border-y border-r border-line bg-card text-3xl text-ink transition-colors",
                 "first:rounded-l-2xl first:border-l last:rounded-r-2xl",
                 isActive && "z-10 rounded-xl ring-2 ring-saffron ring-offset-2 ring-offset-paper first:rounded-l-2xl last:rounded-r-2xl",
                 error && "border-miss bg-miss-soft",

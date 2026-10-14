@@ -36,7 +36,7 @@ export function AuthFrame({
                     <div className="flex items-center gap-2.5">
                         <BrandMark size={38} />
                         <div className="leading-tight">
-                            <p className="text-[18px] font-semibold text-ink">{t("appName")}</p>
+                            <p className="text-[16px] font-semibold text-ink">{t("appName")}</p>
                             <p className="text-[13px] text-ink-3">{t("tagline")}</p>
                         </div>
                     </div>
@@ -76,8 +76,8 @@ export function AuthFrame({
 export function AuthHeading({ title, sub }: { title: string; sub?: React.ReactNode }) {
     return (
         <div className="mt-10">
-            <h1 className="text-[30px] font-semibold leading-[1.15] tracking-[-0.01em] text-ink">{title}</h1>
-            {sub && <p className="mt-2 text-[17px] leading-snug text-ink-2">{sub}</p>}
+            <h1 className="text-[26px] font-semibold leading-[1.15] tracking-[-0.01em] text-ink">{title}</h1>
+            {sub && <p className="mt-2 text-[15px] leading-snug text-ink-2">{sub}</p>}
         </div>
     )
 }

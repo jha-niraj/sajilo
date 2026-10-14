@@ -48,7 +48,7 @@ export const CustomerRow = memo(function CustomerRow({
                     {num(row.index + 1)}
                 </span>
                 <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[19px] font-semibold leading-snug text-ink">{customer.name}</span>
+                    <span className="block truncate text-[16px] font-semibold leading-snug text-ink">{customer.name}</span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[14px] leading-snug">
                         {flagged && (
                             <span className="inline-flex items-center gap-1 font-medium text-[#8a5a08]">
@@ -79,7 +79,7 @@ export const CustomerRow = memo(function CustomerRow({
                         )}
                     </span>
                 </span>
-                <span className={cn("shrink-0 text-right text-[18px] font-semibold tabular", paid ? "text-paid" : "text-ink-2")}>
+                <span className={cn("shrink-0 text-right text-[16px] font-semibold tabular", paid ? "text-paid" : "text-ink-2")}>
                     {money(paid ? view.received : view.expected)}
                 </span>
             </button>
@@ -91,7 +91,7 @@ export const CustomerRow = memo(function CustomerRow({
                 aria-label={paid ? t("undo") : t("received")}
                 aria-pressed={paid}
                 className={cn(
-                    "flex h-14 w-14 shrink-0 items-center justify-center self-center rounded-full transition-colors duration-200 disabled:opacity-50",
+                    "flex h-12 w-12 shrink-0 items-center justify-center self-center rounded-full transition-colors duration-200 disabled:opacity-50",
                     paid
                         ? "bg-paid text-white"
                         : missed

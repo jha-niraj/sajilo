@@ -126,9 +126,10 @@ export function SettingsClient({ initial, today }: { initial: SettingsView; toda
                                 value={holidayLabel}
                                 onChange={(e) => setHolidayLabel(e.target.value)}
                                 placeholder={`${t("noteOptional")}`}
-                                className="h-12 flex-1 rounded-xl bg-paper px-3 text-[16px] outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
+                                className="h-12 min-w-0 flex-1 rounded-xl bg-paper px-3 text-[16px] outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
                             />
-                            <button type="button" onClick={addH} className="h-12 rounded-xl bg-ink px-4 font-semibold text-paper">
+                            <button type="button" onClick={addH} className="flex h-12 shrink-0 items-center gap-1 whitespace-nowrap rounded-xl bg-ink px-3.5 text-[14px] font-semibold text-paper">
+                                <Plus className="h-4 w-4" />
                                 {t("addHoliday")}
                             </button>
                         </div>
@@ -158,7 +159,7 @@ export function SettingsClient({ initial, today }: { initial: SettingsView; toda
                                 inputMode="decimal"
                                 value={rate}
                                 onChange={(e) => setRate(toAsciiDigits(e.target.value).replace(/[^\d.]/g, ""))}
-                                className="h-12 flex-1 rounded-xl bg-paper px-3 text-[18px] font-semibold outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
+                                className="h-12 flex-1 rounded-xl bg-paper px-3 text-[16px] font-semibold outline-none ring-1 ring-line focus:ring-2 focus:ring-saffron"
                             />
                             <button
                                 type="button"
@@ -213,7 +214,7 @@ export function SettingsClient({ initial, today }: { initial: SettingsView; toda
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <section className="rounded-[24px] bg-card p-4 ring-1 ring-line">
-            <h2 className="mb-3 text-[17px] font-semibold text-ink">{title}</h2>
+            <h2 className="mb-3 text-[15px] font-semibold text-ink">{title}</h2>
             {children}
         </section>
     )
@@ -231,7 +232,7 @@ function Stepper({ value, min, max, onChange, label }: { value: number; min: num
             >
                 <Minus className="h-4 w-4" />
             </button>
-            <span className="w-8 text-center text-[18px] font-semibold tabular">{label}</span>
+            <span className="w-8 text-center text-[16px] font-semibold tabular">{label}</span>
             <button
                 type="button"
                 disabled={value >= max}

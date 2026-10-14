@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { toast } from "sonner"
-import { ArrowUp, Camera, Keyboard, Mic, RotateCcw, Square, UserPlus, AudioLines } from "lucide-react"
+import { ArrowUp, Camera, Keyboard, Mic, RotateCcw, Square, UserPlus, AudioLines, UserRoundX, ChartColumnBig, TrendingUp, HandCoins } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { Loader } from "@repo/ui/components/ui/loader"
 import { Textarea } from "@repo/ui/components/ui/textarea"
@@ -33,9 +33,19 @@ function loadMessages(): MunshiMessage[] {
     }
 }
 
-export function MunshiClient({ userName, hasCustomers: initialHasCustomers, welcome }: { userName: string; hasCustomers: boolean; welcome: boolean }) {
+export function MunshiClient({
+    userName,
+    hasCustomers: initialHasCustomers,
+    welcome,
+    initialMode = "voice",
+}: {
+    userName: string
+    hasCustomers: boolean
+    welcome: boolean
+    initialMode?: "voice" | "chat"
+}) {
     const { t } = useI18n()
-    const [mode, setMode] = useState<"voice" | "chat">("voice")
+    const [mode, setMode] = useState<"voice" | "chat">(initialMode)
     const [messages, setMessages] = useState<MunshiMessage[]>([])
     const [loaded, setLoaded] = useState(false)
     const [busy, setBusy] = useState(false)
@@ -162,7 +172,7 @@ export function MunshiClient({ userName, hasCustomers: initialHasCustomers, welc
     const empty = messages.filter((m) => m.role === "user").length === 0
 
     return (
-        <div className="relative flex h-[calc(100dvh-6.5rem-env(safe-area-inset-bottom))] flex-col overflow-hidden">
+        <div className="relative flex -mb-6 h-[calc(100dvh-3.5rem-1px-env(safe-area-inset-bottom))] flex-col overflow-hidden">
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
                 <div className="absolute -top-32 left-1/2 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgb(232_140_70/0.22),transparent_65%)] blur-2xl" />
                 <div className="absolute bottom-0 right-[-120px] h-[360px] w-[360px] rounded-full bg-[radial-gradient(circle,rgb(123_97_255/0.12),transparent_65%)] blur-2xl" />
@@ -170,7 +180,7 @@ export function MunshiClient({ userName, hasCustomers: initialHasCustomers, welc
 
             <header className="flex items-center justify-between gap-3 px-4 pt-safe">
                 <div className="pt-4">
-                    <h1 className="text-[26px] font-semibold leading-tight text-ink">{t("munshi")}</h1>
+                    <h1 className="text-[22px] font-semibold leading-tight text-ink">{t("munshi")}</h1>
                     <p className="text-[14px] text-ink-3">{t("munshiTagline")}</p>
                 </div>
                 <div className="flex items-center gap-2 pt-4">
@@ -272,14 +282,15 @@ function VoiceView(props: {
     const latest = props.pending.at(-1)
 
     return (
-        <div className="flex flex-1 flex-col items-center px-5">
-            <div className="flex flex-1 flex-col items-center justify-center py-6">
+        <ScrollArea orientation="vertical" className="min-h-0 flex-1">
+            <div className="flex min-h-[calc(100dvh-10rem-env(safe-area-inset-bottom))] flex-col items-center px-5">
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-4">
                 <Orb
                     state={props.orbState}
                     levelRef={props.level}
                     onClick={props.onOrb}
                     label={label}
-                    className="size-[min(66vw,280px)]"
+                    className="size-[min(62vw,34dvh,270px)]"
                 />
                 <AnimatePresence mode="wait">
                     <motion.p
@@ -288,7 +299,7 @@ function VoiceView(props: {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.2 }}
-                        className="mt-9 flex items-center gap-2 text-[16px] font-medium text-ink-2"
+                        className="mt-6 flex items-center gap-2 text-[14px] font-medium text-ink-2"
                     >
                         {props.orbState === "listening" && <span className="h-2 w-2 animate-pulse rounded-full bg-miss" />}
                         {label}
@@ -296,8 +307,9 @@ function VoiceView(props: {
                     </motion.p>
                 </AnimatePresence>
 
-                <div className="mt-6 min-h-[96px] w-full max-w-md text-center">
-                    {props.lastUser && <p className="line-clamp-2 text-[15px] text-ink-3">“{props.lastUser}”</p>}
+                <div className="mt-4 min-h-[72px] w-full max-w-md text-center">
+                    {props.lastUser && <p className="line-clamp-2 text-[13px] text-ink-3">“{props.lastUser}”</p>}
+                    <ScrollArea orientation="vertical" viewportClassName="max-h-[22dvh]">
                     <AnimatePresence mode="wait">
                         {props.lastAssistant && (
                             <motion.p
@@ -305,12 +317,13 @@ function VoiceView(props: {
                                 initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
                                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                                className="mt-2 text-[20px] font-medium leading-snug text-ink"
+                                className="mt-1.5 px-1 text-[16px] font-medium leading-snug text-ink"
                             >
                                 {props.lastAssistant}
                             </motion.p>
                         )}
                     </AnimatePresence>
+                    </ScrollArea>
                 </div>
             </div>
 
@@ -330,7 +343,7 @@ function VoiceView(props: {
                                     type="button"
                                     disabled={props.busy}
                                     onClick={() => props.onSuggest(t(k))}
-                                    className="rounded-full bg-card px-4 py-2.5 text-[14px] font-medium text-ink ring-1 ring-line transition-colors active:bg-paper-2 disabled:opacity-50"
+                                    className="rounded-full bg-card px-3.5 py-2 text-[13px] font-medium text-ink ring-1 ring-line transition-colors active:bg-paper-2 disabled:opacity-50"
                                 >
                                     {t(k)}
                                 </button>
@@ -339,7 +352,8 @@ function VoiceView(props: {
                     )
                 )}
             </div>
-        </div>
+            </div>
+        </ScrollArea>
     )
 }
 
@@ -438,26 +452,13 @@ function ChatView(props: {
                         </div>
                     )}
                     {!props.hasCustomers && <StartCards />}
-                    {props.empty && props.hasCustomers && (
-                        <div className="flex flex-wrap gap-2 pt-2">
-                            {SUGGESTIONS.map((k) => (
-                                <button
-                                    key={k}
-                                    type="button"
-                                    onClick={() => props.onSend(t(k))}
-                                    className="rounded-full bg-card px-4 py-2.5 text-[14px] font-medium text-ink ring-1 ring-line active:bg-paper-2"
-                                >
-                                    {t(k)}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                    {props.empty && props.hasCustomers && <ChatWelcome onPick={props.onSend} />}
                 </div>
             </ScrollArea>
 
             <div className="shrink-0 border-t border-line/60 bg-paper/95 px-4 pb-3 pt-3 backdrop-blur">
                 {dictation.recording ? (
-                    <div className="flex items-center gap-3 rounded-[26px] bg-card p-2 pl-4 shadow-[0_10px_30px_-16px_rgb(200_97_31/0.5)] ring-2 ring-saffron/50">
+                    <div className="flex items-center gap-3 rounded-[22px] bg-card p-2 pl-4 shadow-[0_10px_30px_-16px_rgb(200_97_31/0.5)] ring-2 ring-saffron/50">
                         <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-miss" />
                         <Waveform levelRef={dictation.level} className="min-w-0 flex-1 justify-center" />
                         <button
@@ -470,7 +471,7 @@ function ChatView(props: {
                         </button>
                     </div>
                 ) : (
-                    <div className="flex items-end gap-2 rounded-[26px] bg-card p-2 pl-4 shadow-[0_10px_30px_-16px_rgb(42_33_24/0.4)] ring-1 ring-line focus-within:ring-2 focus-within:ring-saffron">
+                    <div className="flex items-end gap-2 rounded-[22px] bg-card p-2 pl-4 shadow-[0_10px_30px_-16px_rgb(42_33_24/0.4)] ring-1 ring-line focus-within:ring-2 focus-within:ring-saffron">
                         <Textarea
                             value={text}
                             onChange={(e) => setText(e.target.value)}
@@ -482,7 +483,7 @@ function ChatView(props: {
                             }}
                             rows={1}
                             placeholder={t("typeMessage")}
-                            className="max-h-32 min-h-11 flex-1 resize-none sm:resize-none border-0 bg-transparent px-0 py-2.5 text-[17px] text-ink shadow-none outline-none placeholder:text-ink-3 focus-visible:ring-0"
+                            className="max-h-32 min-h-11 flex-1 resize-none sm:resize-none border-0 bg-transparent px-0 py-2.5 text-[15px] text-ink shadow-none outline-none placeholder:text-ink-3 focus-visible:ring-0"
                         />
                         {text.trim() ? (
                             <button type="button" onClick={submit} disabled={props.busy} aria-label={t("send")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-paper disabled:opacity-40">
@@ -502,6 +503,42 @@ function ChatView(props: {
                     </div>
                 )}
                 {dictation.recording && <p className="mt-2 text-center text-[13px] text-ink-3">{t("listening")}</p>}
+            </div>
+        </div>
+    )
+}
+
+const SUGGESTION_ICONS = [UserRoundX, ChartColumnBig, TrendingUp, HandCoins] as const
+
+function ChatWelcome({ onPick }: { onPick: (text: string) => void }) {
+    const { t } = useI18n()
+    return (
+        <div className="flex flex-col items-center px-1 pb-2 pt-8 text-center">
+            <span className="relative flex h-16 w-16 items-center justify-center">
+                <span className="absolute -inset-3 rounded-full bg-[radial-gradient(circle,rgb(232_140_70/0.35),transparent_65%)] blur-md" />
+                <span className="relative h-16 w-16 rounded-full bg-[radial-gradient(circle_at_32%_26%,#fff2e2_0%,#ffb36b_28%,#e3611c_62%,#7b61ff_125%)] shadow-[0_12px_30px_-12px_rgb(200_97_31/0.7)]">
+                    <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_22%,rgb(255_255_255/0.7),transparent_38%)]" />
+                </span>
+            </span>
+            <h2 className="mt-4 text-[19px] font-semibold text-ink">{t("chatWelcomeTitle")}</h2>
+            <p className="mt-1 max-w-xs text-[14px] leading-snug text-ink-2">{t("chatWelcomeSub")}</p>
+            <div className="mt-6 grid w-full grid-cols-2 gap-2">
+                {SUGGESTIONS.map((k, i) => {
+                    const Icon = SUGGESTION_ICONS[i]!
+                    return (
+                        <button
+                            key={k}
+                            type="button"
+                            onClick={() => onPick(t(k))}
+                            className="flex min-h-[76px] flex-col items-start justify-between gap-2 rounded-2xl bg-card p-3 text-left ring-1 ring-line transition-colors active:bg-paper-2"
+                        >
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-saffron-soft text-saffron">
+                                <Icon className="h-4 w-4" />
+                            </span>
+                            <span className="text-[13px] font-medium leading-snug text-ink">{t(k)}</span>
+                        </button>
+                    )
+                })}
             </div>
         </div>
     )

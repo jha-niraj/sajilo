@@ -95,7 +95,7 @@ export function NepaliCalendar({ selected, onSelect, minDate, maxDate, monthName
                     dropdown the same rounding, colours and motion as every other menu here. */}
                 <div className="flex flex-1 items-center justify-center gap-2">
                     <Select value={String(viewMonth)} onValueChange={(v) => setViewMonth(Number(v))}>
-                        <SelectTrigger className="h-9 flex-1 rounded-xl text-sm font-medium">
+                        <SelectTrigger className="h-9 w-auto min-w-[6.5rem] gap-2 rounded-xl text-sm font-medium">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -105,7 +105,7 @@ export function NepaliCalendar({ selected, onSelect, minDate, maxDate, monthName
                         </SelectContent>
                     </Select>
                     <Select value={String(viewYear)} onValueChange={(v) => setViewYear(Number(v))}>
-                        <SelectTrigger className="h-9 w-[92px] shrink-0 rounded-xl text-sm font-medium">
+                        <SelectTrigger className="h-9 w-auto shrink-0 gap-2 rounded-xl text-sm font-medium">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
