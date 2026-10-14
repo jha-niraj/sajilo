@@ -132,3 +132,28 @@ export async function fetchDeadline(): Promise<DeadlineInfo> {
         monthTotal: received.reduce((s, r) => s + r.amountReceived, 0),
     }
 }
+
+export interface MonthRegister {
+    report: MonthReport
+    /** BS day numbers of the month with their AD dates, in order */
+    days: { day: number; date: string; weekday: number }[]
+    /** customerId -> AD date -> amount received that day */
+    cells: Record<string, Record<string, number>>
+}
+
+/** The bank register: every customer x every day of the BS month. */
+export async function fetchMonthRegister(year?: number, month?: number): Promise<MonthRegister> {
+    const report = await fetchMonthReport(year, month)
+    const collectorId = await actionCollectorId()
+    const received = await receivedBetween(collectorId, report.start, report.end)
+    const cells: MonthRegister["cells"] = {}
+    for (const r of received) {
+        cells[r.customerId] ??= {}
+        cells[r.customerId]![r.date] = (cells[r.customerId]![r.date] ?? 0) + r.amountReceived
+    }
+    const days: MonthRegister["days"] = []
+    for (let d = report.start, i = 1; d <= report.end; d = addAdDays(d, 1), i++) {
+        days.push({ day: i, date: d, weekday: new Date(`${d}T12:00:00`).getDay() })
+    }
+    return { report, days, cells }
+}

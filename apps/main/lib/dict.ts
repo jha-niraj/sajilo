@@ -82,6 +82,9 @@ const en = {
 
     // today
     todayTitle: "Today's collection",
+    pastDayTitle: "Collection",
+    viewingDay: "Viewing {date}",
+    backToToday: "Back to today",
     collected: "Collected",
     of: "of",
     peopleDone: "{done}/{total} done",
@@ -355,6 +358,9 @@ const ne: Record<DictKey, string> = {
     you: "तपाईं",
 
     todayTitle: "आजको संकलन",
+    pastDayTitle: "संकलन",
+    viewingDay: "{date} हेर्दै",
+    backToToday: "आजमा फर्कनुहोस्",
     collected: "संकलन",
     of: "मध्ये",
     peopleDone: "{total} मध्ये {done} भयो",

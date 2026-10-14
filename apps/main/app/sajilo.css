@@ -25,7 +25,7 @@
     --color-miss: #c2453a;
     --color-miss-soft: #fbe6e3;
 
-    --font-sajilo: var(--font-mukta), ui-sans-serif, system-ui, sans-serif;
+    --font-sajilo: var(--font-bricolage), var(--font-mukta), ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {

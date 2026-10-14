@@ -11,6 +11,7 @@ import { PageTop } from "@/components/shell/page-top"
 import { useI18n } from "@/lib/i18n"
 import { fetchMonthReport, type MonthReport } from "@/actions/report.action"
 import { MonthPicker } from "./month-picker"
+import { ProgressiveList } from "@/components/progressive-list"
 
 export function MonthClient({
     initial,
@@ -87,13 +88,13 @@ export function MonthClient({
             <div className="space-y-4 px-4 pt-4">
                 <MonthPicker year={report.year} month={report.month} max={max} onChange={change} disabled={pending} />
 
-                <section className={cn("rounded-[26px] bg-ink p-5 text-paper transition-opacity", pending && "opacity-60")}>
-                    <p className="text-[15px] text-paper/70">
+                <section className={cn("rounded-[24px] bg-ink p-4 text-paper transition-opacity", pending && "opacity-60")}>
+                    <p className="text-[13px] text-paper/70">
                         {t("grandTotal")} · {title}
                     </p>
-                    <p className="mt-1 text-[40px] font-semibold leading-none tabular">{money(report.grandTotal)}</p>
+                    <p className="mt-1 text-[32px] font-semibold leading-none tabular">{money(report.grandTotal)}</p>
                     {report.totalDueNow > 0 && (
-                        <p className="mt-3 text-[15px] text-paper/80">
+                        <p className="mt-2.5 text-[13px] text-paper/80">
                             {t("totalDue")}: <span className="font-semibold tabular">{money(report.totalDueNow)}</span>
                         </p>
                     )}
@@ -101,26 +102,26 @@ export function MonthClient({
                         <Link
                             href={`/print/month?y=${report.year}&m=${report.month}`}
                             target="_blank"
-                            className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-paper/10 text-[14px] font-semibold"
+                            className="flex h-11 items-center justify-center gap-1.5 rounded-2xl bg-paper/10 text-[13px] font-semibold"
                         >
                             <Printer className="h-5 w-5" /> PDF
                         </Link>
-                        <button type="button" onClick={share} className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-paper/10 text-[14px] font-semibold">
+                        <button type="button" onClick={share} className="flex h-11 items-center justify-center gap-1.5 rounded-2xl bg-paper/10 text-[13px] font-semibold">
                             <Share2 className="h-5 w-5" /> {t("share")}
                         </button>
-                        <button type="button" onClick={exportCsv} className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-paper/10 text-[14px] font-semibold">
+                        <button type="button" onClick={exportCsv} className="flex h-11 items-center justify-center gap-1.5 rounded-2xl bg-paper/10 text-[13px] font-semibold">
                             <FileSpreadsheet className="h-5 w-5" /> CSV
                         </button>
                     </div>
                 </section>
 
-                <div className="grid grid-cols-2 rounded-2xl bg-paper-2 p-1 text-[15px] font-semibold">
+                <div className="grid grid-cols-2 rounded-2xl bg-paper-2 p-1 text-[14px] font-semibold">
                     {(["customers", "days"] as const).map((k) => (
                         <button
                             key={k}
                             type="button"
                             onClick={() => setTab(k)}
-                            className={cn("h-11 rounded-xl transition-colors", tab === k ? "bg-card text-ink shadow-sm" : "text-ink-3")}
+                            className={cn("h-10 rounded-xl transition-colors", tab === k ? "bg-card text-ink shadow-sm" : "text-ink-3")}
                         >
                             {k === "customers" ? t("perCustomer") : t("perDay")}
                         </button>
@@ -128,47 +129,51 @@ export function MonthClient({
                 </div>
 
                 {tab === "customers" ? (
-                    <ul className={cn("divide-y divide-line overflow-hidden rounded-[22px] bg-card ring-1 ring-line", pending && "opacity-60")}>
-                        {report.customers.map((c, i) => (
-                            <li key={c.id}>
-                                <Link
-                                    href={`/customers/${c.id}?y=${report.year}&m=${report.month}`}
-                                    className="flex items-center gap-3 px-4 py-3 active:bg-paper-2"
-                                >
-                                    <span className="w-7 text-[14px] text-ink-3 tabular">{num(i + 1)}</span>
-                                    <span className="min-w-0 flex-1">
-                                        <span className="block truncate text-[17px] font-semibold text-ink">{c.name}</span>
-                                        <span className="block text-[13px] text-ink-3">
-                                            {c.bankAccountNo ? `${t("accountNo")} ${c.bankAccountNo} · ` : ""}
-                                            {num(c.daysPaid)} {t("days")}
-                                            {c.dueNow > 0 && <span className="text-late"> · {t("dueOldShort", { amount: money(c.dueNow) })}</span>}
-                                        </span>
+                    <ProgressiveList
+                        items={report.customers}
+                        getKey={(c) => c.id}
+                        resetKey={`${report.year}-${report.month}-c`}
+                        className={cn(pending && "opacity-60")}
+                        empty={<p className="px-4 py-8 text-center text-[14px] text-ink-3">-</p>}
+                        render={(c, i) => (
+                            <Link href={`/customers/${c.id}?y=${report.year}&m=${report.month}`} className="flex items-center gap-3 px-4 py-2.5 active:bg-paper-2">
+                                <span className="w-6 text-[13px] text-ink-3 tabular">{num(i + 1)}</span>
+                                <span className="min-w-0 flex-1">
+                                    <span className="block truncate text-[15px] font-semibold text-ink">{c.name}</span>
+                                    <span className="block text-[12px] text-ink-3">
+                                        {c.bankAccountNo ? `${t("accountNo")} ${c.bankAccountNo} · ` : ""}
+                                        {num(c.daysPaid)} {t("days")}
+                                        {c.dueNow > 0 && <span className="text-late"> · {t("dueOldShort", { amount: money(c.dueNow) })}</span>}
                                     </span>
-                                    <span className="text-[17px] font-semibold text-ink tabular">{money(c.received)}</span>
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
+                                </span>
+                                <span className="text-[15px] font-semibold text-ink tabular">{money(c.received)}</span>
+                            </Link>
+                        )}
+                    />
                 ) : (
-                    <ul className={cn("divide-y divide-line overflow-hidden rounded-[22px] bg-card ring-1 ring-line", pending && "opacity-60")}>
-                        {[...report.days].reverse().map((d) => (
-                            <li key={d.date} className="px-4 py-3">
+                    <ProgressiveList
+                        items={[...report.days].reverse()}
+                        getKey={(d) => d.date}
+                        resetKey={`${report.year}-${report.month}-d`}
+                        className={cn(pending && "opacity-60")}
+                        empty={<p className="px-4 py-8 text-center text-[14px] text-ink-3">-</p>}
+                        render={(d) => (
+                            <div className="px-4 py-2.5">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[16px] text-ink">
+                                    <span className="text-[14px] text-ink">
                                         {date(d.date)} <span className="text-ink-3">· {weekday(d.date)}</span>
                                     </span>
-                                    <span className="text-[16px] font-semibold text-ink tabular">{money(d.total)}</span>
+                                    <span className="text-[14px] font-semibold text-ink tabular">{money(d.total)}</span>
                                 </div>
                                 <div className="mt-1.5 flex items-center gap-2">
                                     <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-paper-2">
                                         <div className="h-full rounded-full bg-saffron/70" style={{ width: `${(d.total / maxDay) * 100}%` }} />
                                     </div>
-                                    <span className="w-14 text-right text-[13px] text-ink-3 tabular">{num(d.people)}</span>
+                                    <span className="w-10 text-right text-[12px] text-ink-3 tabular">{num(d.people)}</span>
                                 </div>
-                            </li>
-                        ))}
-                        {report.days.length === 0 && <li className="px-4 py-8 text-center text-ink-3">-</li>}
-                    </ul>
+                            </div>
+                        )}
+                    />
                 )}
             </div>
         </>

@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: "Sajilo - सजिलो",
         short_name: "Sajilo",
         description: "दैनिक बचत संकलन, सजिलै। Daily savings collection made easy.",
-        start_url: "/today",
+        start_url: "/munshi",
         scope: "/",
         display: "standalone",
         orientation: "portrait",
@@ -20,6 +20,7 @@ export default function manifest(): MetadataRoute.Manifest {
             { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
         shortcuts: [
+            { name: "Munshi", url: "/munshi", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
             { name: "Today", url: "/today", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
             { name: "Month", url: "/month", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
         ],

@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL("/login", request.nextUrl.origin))
     }
     if (isLoggedIn && (isPublic || pathname === "/")) {
-        return NextResponse.redirect(new URL("/today", request.nextUrl.origin))
+        return NextResponse.redirect(new URL("/munshi", request.nextUrl.origin))
     }
     return NextResponse.next()
 }

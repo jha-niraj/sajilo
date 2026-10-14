@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { Lock, Search, UserPlus, CheckCheck, Coffee } from "lucide-react"
+import { Lock, Search, UserPlus, CheckCheck, Coffee, CalendarDays, ChevronDown } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { Skeleton } from "@repo/ui/components/ui/skeleton"
 import { PageTop } from "@/components/shell/page-top"
+import { DayPicker } from "@/components/day-picker"
 import { useI18n } from "@/lib/i18n"
 import type { EntryStatus } from "@/lib/collection/types"
 import { useDay, useNepalToday, type DayRow } from "./use-day"
@@ -16,7 +17,9 @@ import { RowSheet } from "./row-sheet"
 export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }) {
     const { t, money, num, date: fmtDate, weekday } = useI18n()
     const today = useNepalToday()
-    const { snapshot, rows, totals, loading, failed, mark } = useDay(today)
+    const [day, setDay] = useState(today)
+    const isToday = day === today
+    const { snapshot, rows, totals, loading, failed, mark } = useDay(day)
     const [query, setQuery] = useState("")
     const [sheet, setSheet] = useState<{ row: DayRow; seq: number } | null>(null)
     const [sheetOpen, setSheetOpen] = useState(false)
@@ -80,8 +83,31 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
 
     return (
         <>
-            <PageTop title={t("todayTitle")} subtitle={`${weekday(today)}, ${fmtDate(today, true)}`} />
-            {deadlineSlot}
+            <PageTop
+                title={isToday ? t("todayTitle") : t("pastDayTitle")}
+                subtitle={
+                    <DayPicker value={day} onChange={setDay} max={today}>
+                        <button
+                            type="button"
+                            className="-ml-1 mt-0.5 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[15px] text-ink-2 transition-colors active:bg-paper-2"
+                        >
+                            <CalendarDays className="h-4 w-4 text-saffron" />
+                            {weekday(day)}, {fmtDate(day, true)}
+                            <ChevronDown className="h-4 w-4 text-ink-3" />
+                        </button>
+                    </DayPicker>
+                }
+            />
+            {isToday ? (
+                deadlineSlot
+            ) : (
+                <div className="mx-4 mt-3 flex items-center justify-between gap-3 rounded-2xl bg-late-soft px-4 py-3 text-late">
+                    <span className="text-[14px] font-medium">{t("viewingDay", { date: fmtDate(day, true) })}</span>
+                    <button type="button" onClick={() => setDay(today)} className="shrink-0 rounded-full bg-late px-3 py-1.5 text-[13px] font-semibold text-white">
+                        {t("backToToday")}
+                    </button>
+                </div>
+            )}
 
             <section className="sticky top-0 z-30 bg-paper/95 px-4 pb-3 pt-3 backdrop-blur">
                 <div className="rounded-[26px] bg-ink p-4 text-paper shadow-[0_10px_30px_-12px_rgb(42_33_24/0.5)]">
@@ -103,7 +129,7 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
                             style={{ width: `${progress}%` }}
                         />
                     </div>
-                    {rows.length > 0 && (
+                    {rows.length > 0 && isToday && (
                         <Link
                             href="/today/finish"
                             className={cn(

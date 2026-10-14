@@ -8,6 +8,7 @@ const NONE = "__none__"
 export interface ChoiceOption {
     value: string
     label: string
+    disabled?: boolean
 }
 
 /** shadcn Select in Sajilo styling. `""` is a valid value (Radix items cannot be empty). */
@@ -47,6 +48,7 @@ export function Choice({
                     <SelectItem
                         key={o.value || NONE}
                         value={o.value === "" ? NONE : o.value}
+                        disabled={o.disabled}
                         className="min-h-11 rounded-xl text-[16px] text-ink focus:bg-paper-2 data-[state=checked]:bg-saffron-soft"
                     >
                         {o.label}

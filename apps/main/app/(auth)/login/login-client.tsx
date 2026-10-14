@@ -56,7 +56,7 @@ export function LoginClient() {
             return
         }
         saveDeviceAccount({ phone: account.phone, name: res.data?.user?.name ?? account.name })
-        window.location.replace("/today")
+        window.location.replace("/munshi")
     }
 
     if (mode === "loading") {

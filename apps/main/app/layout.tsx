@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next"
 import { cookies } from "next/headers"
-import { Mukta } from "next/font/google"
+import { Bricolage_Grotesque, Mukta } from "next/font/google"
 import "./sajilo.css"
 import "@/lib/env"
 import { Providers } from "./providers"
 import type { Lang } from "@/lib/dict"
+
+// Bricolage Grotesque for Latin text; Mukta covers Devanagari (Bricolage has no Nepali glyphs).
+const bricolage = Bricolage_Grotesque({
+    subsets: ["latin"],
+    variable: "--font-bricolage",
+    display: "swap",
+})
 
 const mukta = Mukta({
     subsets: ["devanagari", "latin"],
@@ -41,7 +48,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     const jar = await cookies()
     const lang: Lang = jar.get("sajilo.lang")?.value === "ne" ? "ne" : "en"
     return (
-        <html lang={lang} className={mukta.variable}>
+        <html lang={lang} className={`${bricolage.variable} ${mukta.variable}`}>
             <body className="min-h-dvh bg-paper text-ink antialiased">
                 <Providers lang={lang}>{children}</Providers>
             </body>

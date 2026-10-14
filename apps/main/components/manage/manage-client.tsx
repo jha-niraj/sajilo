@@ -33,6 +33,7 @@ import {
 } from "@/actions/customer.action"
 import { CustomerForm } from "./customer-form"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 
 export function ManageClient({ initial, today }: { initial: CustomerRow[]; today: string }) {
     const { t, money, num } = useI18n()
@@ -190,7 +191,8 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                     className="w-full rounded-2xl border-line bg-card p-4 text-[17px] leading-relaxed text-ink focus-visible:ring-2 focus-visible:ring-saffron"
                 />
                 {parsed.length > 0 && (
-                    <ul className="mt-3 max-h-56 divide-y divide-line overflow-auto rounded-2xl bg-card ring-1 ring-line">
+                    <ScrollArea orientation="vertical" className="mt-3 rounded-2xl bg-card ring-1 ring-line" viewportClassName="max-h-56">
+                    <ul className="divide-y divide-line">
                         {parsed.map((p, i) => (
                             <li key={i} className="flex items-center justify-between px-4 py-2.5 text-[16px]">
                                 <span className="truncate text-ink">{p.name}</span>
@@ -200,6 +202,7 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                             </li>
                         ))}
                     </ul>
+                    </ScrollArea>
                 )}
                 <button
                     type="button"

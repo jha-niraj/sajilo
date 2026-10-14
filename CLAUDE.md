@@ -192,6 +192,9 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 
 ### Rules
 - English by default, Nepali toggle (`lib/dict.ts`, `useI18n()`); every user-facing string goes through the dictionary in both languages.
+- Scrolling containers use the shadcn `ScrollArea` from `@repo/ui` (long lists: `components/progressive-list.tsx`, loads 10 more as you reach the bottom). Never hand-roll `overflow-auto`.
+- Fonts: Bricolage Grotesque for Latin, Mukta for Devanagari (`--font-sajilo`).
+- Landing page after login is `/munshi`.
 - No native form controls: use `components/choice.tsx` (shadcn Select), `@repo/ui` Textarea/Input, `components/pin-input.tsx` (InputOTP), `NepaliDatePicker`, `useConfirm`. Never `<select>`, `type="date"`, `window.confirm`.
 - All dates are Nepal-local AD strings `YYYY-MM-DD` in the DB; Bikram Sambat comes from `@repo/calendar` (`adToBs`, `bsToAd`, `bsMonthRange`). Never use `new Date('YYYY-MM-DD')` for calendar maths.
 - Money logic is pure and tested: `lib/money/ledger.ts` (dues, catch-up oldest-first, advance) and `lib/money/interest.ts` (Rs X per 100 per month, real BS month lengths, compounding toggle, interest-first repayments). Run `pnpm --filter main test`.
@@ -199,7 +202,7 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - Keep the file name `middleware.ts` (edge). OpenNext on Workers does not run Node "proxy" yet. Next is pinned to 16.3.x until OpenNext supports 16.4.
 
 ### Routes
-`/login`, `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month`, `/customers/[id]`, `/manage`, `/scan`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/more`, `/settings`, `/offline`.
+`/login`, `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month` (landscape A4 register: customers x BS days), `/customers/[id]`, `/manage`, `/scan`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/more`, `/settings`, `/offline`.
 
 ### Offline
 `lib/offline/store.ts` (Dexie: day snapshots + outbox) and `lib/offline/sync.ts` (flush on online/visibility/30s). `public/sw.js` caches the app shell and pages (network-first). Server actions in `actions/` are the only API.
