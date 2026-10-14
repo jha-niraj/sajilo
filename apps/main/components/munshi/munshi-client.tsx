@@ -4,15 +4,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { toast } from "sonner"
-import { ArrowUp, Camera, Keyboard, Mic, RotateCcw, Square, UserPlus, AudioLines, UserRoundX, ChartColumnBig, TrendingUp, HandCoins } from "lucide-react"
+import { ArrowUp, Camera, Keyboard, Mic, Square, UserPlus, AudioLines, UserRoundX, ChartColumnBig, TrendingUp, HandCoins, History, SquarePen, Trash2, WifiOff } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { toNepalDateStr } from "@repo/calendar"
+import { useConfirm } from "@repo/ui/components/ui/use-confirm"
+import { BottomSheet } from "@/components/bottom-sheet"
+import { useOnline } from "@/lib/offline/network"
 import { cn } from "@repo/ui/lib/utils"
 import { Loader } from "@repo/ui/components/ui/loader"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { useI18n } from "@/lib/i18n"
 import { refreshDay } from "@/lib/offline/sync"
-import { confirmProposal, munshiSpeak } from "@/actions/munshi.action"
-import type { MunshiMessage, MunshiTurnResult, Proposal } from "@/lib/munshi/types"
+import { confirmProposal, deleteConversation, listConversations, munshiSpeak, saveConversation } from "@/actions/munshi.action"
+import type { MunshiConversationSummary, MunshiMessage, MunshiTurnResult, Proposal } from "@/lib/munshi/types"
 import type { DictKey } from "@/lib/dict"
 import { Orb, type OrbState } from "./orb"
 import { ProposalCard } from "./proposal-card"
@@ -20,17 +25,16 @@ import { useVoiceSession } from "./use-voice-session"
 import { useDictation } from "./use-dictation"
 import { TypingDots, Waveform } from "./waveform"
 
-const STORE_KEY = "sajilo.munshi.v1"
 const SUGGESTIONS: DictKey[] = ["suggest1", "suggest2", "suggest3", "suggest4"]
 
 const newId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now() + Math.random()))
 
-function loadMessages(): MunshiMessage[] {
-    try {
-        return JSON.parse(localStorage.getItem(STORE_KEY) ?? "[]") as MunshiMessage[]
-    } catch {
-        return []
-    }
+function munshiUrl(id: string | null, mode: "voice" | "chat") {
+    const q = new URLSearchParams()
+    if (id) q.set("c", id)
+    if (mode === "chat") q.set("mode", "chat")
+    const qs = q.toString()
+    return qs ? `/munshi?${qs}` : "/munshi"
 }
 
 export function MunshiClient({
@@ -38,16 +42,30 @@ export function MunshiClient({
     hasCustomers: initialHasCustomers,
     welcome,
     initialMode = "voice",
+    conversationId,
+    initialMessages,
 }: {
     userName: string
     hasCustomers: boolean
     welcome: boolean
     initialMode?: "voice" | "chat"
+    conversationId?: string
+    initialMessages?: MunshiMessage[]
 }) {
     const { t } = useI18n()
+    const router = useRouter()
+    const online = useOnline()
     const [mode, setMode] = useState<"voice" | "chat">(initialMode)
-    const [messages, setMessages] = useState<MunshiMessage[]>([])
-    const [loaded, setLoaded] = useState(false)
+    const [convId, setConvId] = useState<string | null>(conversationId ?? null)
+    const [historyOpen, setHistoryOpen] = useState(false)
+    const firstName = userName.split(" ")[0] ?? ""
+    const [messages, setMessages] = useState<MunshiMessage[]>(() =>
+        initialMessages?.length
+            ? initialMessages
+            : welcome || !initialHasCustomers
+              ? [{ id: newId(), role: "assistant", content: t("welcomeMunshi", { name: firstName }), at: Date.now() }]
+              : [],
+    )
     const [busy, setBusy] = useState(false)
     const [confirming, setConfirming] = useState<string | null>(null)
     const [hasCustomers, setHasCustomers] = useState(initialHasCustomers)
@@ -55,20 +73,44 @@ export function MunshiClient({
     const messagesRef = useRef(messages)
     messagesRef.current = messages
 
-    const firstName = userName.split(" ")[0] ?? ""
+    const hasUserMessage = messages.some((m) => m.role === "user")
 
+    // The chat gets its id (and its URL) with his first message, so a refresh reopens it.
     useEffect(() => {
-        const saved = loadMessages()
-        if (saved.length === 0 && (welcome || !hasCustomers)) {
-            saved.push({ id: newId(), role: "assistant", content: t("welcomeMunshi", { name: firstName }), at: Date.now() })
+        if (hasUserMessage && !convId) {
+            const id = newId()
+            setConvId(id)
+            window.history.replaceState(null, "", munshiUrl(id, mode))
         }
-        setMessages(saved)
-        setLoaded(true)
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [hasUserMessage, convId, mode])
+
+    const convIdRef = useRef(convId)
+    convIdRef.current = convId
+    const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const saveNow = useCallback(async () => {
+        if (saveTimer.current) clearTimeout(saveTimer.current)
+        saveTimer.current = null
+        const id = convIdRef.current
+        if (!id || !messagesRef.current.some((m) => m.role === "user")) return
+        await saveConversation(id, messagesRef.current).catch(() => {})
+    }, [])
+    useEffect(() => {
+        if (!convId || !hasUserMessage) return
+        if (saveTimer.current) clearTimeout(saveTimer.current)
+        saveTimer.current = setTimeout(() => void saveNow(), 500)
+    }, [messages, convId, hasUserMessage, saveNow])
 
     useEffect(() => {
-        if (loaded) localStorage.setItem(STORE_KEY, JSON.stringify(messages.slice(-60)))
-    }, [messages, loaded])
+        const onHide = () => document.visibilityState === "hidden" && void saveNow()
+        document.addEventListener("visibilitychange", onHide)
+        return () => document.removeEventListener("visibilitychange", onHide)
+    }, [saveNow])
+
+    const switchMode = (m: "voice" | "chat") => {
+        if (m === "chat") voice.stop()
+        setMode(m)
+        window.history.replaceState(null, "", munshiUrl(convIdRef.current, m))
+    }
 
     const pending = useMemo(() => messages.flatMap((m) => m.proposals ?? []).filter((p) => p.status === "pending"), [messages])
 
@@ -81,14 +123,14 @@ export function MunshiClient({
     }, [])
 
     const applyResult = useCallback(
-        (res: MunshiTurnResult, userText: string | undefined) => {
+        (res: MunshiTurnResult, userText: string | undefined, via?: "voice") => {
             for (const r of res.resolved) setProposalStatus(r.id, r.status)
             if (res.error === "no_speech") {
                 toast(t("didntHear"))
                 return
             }
             const additions: MunshiMessage[] = []
-            if (userText) additions.push({ id: newId(), role: "user", content: userText, at: Date.now() })
+            if (userText) additions.push({ id: newId(), role: "user", content: userText, at: Date.now(), ...(via ? { via } : {}) })
             const reply = res.error ? (res.error === "no_llm" ? t("noLlm") : t("munshiError")) : res.reply
             if (reply || res.proposals.length) {
                 additions.push({ id: newId(), role: "assistant", content: reply, proposals: res.proposals, at: Date.now() })
@@ -106,7 +148,7 @@ export function MunshiClient({
             const clean = text.trim()
             if (!clean || busy) return
             setBusy(true)
-            setMessages((ms) => [...ms, { id: newId(), role: "user", content: clean, at: Date.now() }])
+            setMessages((ms) => [...ms, { id: newId(), role: "user", content: clean, at: Date.now(), ...(speakReply ? { via: "voice" as const } : {}) }])
             try {
                 const res = (await fetch("/api/munshi", {
                     method: "POST",
@@ -135,7 +177,7 @@ export function MunshiClient({
             fd.set("pending", JSON.stringify(pendingNow()))
             fd.set("speak", speakReply ? "1" : "0")
             const res = (await fetch("/api/munshi", { method: "POST", body: fd }).then((r) => r.json())) as MunshiTurnResult
-            applyResult(res, res.heard)
+            applyResult(res, res.heard, speakReply ? "voice" : undefined)
             return res
         },
         [applyResult],
@@ -160,10 +202,20 @@ export function MunshiClient({
         if (res.ok) toast.success(`${t("savedDone")} · ${p.title}`)
     }
 
-    const reset = () => {
+    const reset = async () => {
         voice.stop()
+        await saveNow()
         setMessages([])
-        localStorage.removeItem(STORE_KEY)
+        setConvId(null)
+        window.history.replaceState(null, "", munshiUrl(null, mode))
+    }
+
+    const openConversation = async (id: string) => {
+        setHistoryOpen(false)
+        if (id === convIdRef.current) return
+        voice.stop()
+        await saveNow()
+        router.push(munshiUrl(id, mode))
     }
 
     const orbState: OrbState = voice.status === "off" ? (busy ? "thinking" : "idle") : voice.status
@@ -172,21 +224,24 @@ export function MunshiClient({
     const empty = messages.filter((m) => m.role === "user").length === 0
 
     return (
-        <div className="relative flex -mb-6 h-[calc(100dvh-3.5rem-1px-env(safe-area-inset-bottom))] flex-col overflow-hidden">
+        <div className="relative flex -mb-6 h-[calc(100dvh-78px-env(safe-area-inset-bottom))] flex-col overflow-hidden">
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
                 <div className="absolute -top-32 left-1/2 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgb(232_140_70/0.22),transparent_65%)] blur-2xl" />
                 <div className="absolute bottom-0 right-[-120px] h-[360px] w-[360px] rounded-full bg-[radial-gradient(circle,rgb(123_97_255/0.12),transparent_65%)] blur-2xl" />
             </div>
 
             <header className="flex items-center justify-between gap-3 px-4 pt-safe">
-                <div className="pt-4">
+                <div className="min-w-0 pt-4">
                     <h1 className="text-[22px] font-semibold leading-tight text-ink">{t("munshi")}</h1>
-                    <p className="text-[14px] text-ink-3">{t("munshiTagline")}</p>
+                    <p className="truncate whitespace-nowrap text-[13px] text-ink-3">{t("munshiTagline")}</p>
                 </div>
-                <div className="flex items-center gap-2 pt-4">
+                <div className="flex shrink-0 items-center gap-1.5 pt-4">
+                    <button type="button" onClick={() => setHistoryOpen(true)} aria-label={t("pastChats")} className="flex h-9 w-9 items-center justify-center rounded-full bg-paper-2 text-ink-2">
+                        <History className="h-[18px] w-[18px]" />
+                    </button>
                     {!empty && (
-                        <button type="button" onClick={reset} aria-label={t("newConversation")} className="flex h-10 w-10 items-center justify-center rounded-full bg-paper-2 text-ink-2">
-                            <RotateCcw className="h-5 w-5" />
+                        <button type="button" onClick={() => void reset()} aria-label={t("newConversation")} className="flex h-9 w-9 items-center justify-center rounded-full bg-paper-2 text-ink-2">
+                            <SquarePen className="h-[18px] w-[18px]" />
                         </button>
                     )}
                     <div className="grid grid-cols-2 rounded-full bg-paper-2 p-1 text-[14px] font-semibold" role="tablist">
@@ -196,10 +251,7 @@ export function MunshiClient({
                                 type="button"
                                 role="tab"
                                 aria-selected={mode === m}
-                                onClick={() => {
-                                    if (m === "chat") voice.stop()
-                                    setMode(m)
-                                }}
+                                onClick={() => switchMode(m)}
                                 className={cn("flex h-9 items-center gap-1.5 rounded-full px-3.5 transition-colors", mode === m ? "bg-card text-ink shadow-sm" : "text-ink-3")}
                             >
                                 {m === "voice" ? <AudioLines className="h-4 w-4" /> : <Keyboard className="h-4 w-4" />}
@@ -210,7 +262,9 @@ export function MunshiClient({
                 </div>
             </header>
 
-            {mode === "voice" ? (
+            {!online ? (
+                <MunshiOffline />
+            ) : mode === "voice" ? (
                 <VoiceView
                     orbState={orbState}
                     level={voice.level}
@@ -250,7 +304,97 @@ export function MunshiClient({
                     hasCustomers={hasCustomers}
                 />
             )}
+            <HistorySheet open={historyOpen} onOpenChange={setHistoryOpen} currentId={convId} onOpen={(id) => void openConversation(id)} onDeleted={(id) => id === convIdRef.current && void reset()} />
         </div>
+    )
+}
+
+function MunshiOffline() {
+    const { t } = useI18n()
+    return (
+        <div className="flex flex-1 flex-col items-center justify-center px-8 pb-10 text-center">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-paper-2 text-ink-3">
+                <WifiOff className="h-7 w-7" />
+            </span>
+            <h2 className="mt-4 text-[18px] font-semibold text-ink">{t("munshiOfflineTitle")}</h2>
+            <p className="mt-1 max-w-xs text-[14px] leading-snug text-ink-2">{t("munshiOfflineBody")}</p>
+            <Link href="/today" className="mt-5 flex h-11 items-center rounded-full bg-ink px-5 text-[14px] font-semibold text-paper">
+                {t("openToday")}
+            </Link>
+        </div>
+    )
+}
+
+function HistorySheet({
+    open,
+    onOpenChange,
+    currentId,
+    onOpen,
+    onDeleted,
+}: {
+    open: boolean
+    onOpenChange: (o: boolean) => void
+    currentId: string | null
+    onOpen: (id: string) => void
+    onDeleted: (id: string) => void
+}) {
+    const { t, date } = useI18n()
+    const online = useOnline()
+    const { confirm, confirmDialog } = useConfirm()
+    const [items, setItems] = useState<MunshiConversationSummary[] | null>(null)
+
+    useEffect(() => {
+        if (!open || !online) return
+        let alive = true
+        listConversations()
+            .then((rows) => alive && setItems(rows))
+            .catch(() => alive && setItems([]))
+        return () => {
+            alive = false
+        }
+    }, [open, online])
+
+    const remove = async (c: MunshiConversationSummary) => {
+        const ok = await confirm({ title: t("deleteChatTitle"), description: c.title, confirmText: t("delete"), cancelText: t("cancel"), destructive: true })
+        if (!ok) return
+        setItems((xs) => xs?.filter((x) => x.id !== c.id) ?? null)
+        await deleteConversation(c.id).catch(() => toast.error(t("somethingWrong")))
+        onDeleted(c.id)
+    }
+
+    return (
+        <>
+            <BottomSheet open={open} onOpenChange={onOpenChange} title={t("pastChats")}>
+                <div className="px-4 pb-4">
+                    {!online ? (
+                        <p className="py-8 text-center text-[14px] text-ink-3">{t("munshiOfflineBody")}</p>
+                    ) : items === null ? (
+                        <div className="flex justify-center py-10">
+                            <Loader size={22} />
+                        </div>
+                    ) : items.length === 0 ? (
+                        <p className="py-8 text-center text-[14px] text-ink-3">{t("noPastChats")}</p>
+                    ) : (
+                        <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-card ring-1 ring-line">
+                            {items.map((c) => (
+                                <li key={c.id} className={cn("flex items-center gap-2 pl-4 pr-1.5", c.id === currentId && "bg-saffron-soft/50")}>
+                                    <button type="button" onClick={() => onOpen(c.id)} className="min-w-0 flex-1 py-3 text-left">
+                                        <p className="truncate text-[15px] font-medium text-ink">{c.title || t("untitledChat")}</p>
+                                        <p className="text-[12px] text-ink-3">
+                                            {date(toNepalDateStr(new Date(c.updatedAt)), true)} · {t("questionsCount", { count: c.messageCount })}
+                                        </p>
+                                    </button>
+                                    <button type="button" onClick={() => void remove(c)} aria-label={t("delete")} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-3 active:bg-paper-2">
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </BottomSheet>
+            {confirmDialog}
+        </>
     )
 }
 
@@ -420,7 +564,7 @@ function ChatView(props: {
                             {m.content && (
                                 <div
                                     className={cn(
-                                        "whitespace-pre-wrap rounded-[22px] px-4 py-3 text-[16px] leading-relaxed",
+                                        "whitespace-pre-wrap rounded-[22px] px-4 py-2.5 text-[15px] leading-relaxed",
                                         m.role === "user" ? "max-w-[85%] rounded-br-md bg-ink text-paper" : "w-full rounded-bl-md bg-card text-ink ring-1 ring-line",
                                     )}
                                 >
@@ -429,6 +573,7 @@ function ChatView(props: {
                                             <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#ffb36b] to-[#7b61ff]" /> {t("munshi")}
                                         </span>
                                     )}
+                                    {m.via === "voice" && m.role === "user" && <Mic className="-mt-0.5 mr-1.5 inline h-3.5 w-3.5 opacity-60" />}
                                     {m.content}
                                 </div>
                             )}

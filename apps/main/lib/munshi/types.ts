@@ -18,6 +18,15 @@ export interface MunshiMessage {
     content: string
     proposals?: Proposal[]
     at: number
+    /** Spoken in Talk mode (shown with a small mic in the chat) */
+    via?: "voice"
+}
+
+export interface MunshiConversationSummary {
+    id: string
+    title: string
+    messageCount: number
+    updatedAt: string
 }
 
 export interface MunshiTurnResult {
