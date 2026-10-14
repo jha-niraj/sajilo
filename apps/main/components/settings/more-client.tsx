@@ -1,17 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Calculator, Camera, ChevronRight, Download, LogOut, Settings, Users, Wallet } from "lucide-react"
+import { Calculator, Camera, ChevronRight, LogOut, Settings, Users, Wallet } from "lucide-react"
 import { signOut } from "@repo/auth/client"
 import { PageTop } from "@/components/shell/page-top"
+import { InstallCard } from "@/components/shell/install-card"
 import { BrandMark } from "@/components/brand"
 import { useI18n } from "@/lib/i18n"
 import { displayPhone } from "@/lib/phone"
 import { clearLocalData } from "@/lib/offline/store"
 import type { DictKey } from "@/lib/dict"
-
-type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }
 
 const LINKS: { href: string; label: DictKey; icon: typeof Users }[] = [
     { href: "/manage", label: "manageTitle", icon: Users },
@@ -23,17 +21,6 @@ const LINKS: { href: string; label: DictKey; icon: typeof Users }[] = [
 
 export function MoreClient({ name, phone }: { name: string; phone: string | null }) {
     const { t } = useI18n()
-    const [install, setInstall] = useState<InstallEvent | null>(null)
-
-    useEffect(() => {
-        const onPrompt = (e: Event) => {
-            e.preventDefault()
-            setInstall(e as InstallEvent)
-        }
-        window.addEventListener("beforeinstallprompt", onPrompt)
-        return () => window.removeEventListener("beforeinstallprompt", onPrompt)
-    }, [])
-
     const logout = async () => {
         await signOut()
         await clearLocalData()
@@ -52,20 +39,7 @@ export function MoreClient({ name, phone }: { name: string; phone: string | null
                     </div>
                 </div>
 
-                {install && (
-                    <button
-                        type="button"
-                        onClick={async () => {
-                            await install.prompt()
-                            setInstall(null)
-                        }}
-                        className="flex w-full items-center gap-3 rounded-[24px] bg-saffron p-4 text-left text-white"
-                    >
-                        <Download className="h-6 w-6" />
-                        <span className="flex-1 text-[15px] font-semibold">{t("installApp")}</span>
-                        <span className="rounded-full bg-white/20 px-3 py-1 text-[14px] font-semibold">{t("install")}</span>
-                    </button>
-                )}
+                <InstallCard />
 
                 <ul className="divide-y divide-line overflow-hidden rounded-[24px] bg-card ring-1 ring-line">
                     {LINKS.map(({ href, label, icon: Icon }) => (

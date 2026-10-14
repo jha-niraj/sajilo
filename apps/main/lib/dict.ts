@@ -305,6 +305,8 @@ const en = {
     optional: "optional",
     installApp: "Add Sajilo to your home screen",
     install: "Add",
+    installHintIos: "Tap the Share button below, then \"Add to Home Screen\".",
+    installHintOther: "Open the browser menu (⋮) and tap \"Add to Home screen\" or \"Install app\".",
 } as const
 
 export type DictKey = keyof typeof en
@@ -602,6 +604,8 @@ const ne: Record<DictKey, string> = {
     optional: "चाहे भने",
     installApp: "सजिलो होम स्क्रिनमा राख्नुहोस्",
     install: "राख्नुहोस्",
+    installHintIos: "तलको Share बटन थिच्नुहोस्, अनि \"Add to Home Screen\" छान्नुहोस्।",
+    installHintOther: "ब्राउजरको मेनु (⋮) खोल्नुहोस् र \"Add to Home screen\" वा \"Install app\" थिच्नुहोस्।",
 }
 
 export const dict: Record<Lang, Record<DictKey, string>> = { en, ne }

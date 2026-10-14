@@ -10,6 +10,7 @@ import { DateField } from "@/components/day-picker"
 import { WEEKDAYS_EN, WEEKDAYS_NE, toNepaliDigits } from "@repo/calendar"
 import { authClient } from "@repo/auth/client"
 import { PageTop } from "@/components/shell/page-top"
+import { InstallCard } from "@/components/shell/install-card"
 import { LangToggle } from "@/components/lang-toggle"
 import { PinInput } from "@/components/pin-input"
 import { useI18n } from "@/lib/i18n"
@@ -82,6 +83,8 @@ export function SettingsClient({ initial, today }: { initial: SettingsView; toda
         <>
             <PageTop title={t("settingsTitle")} backHref="/more" />
             <div className="space-y-4 px-4 pt-4">
+                <InstallCard />
+
                 <Card title={t("language")}>
                     <LangToggle onChange={(l) => patch({ language: l })} className="text-[16px]" />
                 </Card>

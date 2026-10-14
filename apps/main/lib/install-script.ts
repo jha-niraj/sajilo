@@ -1,0 +1,2 @@
+// Inlined in the root layout so `beforeinstallprompt` is caught before React hydrates (see lib/install.ts).
+export const INSTALL_CAPTURE_SCRIPT = `addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__sajiloInstall=e;dispatchEvent(new Event("sajilo:install"))});addEventListener("appinstalled",function(){window.__sajiloInstall=null;dispatchEvent(new Event("sajilo:install"))})`

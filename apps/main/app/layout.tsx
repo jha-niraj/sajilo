@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { Bricolage_Grotesque, Mukta } from "next/font/google"
 import "./sajilo.css"
 import "@/lib/env"
+import { INSTALL_CAPTURE_SCRIPT } from "@/lib/install-script"
 import { Providers } from "./providers"
 import type { Lang } from "@/lib/dict"
 
@@ -51,6 +52,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     return (
         <html lang={lang} className={`${bricolage.variable} ${mukta.variable}`}>
             <body className="min-h-dvh bg-paper text-ink antialiased">
+                <script dangerouslySetInnerHTML={{ __html: INSTALL_CAPTURE_SCRIPT }} />
                 <Providers lang={lang}>{children}</Providers>
             </body>
         </html>

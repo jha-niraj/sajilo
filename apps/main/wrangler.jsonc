@@ -23,7 +23,25 @@
 		"ADMIN_APP_URL": "https://admin.sajilo.example.com"
 	},
 
+	// Same as Gurukul and the Cloudflare dashboard: logs and traces kept, every request sampled.
+	// Leaving this out would switch them off again on the next deploy.
 	"observability": {
-		"logs": { "enabled": true }
+		"enabled": false,
+		"head_sampling_rate": 1,
+		"redact_query_string": false,
+		"logs": {
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"invocation_logs": true,
+			"persist": true
+		},
+		"traces": {
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"persist": true
+		},
+		"issue_detection": {
+			"enabled": true
+		}
 	}
 }
