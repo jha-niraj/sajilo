@@ -101,7 +101,7 @@ export function MunshiClient({ userName, hasCustomers: initialHasCustomers, welc
                 const res = (await fetch("/api/munshi", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: clean, history: history(), pending: pendingNow() }),
+                    body: JSON.stringify({ text: clean, history: history(), pending: pendingNow(), voice: speakReply }),
                 }).then((r) => r.json())) as MunshiTurnResult
                 applyResult(res, undefined)
                 if (speakReply && res.reply) {
@@ -162,7 +162,7 @@ export function MunshiClient({ userName, hasCustomers: initialHasCustomers, welc
     const empty = messages.filter((m) => m.role === "user").length === 0
 
     return (
-        <div className="relative flex h-[calc(100dvh-5rem-env(safe-area-inset-bottom))] flex-col overflow-hidden">
+        <div className="relative flex h-[calc(100dvh-6.5rem-env(safe-area-inset-bottom))] flex-col overflow-hidden">
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
                 <div className="absolute -top-32 left-1/2 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgb(232_140_70/0.22),transparent_65%)] blur-2xl" />
                 <div className="absolute bottom-0 right-[-120px] h-[360px] w-[360px] rounded-full bg-[radial-gradient(circle,rgb(123_97_255/0.12),transparent_65%)] blur-2xl" />

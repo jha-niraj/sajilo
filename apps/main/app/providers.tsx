@@ -15,7 +15,7 @@ export function Providers({ lang, children }: { lang: Lang; children: React.Reac
     return (
         <I18nProvider initialLang={lang}>
             {children}
-            <Toaster position="top-center" />
+            <Toaster position="bottom-center" offset={{ bottom: "calc(7rem + env(safe-area-inset-bottom))" }} mobileOffset={{ bottom: "calc(7rem + env(safe-area-inset-bottom))" }} />
         </I18nProvider>
     )
 }

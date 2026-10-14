@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowLeft, ArrowRight, Check } from "lucide-react"
@@ -28,6 +28,13 @@ export function SignupClient() {
     const [error, setError] = useState<string | null>(null)
     const [taken, setTaken] = useState(false)
     const [busy, setBusy] = useState(false)
+    const nameRef = useRef<HTMLInputElement>(null)
+
+    // Keep anything typed before the page finished loading (React would otherwise reset it to "").
+    useEffect(() => {
+        const typed = nameRef.current?.value
+        if (typed) setName(typed)
+    }, [])
 
     const go = (next: Step, dir: 1 | -1 = 1) => {
         setError(null)
@@ -136,6 +143,7 @@ export function SignupClient() {
                 >
                     <AuthHeading title={t("nameTitle")} sub={t("nameSub")} />
                     <input
+                        ref={nameRef}
                         autoFocus
                         value={name}
                         onChange={(e) => setName(e.target.value)}

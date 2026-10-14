@@ -93,37 +93,40 @@ export function RowSheet({
                 />
             </div>
 
-            <div className="mt-5 rounded-[22px] bg-card p-4 ring-1 ring-line">
-                <p className="text-[15px] font-medium text-ink-2">{t("otherAmount")}</p>
-                <p className={cn("mt-1 text-[40px] font-semibold leading-tight tabular", amount ? "text-ink" : "text-ink-3/50")}>
-                    {money(typed)}
-                </p>
-                {typed > 0 && (
-                    <div className="mt-2 space-y-1 text-[15px]">
-                        <Line label={t("todaysPart")} value={money(preview.toToday)} />
-                        {preview.toOld > 0 && (
-                            <Line label={t("oldDuePart", { days: preview.oldDaysSettled })} value={money(preview.toOld)} className="text-late" />
-                        )}
-                        {preview.toAdvance > 0 && <Line label={t("extraPart")} value={money(preview.toAdvance)} className="text-paid" />}
-                        {preview.todayOutstanding + preview.arrears > 0 && (
-                            <Line label={t("stillDue")} value={money(preview.todayOutstanding + preview.arrears)} className="text-miss" />
-                        )}
-                    </div>
-                )}
+            <div className="mt-3 rounded-[20px] bg-card px-4 py-3 ring-1 ring-line">
+                <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-[14px] font-medium text-ink-2">{t("otherAmount")}</p>
+                    <p className={cn("text-[28px] font-semibold leading-tight tabular", amount ? "text-ink" : "text-ink-3/50")}>{money(typed)}</p>
+                </div>
+                {/* Fixed height: the keypad must not move under his thumb while he types. */}
+                <div className="mt-1.5 flex h-10 flex-wrap content-start gap-x-3 gap-y-0.5 overflow-hidden text-[12px] leading-tight">
+                    {typed > 0 ? (
+                        <>
+                            <Part label={t("todaysPart")} value={money(preview.toToday)} />
+                            {preview.toOld > 0 && <Part label={t("oldDuePart", { days: preview.oldDaysSettled })} value={money(preview.toOld)} className="text-late" />}
+                            {preview.toAdvance > 0 && <Part label={t("extraPart")} value={money(preview.toAdvance)} className="text-paid" />}
+                            {preview.todayOutstanding + preview.arrears > 0 && (
+                                <Part label={t("stillDue")} value={money(preview.todayOutstanding + preview.arrears)} className="text-miss" />
+                            )}
+                        </>
+                    ) : (
+                        <span className="text-ink-3">{t("typeAmountHint")}</span>
+                    )}
+                </div>
             </div>
 
-            <Keypad className="mt-4" onKey={onKey} extraKey="00" disabled={locked} />
+            <Keypad className="mt-3" compact onKey={onKey} extraKey="00" disabled={locked} />
 
             <button
                 type="button"
                 disabled={locked || typed <= 0}
                 onClick={() => done("paid", typed)}
-                className="mt-4 flex h-16 w-full items-center justify-center rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-30"
+                className="mt-3 flex h-14 w-full items-center justify-center rounded-2xl bg-ink text-lg font-semibold text-paper disabled:opacity-30"
             >
                 {t("save")}
             </button>
 
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-2 flex items-center justify-between">
                 <Link
                     href={`/customers/${row.customer.id}`}
                     className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[15px] font-medium text-ink-2 active:bg-paper-2"
@@ -144,12 +147,11 @@ export function RowSheet({
     )
 }
 
-function Line({ label, value, className }: { label: string; value: string; className?: string }) {
+function Part({ label, value, className }: { label: string; value: string; className?: string }) {
     return (
-        <div className={cn("flex items-center justify-between text-ink-2", className)}>
-            <span>{label}</span>
-            <span className="font-semibold tabular">{value}</span>
-        </div>
+        <span className={cn("whitespace-nowrap text-ink-2", className)}>
+            {label} <b className="font-semibold tabular">{value}</b>
+        </span>
     )
 }
 
@@ -174,17 +176,17 @@ function QuickButton({
             disabled={disabled}
             onClick={onClick}
             className={cn(
-                "flex min-h-[76px] flex-col items-start justify-center gap-1 rounded-[20px] px-4 py-3 text-left transition-colors disabled:opacity-40",
+                "flex min-h-[60px] flex-col items-start justify-center gap-0.5 rounded-[18px] px-3.5 py-2 text-left transition-colors disabled:opacity-40",
                 tone === "paid" && "bg-paid text-white active:bg-paid/90",
                 tone === "late" && "bg-late-soft text-late active:bg-late-soft/70",
                 tone === "miss" && "bg-miss-soft text-miss active:bg-miss-soft/70",
             )}
         >
-            <span className="flex items-center gap-2 text-[18px] font-semibold leading-tight">
+            <span className="flex items-center gap-2 text-[16px] font-semibold leading-tight">
                 {icon}
                 {label}
             </span>
-            {sub && <span className="text-[13px] opacity-85">{sub}</span>}
+            {sub && <span className="text-[12px] opacity-85">{sub}</span>}
         </button>
     )
 }

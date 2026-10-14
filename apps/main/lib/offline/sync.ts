@@ -72,6 +72,7 @@ async function doFlush() {
         const done = [...res.applied, ...res.rejected.map((r) => r.opId)]
         await db.outbox.bulkDelete(done)
         state.lastError = null
+        if (res.applied.length) window.dispatchEvent(new Event("sajilo:synced"))
         if (res.rejected.some((r) => r.reason === "locked")) {
             state.lockedRejections++
             const dates = new Set(ops.filter((o) => res.rejected.some((r) => r.opId === o.opId)).map((o) => o.date))

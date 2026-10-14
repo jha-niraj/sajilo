@@ -12,7 +12,8 @@ export function CashClient({ cash }: { cash: CashOnHand }) {
             <div className="space-y-4 px-4 pt-4">
                 <section className="rounded-[26px] bg-ink p-5 text-paper">
                     <p className="text-[15px] text-paper/70">{t("shouldHave")}</p>
-                    <p className="mt-1 text-[40px] font-semibold leading-none tabular">{money(cash.shouldHave)}</p>
+                    <p className={`mt-1 text-[36px] font-semibold leading-none tabular ${cash.shouldHave < 0 ? "text-[#ffb4a8]" : ""}`}>{money(cash.shouldHave)}</p>
+                    {cash.shouldHave < 0 && <p className="mt-2 text-[13px] text-paper/80">{t("cashNegative", { amount: money(-cash.shouldHave) })}</p>}
                 </section>
                 <section className="space-y-3 rounded-[24px] bg-card p-5 ring-1 ring-line text-[17px]">
                     <Line label={t("collectedThisMonth")} value={`+ ${money(cash.collected)}`} className="text-ink" />

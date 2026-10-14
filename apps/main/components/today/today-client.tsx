@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Lock, Search, UserPlus, CheckCheck, Coffee, CalendarDays, ChevronDown } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
@@ -24,6 +25,14 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
     const [sheet, setSheet] = useState<{ row: DayRow; seq: number } | null>(null)
     const [sheetOpen, setSheetOpen] = useState(false)
     const scrolled = useRef(false)
+    const router = useRouter()
+
+    // Server-rendered bits (deposit banner total) catch up once marks reach the server.
+    useEffect(() => {
+        const onSynced = () => router.refresh()
+        window.addEventListener("sajilo:synced", onSynced)
+        return () => window.removeEventListener("sajilo:synced", onSynced)
+    }, [router])
 
     const locked = Boolean(snapshot?.lockedAt)
     const carryBy = useMemo(() => new Map(snapshot?.carry.map((c) => [c.customerId, c]) ?? []), [snapshot])

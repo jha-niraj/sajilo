@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Camera, Images, Plus, Sparkles, Trash2 } from "lucide-react"
+import { Camera, ChevronDown, Images, Plus, Sparkles, Trash2 } from "lucide-react"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@repo/ui/components/ui/collapsible"
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { cn } from "@repo/ui/lib/utils"
 import { Loader } from "@repo/ui/components/ui/loader"
-import { NepaliDatePicker } from "@repo/ui/components/ui/nepali-date-picker"
+import { DateField } from "@/components/day-picker"
 import { bsToAd } from "@repo/calendar"
 import { PageTop } from "@/components/shell/page-top"
 import { useI18n } from "@/lib/i18n"
@@ -322,7 +324,7 @@ export function ScanClient({
                                         {kind === "customers" ? (
                                             <input value={r.phone} onChange={(e) => update(r.key, { phone: e.target.value })} placeholder={t("phone")} className={inputCls} />
                                         ) : (
-                                            <NepaliDatePicker value={r.date} onChange={(v) => update(r.key, { date: v })} maxDate={today} className="h-11 w-full rounded-xl" />
+                                            <DateField value={r.date} onChange={(v) => update(r.key, { date: v })} max={today} className="h-11" />
                                         )}
                                     </div>
                                     {kind === "customers" && (
@@ -360,10 +362,17 @@ export function ScanClient({
                             {kind !== "customers" && rows.length > 0 && ` · ${money(rows.reduce((s, r) => s + (Number(r.amount) || 0), 0))}`}
                         </button>
                         {rawText && (
-                            <details className="rounded-2xl bg-card p-4 ring-1 ring-line">
-                                <summary className="cursor-pointer text-[15px] font-medium text-ink-2">{t("rawText")}</summary>
-                                <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-[14px] text-ink-2">{rawText}</pre>
-                            </details>
+                            <Collapsible className="rounded-2xl bg-card ring-1 ring-line">
+                                <CollapsibleTrigger className="group flex w-full items-center justify-between px-4 py-3 text-[15px] font-medium text-ink-2">
+                                    {t("rawText")}
+                                    <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                    <ScrollArea orientation="vertical" viewportClassName="max-h-64">
+                                        <pre className="whitespace-pre-wrap break-words px-4 pb-4 font-sans text-[14px] text-ink-2">{rawText}</pre>
+                                    </ScrollArea>
+                                </CollapsibleContent>
+                            </Collapsible>
                         )}
                     </>
                 )}

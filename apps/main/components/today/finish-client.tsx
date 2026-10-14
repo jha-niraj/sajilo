@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { Ban, Check, CheckCircle2, Lock, LockOpen, Store } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { PageTop } from "@/components/shell/page-top"
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { Keypad } from "@/components/keypad"
 import { useI18n } from "@/lib/i18n"
 import { closeDay, reopenDay } from "@/actions/collection.action"
@@ -70,10 +71,14 @@ export function FinishClient() {
                             <p className="text-[17px] font-semibold text-ink">
                                 {t("notMarked")} · {pending.length}
                             </p>
-                            <ul className="mt-3 divide-y divide-line">
+                            <ScrollArea orientation="vertical" className="mt-2" viewportClassName="max-h-[248px]">
+                            <ul className="divide-y divide-line pr-2">
                                 {pending.map((r) => (
                                     <li key={r.customer.id} className="flex items-center gap-2 py-2.5">
-                                        <span className="min-w-0 flex-1 truncate text-[17px] text-ink">{r.customer.name}</span>
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-[15px] font-medium text-ink">{r.customer.name}</span>
+                                            <span className="block text-[12px] text-ink-3 tabular">{money(r.view.expected)}</span>
+                                        </span>
                                         <IconBtn
                                             label={t("received")}
                                             tone="paid"
@@ -101,6 +106,7 @@ export function FinishClient() {
                                     </li>
                                 ))}
                             </ul>
+                            </ScrollArea>
                             {!locked && (
                                 <button
                                     type="button"
@@ -125,17 +131,21 @@ export function FinishClient() {
                             {money(counted ?? snapshot?.countedCash ?? 0)}
                         </p>
                     </div>
-                    {counted !== null && (
-                        <p
-                            className={cn(
-                                "mt-2 rounded-2xl px-4 py-3 text-center text-[18px] font-semibold",
-                                diff === 0 ? "bg-paid-soft text-paid" : "bg-flag-soft text-[#8a5a08]",
-                            )}
-                        >
-                            {diff === 0 ? `✓ ${t("matched")}` : diff < 0 ? t("short", { amount: money(-diff) }) : t("over", { amount: money(diff) })}
-                        </p>
-                    )}
-                    {!locked && <Keypad className="mt-4" onKey={onKey} extraKey="00" />}
+                    <p
+                        className={cn(
+                            "mt-2 flex h-12 items-center justify-center rounded-2xl px-4 text-center text-[16px] font-semibold",
+                            counted === null ? "bg-paper-2 text-[14px] font-medium text-ink-3" : diff === 0 ? "bg-paid-soft text-paid" : "bg-flag-soft text-[#8a5a08]",
+                        )}
+                    >
+                        {counted === null
+                            ? t("countHint")
+                            : diff === 0
+                              ? `✓ ${t("matched")}`
+                              : diff < 0
+                                ? t("short", { amount: money(-diff) })
+                                : t("over", { amount: money(diff) })}
+                    </p>
+                    {!locked && <Keypad className="mt-3" compact onKey={onKey} extraKey="00" />}
                 </section>
 
                 {locked ? (

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { Switch } from "@repo/ui/components/ui/switch"
-import { NepaliDatePicker } from "@repo/ui/components/ui/nepali-date-picker"
+import { DateField } from "@/components/day-picker"
 import { PageTop } from "@/components/shell/page-top"
 import { useI18n } from "@/lib/i18n"
 import { toAsciiDigits } from "@/lib/phone"
@@ -58,7 +58,7 @@ export function CalculatorClient({
                             value={loanId}
                             onChange={setLoanId}
                             options={[
-                                { value: "", label: `${t("newLoan")} …` },
+                                { value: "", label: t("calcOwnNumbers") },
                                 ...loans.map((l) => ({ value: l.id, label: `${l.borrowerName} · ${money(l.principal)}` })),
                             ]}
                         />
@@ -84,7 +84,7 @@ export function CalculatorClient({
                                 </Field>
                             </div>
                             <Field label={t("givenOn")}>
-                                <NepaliDatePicker value={start} onChange={setStart} className="h-12 w-full rounded-xl" />
+                                <DateField value={start} onChange={setStart} />
                             </Field>
                             <label className="flex items-center justify-between gap-4">
                                 <span className="text-[15px] text-ink">{t("compounding")}</span>
@@ -93,7 +93,7 @@ export function CalculatorClient({
                         </>
                     )}
                     <Field label={t("calcOn")}>
-                        <NepaliDatePicker value={asOf} onChange={setAsOf} className="h-12 w-full rounded-xl" />
+                        <DateField value={asOf} onChange={setAsOf} />
                     </Field>
                 </section>
 

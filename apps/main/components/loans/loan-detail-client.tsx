@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { CheckCircle2, Phone, RotateCcw, Trash2, Undo2 } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
-import { NepaliDatePicker } from "@repo/ui/components/ui/nepali-date-picker"
+import { DateField } from "@/components/day-picker"
 import { useConfirm } from "@repo/ui/components/ui/use-confirm"
 import { PageTop } from "@/components/shell/page-top"
 import { BottomSheet } from "@/components/bottom-sheet"
@@ -110,7 +110,7 @@ export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today
                     <p className="text-[16px] font-semibold text-[#7a3d10]">{t("calculator")}</p>
                     <div className="mt-2">
                         <p className="mb-1 text-[14px] text-[#7a3d10]">{t("calcOn")}</p>
-                        <NepaliDatePicker value={quoteDate} onChange={setQuoteDate} minDate={loan.startDate} className="h-12 w-full rounded-xl bg-card" />
+                        <DateField value={quoteDate} onChange={setQuoteDate} min={loan.startDate} className="bg-card" />
                     </div>
                     <div className="mt-3 rounded-2xl bg-card p-3">
                         <StatementTotals statement={quote} big />
@@ -186,7 +186,7 @@ export function LoanDetailClient({ loan, today, basis }: { loan: LoanView; today
                             className="h-16 w-full bg-transparent px-3 text-[28px] font-semibold text-ink outline-none"
                         />
                     </div>
-                    <NepaliDatePicker value={repayDate} onChange={setRepayDate} minDate={loan.startDate} maxDate={today} className="h-12 w-full rounded-xl" />
+                    <DateField value={repayDate} onChange={setRepayDate} min={loan.startDate} max={today} />
                     {repayPreview?.row && (
                         <div className="rounded-2xl bg-card p-4 text-[15px] ring-1 ring-line">
                             <p className="text-paid">{t("toInterest", { amount: money(repayPreview.row.toInterest) })}</p>

@@ -43,10 +43,10 @@ export async function POST(req: Request) {
     const isVoice = (req.headers.get("content-type") ?? "").includes("multipart/form-data")
     try {
         if (!isVoice) {
-            const body = (await req.json()) as { text?: string; history?: unknown; pending?: unknown }
+            const body = (await req.json()) as { text?: string; history?: unknown; pending?: unknown; voice?: boolean }
             const text = String(body.text ?? "").trim().slice(0, 2000)
             if (!text) return fail("no_speech")
-            const out = await runMunshi({ ...base, history: cleanHistory(body.history), text, pending: cleanPending(body.pending), voice: false })
+            const out = await runMunshi({ ...base, history: cleanHistory(body.history), text, pending: cleanPending(body.pending), voice: body.voice === true })
             return NextResponse.json(out satisfies MunshiTurnResult)
         }
 

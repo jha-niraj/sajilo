@@ -40,10 +40,14 @@ interface NepaliCalendarProps {
     onSelect: (date: Date) => void;
     minDate?: Date | null;
     maxDate?: Date | null;
+    /** Override labels so an app can show its own spelling/language (12 months, 7 weekdays from Sunday). */
+    monthNames?: readonly string[];
+    weekdayNames?: readonly string[];
+    formatNumber?: (n: number) => string;
 }
 
 /** A native Bikram Sambat month grid. Emits the equivalent AD Date on select. */
-export function NepaliCalendar({ selected, onSelect, minDate, maxDate }: NepaliCalendarProps) {
+export function NepaliCalendar({ selected, onSelect, minDate, maxDate, monthNames = BS_MONTHS, weekdayNames = WEEKDAYS, formatNumber = String }: NepaliCalendarProps) {
     const todayBs = useMemo(() => getBsPartsFromAd(new Date()), []);
     const selectedBs = selected ? getBsPartsFromAd(selected) : null;
     const initial = selectedBs ?? todayBs ?? { year: BS_YEAR_MIN, month: 1, day: 1 };
@@ -95,7 +99,7 @@ export function NepaliCalendar({ selected, onSelect, minDate, maxDate }: NepaliC
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            {BS_MONTHS.map((name, i) => (
+                            {monthNames.map((name, i) => (
                                 <SelectItem key={name} value={String(i + 1)} className="cursor-pointer">{name}</SelectItem>
                             ))}
                         </SelectContent>
@@ -109,7 +113,7 @@ export function NepaliCalendar({ selected, onSelect, minDate, maxDate }: NepaliC
                                 platform rule and matching `examinations/time-field`. */}
                             <ScrollArea className="h-[240px]">
                                 {years.map((y) => (
-                                    <SelectItem key={y} value={String(y)} className="cursor-pointer">{y}</SelectItem>
+                                    <SelectItem key={y} value={String(y)} className="cursor-pointer">{formatNumber(y)}</SelectItem>
                                 ))}
                             </ScrollArea>
                         </SelectContent>
@@ -122,7 +126,7 @@ export function NepaliCalendar({ selected, onSelect, minDate, maxDate }: NepaliC
 
             {/* Weekday headers */}
             <div className="grid grid-cols-7 gap-1">
-                {WEEKDAYS.map((w) => (
+                {weekdayNames.map((w) => (
                     <div key={w} className="flex h-8 items-center justify-center text-[0.8rem] font-medium text-neutral-700 dark:text-neutral-300">{w}</div>
                 ))}
             </div>
@@ -153,7 +157,7 @@ export function NepaliCalendar({ selected, onSelect, minDate, maxDate }: NepaliC
                                 disabled && 'cursor-not-allowed opacity-30 hover:bg-transparent',
                             )}
                         >
-                            {day}
+                            {formatNumber(day)}
                         </button>
                     );
                 })}

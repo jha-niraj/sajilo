@@ -142,7 +142,7 @@ export function MonthClient({
                                     <span className="block truncate text-[15px] font-semibold text-ink">{c.name}</span>
                                     <span className="block text-[12px] text-ink-3">
                                         {c.bankAccountNo ? `${t("accountNo")} ${c.bankAccountNo} · ` : ""}
-                                        {num(c.daysPaid)} {t("days")}
+                                        {num(c.daysPaid)} {c.daysPaid === 1 ? t("day") : t("days")}
                                         {c.dueNow > 0 && <span className="text-late"> · {t("dueOldShort", { amount: money(c.dueNow) })}</span>}
                                     </span>
                                 </span>

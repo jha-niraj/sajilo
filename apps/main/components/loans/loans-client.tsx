@@ -39,10 +39,10 @@ export function LoansClient({ loans }: { loans: LoanView[] }) {
                             <Plus className="h-5 w-5" /> {t("newLoan")}
                         </Link>
                         <Link href="/loans/calculator" className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-paper/10 text-[14px] font-semibold">
-                            <Calculator className="h-5 w-5" />
+                            <Calculator className="h-5 w-5" /> {t("calcShort")}
                         </Link>
                         <Link href="/cash" className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-paper/10 text-[14px] font-semibold">
-                            <Wallet className="h-5 w-5" />
+                            <Wallet className="h-5 w-5" /> {t("cashShort")}
                         </Link>
                     </div>
                 </section>

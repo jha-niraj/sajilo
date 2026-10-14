@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { NepaliDatePicker } from "@repo/ui/components/ui/nepali-date-picker"
+import { DateField } from "@/components/day-picker"
 import { useI18n } from "@/lib/i18n"
 import { toAsciiDigits } from "@/lib/phone"
 import type { CustomerInput, CustomerRow } from "@/actions/customer.action"
@@ -66,7 +66,7 @@ export function CustomerForm({
                 </Field>
             </div>
             <Field label={t("startDate")}>
-                <NepaliDatePicker value={startDate} onChange={setStartDate} maxDate={today} className="h-14 w-full rounded-2xl" />
+                <DateField value={startDate} onChange={setStartDate} max={today} className="h-14 rounded-2xl bg-card" />
             </Field>
 
             <button

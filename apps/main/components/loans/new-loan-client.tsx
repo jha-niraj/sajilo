@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { cn } from "@repo/ui/lib/utils"
 import { Switch } from "@repo/ui/components/ui/switch"
-import { NepaliDatePicker } from "@repo/ui/components/ui/nepali-date-picker"
+import { DateField } from "@/components/day-picker"
 import { PageTop } from "@/components/shell/page-top"
 import { useI18n } from "@/lib/i18n"
 import { toAsciiDigits } from "@/lib/phone"
@@ -112,10 +112,10 @@ export function NewLoanClient({ borrowers, today, defaultRate, defaultCompoundin
                     </Label>
                     <div className="grid grid-cols-2 gap-2">
                         <Label text={t("givenOn")}>
-                            <NepaliDatePicker value={startDate} onChange={setStartDate} maxDate={today} className="h-12 w-full rounded-xl" />
+                            <DateField value={startDate} onChange={setStartDate} max={today} />
                         </Label>
                         <Label text={`${t("returnBy")} (${t("optional")})`}>
-                            <NepaliDatePicker value={dueDate} onChange={setDueDate} minDate={startDate} className="h-12 w-full rounded-xl" />
+                            <DateField value={dueDate} onChange={setDueDate} min={startDate} />
                         </Label>
                     </div>
                     <label className="flex items-center justify-between gap-4 pt-1">

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { Camera, ClipboardPaste, GripVertical, Plus } from "lucide-react"
+import { Camera, ClipboardPaste, GripVertical, Plus, Users } from "lucide-react"
 import {
     DndContext,
     KeyboardSensor,
@@ -128,6 +128,16 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                 </div>
 
                 {active.length > 1 && <p className="px-1 text-[14px] text-ink-3">{t("reorderHint")}</p>}
+
+                {items.length === 0 && (
+                    <div className="flex flex-col items-center rounded-[24px] bg-card px-6 py-10 text-center ring-1 ring-line">
+                        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-saffron-soft text-saffron">
+                            <Users className="h-7 w-7" />
+                        </span>
+                        <p className="mt-3 text-[17px] font-semibold text-ink">{t("noCustomersYet")}</p>
+                        <p className="mt-1 max-w-xs text-[14px] text-ink-2">{t("manageEmptySub")}</p>
+                    </div>
+                )}
 
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
                     <SortableContext items={active.map((c) => c.id)} strategy={verticalListSortingStrategy}>

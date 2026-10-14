@@ -119,7 +119,7 @@ export async function getDaySnapshot(collectorId: string, date: string): Promise
         db
             .select()
             .from(customer)
-            .where(and(eq(customer.collectorId, collectorId), eq(customer.isActive, true)))
+            .where(and(eq(customer.collectorId, collectorId), eq(customer.isActive, true), lte(customer.startDate, date)))
             .orderBy(asc(customer.routeOrder), asc(customer.createdAt)),
         db.query.collectionDay.findFirst({
             where: and(eq(collectionDay.collectorId, collectorId), eq(collectionDay.date, date)),

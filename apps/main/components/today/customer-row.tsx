@@ -30,7 +30,7 @@ export const CustomerRow = memo(function CustomerRow({
         <div
             className={cn(
                 "flex items-stretch gap-3 rounded-[22px] bg-card p-3 pl-3.5 ring-1 transition-colors duration-200",
-                paid ? "ring-paid/25" : missed ? "ring-miss/20" : flagged ? "ring-2 ring-flag animate-flag" : "ring-line",
+                paid ? "ring-paid/25" : missed ? "ring-miss/20" : flagged ? "outline outline-2 outline-flag ring-0 animate-flag" : "ring-line",
                 holiday && "opacity-60",
             )}
         >

@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { Minus, Plus, Trash2 } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { Switch } from "@repo/ui/components/ui/switch"
-import { NepaliDatePicker } from "@repo/ui/components/ui/nepali-date-picker"
+import { DateField } from "@/components/day-picker"
 import { WEEKDAYS_EN, WEEKDAYS_NE, toNepaliDigits } from "@repo/calendar"
 import { authClient } from "@repo/auth/client"
 import { PageTop } from "@/components/shell/page-top"
@@ -120,7 +120,7 @@ export function SettingsClient({ initial, today }: { initial: SettingsView; toda
                         </ul>
                     )}
                     <div className="space-y-2">
-                        <NepaliDatePicker value={holidayDate} onChange={setHolidayDate} className="h-12 w-full rounded-xl" />
+                        <DateField value={holidayDate} onChange={setHolidayDate} />
                         <div className="flex gap-2">
                             <input
                                 value={holidayLabel}

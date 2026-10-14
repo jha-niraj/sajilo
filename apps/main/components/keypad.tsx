@@ -13,16 +13,19 @@ export function Keypad({
     disabled,
     className,
     extraKey,
+    compact,
 }: {
     onKey: (key: string) => void
     disabled?: boolean
     className?: string
     /** Optional key in the empty bottom-left slot, e.g. "00" */
     extraKey?: string
+    /** Shorter keys for bottom sheets, so the sheet fits without scrolling */
+    compact?: boolean
 }) {
     const { lang } = useI18n()
     return (
-        <div className={cn("grid grid-cols-3 gap-2.5", className)}>
+        <div className={cn("grid grid-cols-3", compact ? "gap-2" : "gap-2.5", className)}>
             {KEYS.map((k, i) => {
                 const key = k === "" ? extraKey : k
                 if (!key) return <span key={i} />
@@ -37,7 +40,7 @@ export function Keypad({
                         }}
                         aria-label={key === "del" ? "Delete" : key}
                         className={cn(
-                            "flex h-16 items-center justify-center rounded-2xl text-[28px] font-medium text-ink transition-colors select-none",
+                            compact ? "flex h-12 items-center justify-center rounded-xl text-[22px] font-medium text-ink transition-colors select-none" : "flex h-16 items-center justify-center rounded-2xl text-[28px] font-medium text-ink transition-colors select-none",
                             "bg-card shadow-[0_1px_0_rgb(42_33_24/0.06)] ring-1 ring-line active:bg-paper-2 disabled:opacity-40",
                             key === "del" && "bg-transparent shadow-none ring-0 active:bg-paper-2",
                         )}

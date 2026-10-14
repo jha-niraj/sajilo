@@ -1,9 +1,10 @@
 import "server-only"
 import { z } from "zod"
-import { chatCompletionWithUsage } from "@repo/ai/client"
+import { generateText } from "ai"
 import { logAiUsage } from "@repo/ai/usage"
 import { adToBs } from "@repo/calendar"
 import { parseCustomerList } from "@/lib/parse-list"
+import { munshiModel } from "@/lib/munshi/model"
 
 export type ScanKind = "customers" | "collections" | "loans"
 
@@ -44,7 +45,7 @@ Amounts are rupees as plain numbers (no commas). Never invent rows that are not 
 const PROMPTS: Record<ScanKind, string> = {
     customers: `${COMMON}
 This page is the LIST OF CUSTOMERS (shops/people) he collects from, in route order, with how much each gives daily.
-Return {"rows":[{"name":"...","dailyAmount":200,"phone":"98XXXXXXXX or null","accountNo":"bank account no or null","confidence":"high"}]} in the same order as the page.`,
+Return {"rows":[{"name":"...","dailyAmount":200,"phone":"98XXXXXXXX or null","accountNo":"bank account no or null","confidence":"high"}]} in the same order as the page. Skip page titles, headings and totals; only real customers.`,
     collections: `${COMMON}
 This page records PAST DAILY COLLECTIONS: who paid how much on which date. It may be a table with names as rows and dates as columns, or a list per day.
 Return one row per (person, date) payment: {"rows":[{"name":"...","date":{"year":2083,"month":6,"day":12},"amount":200,"confidence":"high"}]}. Skip blank or zero cells.`,
@@ -70,38 +71,50 @@ function fallback(kind: ScanKind, text: string): ScanResult {
     return { kind, ai: false, rows: [] } as ScanResult
 }
 
+/** Pull the first JSON object out of a model reply (models sometimes wrap it in ``` fences or prose). */
+function extractJson(text: string): unknown {
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+    const body = fenced ? fenced[1]! : text
+    const start = body.indexOf("{")
+    const end = body.lastIndexOf("}")
+    if (start < 0 || end <= start) return null
+    try {
+        return JSON.parse(body.slice(start, end + 1))
+    } catch {
+        return null
+    }
+}
+
 export async function structureScan(kind: ScanKind, text: string, today: string, userId: string, scanId: string): Promise<ScanResult> {
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey || !text.trim()) return fallback(kind, text)
+    const m = munshiModel()
+    if (!m || !text.trim()) return fallback(kind, text)
 
     const bs = adToBs(today)
-    const res = await chatCompletionWithUsage({
-        apiKey,
-        model: "gpt-4o-mini",
-        temperature: 0,
-        response_format: { type: "json_object" },
-        timeoutMs: 60_000,
-        messages: [
-            { role: "system", content: PROMPTS[kind] },
-            { role: "user", content: `Current BS date: ${bs.year}-${bs.month}-${bs.day}\n\nOCR TEXT:\n${text.slice(0, 20_000)}` },
-        ],
-    })
-
-    void logAiUsage({
-        referenceId: scanId,
-        referenceType: `SCAN_${kind.toUpperCase()}`,
-        modelId: "gpt-4o-mini",
-        inputTokens: res.inputTokens,
-        outputTokens: res.outputTokens,
-        userId,
-    })
-
-    let raw: unknown
+    let reply: string
     try {
-        raw = JSON.parse(res.content)
-    } catch {
+        const res = await generateText({
+            model: m.model,
+            system: PROMPTS[kind],
+            prompt: `Current BS date: ${bs.year}-${bs.month}-${bs.day}\n\nOCR TEXT:\n${text.slice(0, 20_000)}\n\nReturn only the JSON object.`,
+            temperature: 0,
+            abortSignal: AbortSignal.timeout(60_000),
+        })
+        reply = res.text
+        void logAiUsage({
+            referenceId: scanId,
+            referenceType: `SCAN_${kind.toUpperCase()}`,
+            modelId: m.id,
+            inputTokens: res.usage?.promptTokens ?? 0,
+            outputTokens: res.usage?.completionTokens ?? 0,
+            userId,
+        })
+    } catch (e) {
+        console.error("[scan] structuring failed", e)
         return fallback(kind, text)
     }
+
+    const raw = extractJson(reply)
+    if (!raw) return fallback(kind, text)
     const rows = (raw as { rows?: unknown[] })?.rows ?? []
     const schema = kind === "customers" ? customerRowSchema : kind === "collections" ? collectionRowSchema : loanRowSchema
     const parsed = rows.map((r) => schema.safeParse(r)).flatMap((r) => (r.success ? [r.data] : []))
