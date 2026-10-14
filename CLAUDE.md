@@ -225,14 +225,14 @@ Photo -> `@repo/sarvamai` digitise (ne-IN, handwritten, md) -> `lib/scan/structu
 `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `AUTH_COOKIE_PREFIX=sajilo`, `SARVAM_API_KEY`, optional `OPENAI_API_KEY`, `R2_*`, `RESEND_*`.
 
 ### Deploy (Cloudflare Workers via OpenNext)
+Same pattern as Gurukul: `.env.production` (git-ignored) is the single source for production values and goes up as Worker secrets with `--secrets-file`. `wrangler.jsonc` `vars` only holds keys not in that file (a key must never be in both).
 ```bash
 cd apps/main
-pnpm deploy:build                      # opennextjs-cloudflare build
-npx wrangler dev --port 8787 --local   # run in workerd locally (uses .dev.vars)
-npx wrangler secret put DATABASE_URL   # repeat for BETTER_AUTH_SECRET, SARVAM_API_KEY, OPENAI_API_KEY, R2_*
-pnpm deploy
+pnpm run deploy            # build + strip bundled env + wrangler deploy --secrets-file .env.production
+pnpm run deploy:nosecrets  # code only, secrets untouched
+pnpm run secrets           # secrets only (wrangler secret bulk .env.production), no code redeploy
 ```
-Set the real domain in `wrangler.jsonc` `vars` (BETTER_AUTH_URL etc.) before deploying.
+Use `pnpm run deploy`, not `pnpm deploy` (that is pnpm's built-in workspace command). `scripts/strip-bundled-env.mjs` runs after the build: OpenNext otherwise copies every `.env`/`.env.production` value into the Worker code, so it keeps only `NEXT_PUBLIC_*` there. Secrets are additive: a key removed from `.env.production` stays on the Worker until `wrangler secret delete`.
 
 ## Admin App (`apps/admin`) - port 3001
 

@@ -9,9 +9,11 @@
 		"start": "next start",
 		"lint": "eslint --max-warnings 0",
 		"check-types": "next typegen && tsc --noEmit",
-		"deploy:build": "opennextjs-cloudflare build",
+		"deploy:build": "opennextjs-cloudflare build && node scripts/strip-bundled-env.mjs",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+		"deploy": "pnpm deploy:build && wrangler deploy --secrets-file .env.production",
+		"deploy:nosecrets": "pnpm deploy:build && wrangler deploy",
+		"secrets": "wrangler secret bulk .env.production",
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
 		"test": "vitest run"
 	},

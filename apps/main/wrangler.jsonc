@@ -16,15 +16,11 @@
 		"binding": "ASSETS"
 	},
 
-	// Non-secret config. Secrets (DATABASE_URL, BETTER_AUTH_SECRET, SARVAM_API_KEY, OPENAI_API_KEY,
-	// R2_*, RESEND_API_KEY) go in with `wrangler secret put` or `pnpm deploy` (see DEPLOY.md).
+	// Only what is not in .env.production. Everything in .env.production (DATABASE_URL, auth, Sarvam,
+	// OpenAI, Resend, the site URLs, R2 keys) goes up as Worker secrets with `pnpm deploy`
+	// (--secrets-file) or `pnpm secrets`. A key must not be in both places.
 	"vars": {
-		"BETTER_AUTH_URL": "https://sajilo.shunyatechofficial.workers.dev",
-		"NEXT_PUBLIC_SITE_URL": "https://sajilo.shunyatechofficial.workers.dev",
-		"MAIN_APP_URL": "https://sajilo.shunyatechofficial.workers.dev",
-		"ADMIN_APP_URL": "https://admin.sajilo.example.com",
-		"AUTH_COOKIE_PREFIX": "sajilo",
-		"R2_BUCKET_NAME": "sajilo-uploads"
+		"ADMIN_APP_URL": "https://admin.sajilo.example.com"
 	},
 
 	"observability": {
