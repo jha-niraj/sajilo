@@ -140,6 +140,9 @@ export function MunshiClient({
         [setProposalStatus, t],
     )
 
+    // Bumped when a new chat starts, so a reply still on its way doesn't land in the new chat.
+    const chatGen = useRef(0)
+
     const history = () => messagesRef.current.map(({ role, content, id, at }) => ({ role, content, id, at }))
     const pendingNow = () => messagesRef.current.flatMap((m) => m.proposals ?? []).filter((p) => p.status === "pending")
 
@@ -147,6 +150,7 @@ export function MunshiClient({
         async (text: string, speakReply: boolean) => {
             const clean = text.trim()
             if (!clean || busy) return
+            const gen = chatGen.current
             setBusy(true)
             setMessages((ms) => [...ms, { id: newId(), role: "user", content: clean, at: Date.now(), ...(speakReply ? { via: "voice" as const } : {}) }])
             try {
@@ -155,13 +159,14 @@ export function MunshiClient({
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ text: clean, history: history(), pending: pendingNow(), voice: speakReply }),
                 }).then((r) => r.json())) as MunshiTurnResult
+                if (gen !== chatGen.current) return
                 applyResult(res, undefined)
                 if (speakReply && res.reply) {
                     const audio = await munshiSpeak(res.reply)
                     if (audio) await voice.sayOnce(audio)
                 }
             } catch {
-                applyResult({ reply: "", proposals: [], resolved: [], error: "failed" }, undefined)
+                if (gen === chatGen.current) applyResult({ reply: "", proposals: [], resolved: [], error: "failed" }, undefined)
             } finally {
                 setBusy(false)
             }
@@ -176,7 +181,9 @@ export function MunshiClient({
             fd.set("history", JSON.stringify(history()))
             fd.set("pending", JSON.stringify(pendingNow()))
             fd.set("speak", speakReply ? "1" : "0")
+            const gen = chatGen.current
             const res = (await fetch("/api/munshi", { method: "POST", body: fd }).then((r) => r.json())) as MunshiTurnResult
+            if (gen !== chatGen.current) return { ...res, audio: null }
             applyResult(res, res.heard, speakReply ? "voice" : undefined)
             return res
         },
@@ -204,6 +211,8 @@ export function MunshiClient({
 
     const reset = async () => {
         voice.stop()
+        chatGen.current++
+        setBusy(false)
         await saveNow()
         setMessages([])
         setConvId(null)
@@ -279,7 +288,6 @@ export function MunshiClient({
                     onCancel={(p) => setProposalStatus(p.id, "cancelled")}
                     empty={empty}
                     hasCustomers={hasCustomers}
-                    onSuggest={(text) => void sendText(text, true)}
                 />
             ) : (
                 <ChatView
@@ -304,7 +312,7 @@ export function MunshiClient({
                     hasCustomers={hasCustomers}
                 />
             )}
-            <HistorySheet open={historyOpen} onOpenChange={setHistoryOpen} currentId={convId} onOpen={(id) => void openConversation(id)} onDeleted={(id) => id === convIdRef.current && void reset()} />
+            <HistorySheet open={historyOpen} onOpenChange={setHistoryOpen} beforeLoad={saveNow} currentId={convId} onOpen={(id) => void openConversation(id)} onDeleted={(id) => id === convIdRef.current && void reset()} />
         </div>
     )
 }
@@ -328,12 +336,14 @@ function MunshiOffline() {
 function HistorySheet({
     open,
     onOpenChange,
+    beforeLoad,
     currentId,
     onOpen,
     onDeleted,
 }: {
     open: boolean
     onOpenChange: (o: boolean) => void
+    beforeLoad: () => Promise<void>
     currentId: string | null
     onOpen: (id: string) => void
     onDeleted: (id: string) => void
@@ -346,13 +356,15 @@ function HistorySheet({
     useEffect(() => {
         if (!open || !online) return
         let alive = true
-        listConversations()
+        setItems(null)
+        beforeLoad()
+            .then(() => listConversations())
             .then((rows) => alive && setItems(rows))
             .catch(() => alive && setItems([]))
         return () => {
             alive = false
         }
-    }, [open, online])
+    }, [open, online, beforeLoad])
 
     const remove = async (c: MunshiConversationSummary) => {
         const ok = await confirm({ title: t("deleteChatTitle"), description: c.title, confirmText: t("delete"), cancelText: t("cancel"), destructive: true })
@@ -381,7 +393,7 @@ function HistorySheet({
                                     <button type="button" onClick={() => onOpen(c.id)} className="min-w-0 flex-1 py-3 text-left">
                                         <p className="truncate text-[15px] font-medium text-ink">{c.title || t("untitledChat")}</p>
                                         <p className="text-[12px] text-ink-3">
-                                            {date(toNepalDateStr(new Date(c.updatedAt)), true)} · {t("questionsCount", { count: c.messageCount })}
+                                            {date(toNepalDateStr(new Date(c.updatedAt)), true)} · {c.messageCount === 1 ? t("oneQuestion") : t("questionsCount", { count: c.messageCount })}
                                         </p>
                                     </button>
                                     <button type="button" onClick={() => void remove(c)} aria-label={t("delete")} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-3 active:bg-paper-2">
@@ -412,7 +424,6 @@ function VoiceView(props: {
     onCancel: (p: Proposal) => void
     empty: boolean
     hasCustomers: boolean
-    onSuggest: (text: string) => void
 }) {
     const { t } = useI18n()
     const label =
@@ -475,26 +486,7 @@ function VoiceView(props: {
                 {latest && (
                     <ProposalCard p={latest} busy={props.confirming === latest.id} onConfirm={() => props.onConfirm(latest)} onCancel={() => props.onCancel(latest)} />
                 )}
-                {!props.hasCustomers ? (
-                    <StartCards />
-                ) : (
-                    props.empty &&
-                    props.status === "off" && (
-                        <div className="flex flex-wrap justify-center gap-2">
-                            {SUGGESTIONS.map((k) => (
-                                <button
-                                    key={k}
-                                    type="button"
-                                    disabled={props.busy}
-                                    onClick={() => props.onSuggest(t(k))}
-                                    className="rounded-full bg-card px-3.5 py-2 text-[13px] font-medium text-ink ring-1 ring-line transition-colors active:bg-paper-2 disabled:opacity-50"
-                                >
-                                    {t(k)}
-                                </button>
-                            ))}
-                        </div>
-                    )
-                )}
+                {!props.hasCustomers && <StartCards />}
             </div>
             </div>
         </ScrollArea>

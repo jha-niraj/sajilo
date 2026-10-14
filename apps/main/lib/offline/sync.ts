@@ -88,6 +88,19 @@ export function recordMark(input: Omit<MarkOp, "opId" | "markedAt">): Promise<{ 
     return queueOp({ kind: "mark", ...input, markedAt: new Date().toISOString() })
 }
 
+/**
+ * After a new version goes live, a phone still running the old page calls server actions the
+ * server no longer has. The queue is safe on the phone, so reload once to pick up the new version.
+ */
+function reloadIfOutdated(e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    if (!/server action/i.test(msg) || !/not found|failed to find/i.test(msg)) return
+    const last = Number(sessionStorage.getItem("sajilo.versionReload") ?? 0)
+    if (Date.now() - last < 60_000) return
+    sessionStorage.setItem("sajilo.versionReload", String(Date.now()))
+    window.location.reload()
+}
+
 function toWire(o: OutboxOp): QueuedOp {
     const op: Partial<OutboxOp> = { ...o }
     delete op.createdAt
@@ -133,6 +146,7 @@ async function doFlush() {
     } catch (e) {
         if (isNetworkError(e)) setReachable(false)
         state.lastError = e instanceof Error ? e.message : String(e)
+        reloadIfOutdated(e)
         await db.outbox.bulkUpdate(ops.map((o) => ({ key: o.opId, changes: { tries: o.tries + 1 } })))
     } finally {
         state.syncing = false

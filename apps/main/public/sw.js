@@ -1,16 +1,18 @@
 /* Sajilo service worker.
  * - Static build files (hashed): cache first, forever.
- * - Pages: network first (4s), then the last copy saved on the phone, then /offline.
+ * - Pages: network first (9s), then the last copy saved on the phone, then /offline.
  *   The app also asks for its main screens to be saved ahead ("warm"), so they open offline
  *   even if he never visited them on this phone.
  * - Everything else (server actions, auth): straight to the network. Marks made offline are
  *   kept in IndexedDB by the app and sent later, not by this worker.
  */
-const VERSION = "v3"
+const VERSION = "v4"
 const STATIC_CACHE = `sajilo-static-${VERSION}`
 const PAGE_CACHE = `sajilo-pages-${VERSION}`
 const PRECACHE = ["/offline", "/icons/icon-192.png", "/icons/icon-512.png", "/manifest.webmanifest"]
-const PAGE_TIMEOUT_MS = 4000
+// Long enough that a slow-but-working connection gets the live page. A saved copy from an older
+// deploy carries old server-action ids, so it should only stand in when the network is really gone.
+const PAGE_TIMEOUT_MS = 9000
 
 self.addEventListener("install", (event) => {
     event.waitUntil(

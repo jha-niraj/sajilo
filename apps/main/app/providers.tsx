@@ -7,9 +7,15 @@ import type { Lang } from "@/lib/dict"
 
 export function Providers({ lang, children }: { lang: Lang; children: React.ReactNode }) {
     useEffect(() => {
-        if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+        if (!("serviceWorker" in navigator)) return
+        if (process.env.NODE_ENV === "production") {
             navigator.serviceWorker.register("/sw.js").catch(() => {})
+            return
         }
+        // A worker left over from testing a production build would serve that build's pages and
+        // scripts on top of the dev server, and their server-action ids don't exist here.
+        void navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => void r.unregister()))
+        void caches?.keys().then((keys) => keys.filter((k) => k.startsWith("sajilo-")).forEach((k) => void caches.delete(k)))
     }, [])
 
     return (
