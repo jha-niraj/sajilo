@@ -170,7 +170,7 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
             )}
 
             {!snapshot && (loading || !failed) ? (
-                <ul className="space-y-2.5 px-4">
+                <ul className="space-y-2.5 px-4 pt-1.5">
                     {Array.from({ length: 6 }).map((_, i) => (
                         <li key={i}>
                             <Skeleton className="h-[78px] rounded-[22px] bg-paper-2" />
@@ -191,7 +191,8 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
                     </Link>
                 </div>
             ) : (
-                <ul className="space-y-2.5 px-4">
+                // pt-1.5: a flagged row's outline (2px) and glow (4px) sit outside the card; without room they slide under the sticky band.
+                <ul className="space-y-2.5 px-4 pt-1.5">
                     {visible.map((row) => (
                         <li key={row.customer.id} id={`row-${row.customer.id}`} className="scroll-mt-48">
                             <CustomerRow row={row} locked={locked} onTick={onTick} onOpen={onOpen} />

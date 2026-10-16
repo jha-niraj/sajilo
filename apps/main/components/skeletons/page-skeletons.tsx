@@ -56,7 +56,7 @@ export function TodaySkeleton() {
             <div className="px-4 pb-4 pt-3">
                 <InkCard />
             </div>
-            <div className="px-4">
+            <div className="px-4 pt-1.5">
                 <Rows count={6} />
             </div>
         </>
