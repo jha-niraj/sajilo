@@ -96,8 +96,8 @@ export function SignupClient() {
         saveDeviceAccount({ phone: res.phone, name: name.trim() })
         setDirection(1)
         setStep("done")
-        // Munshi loads while the welcome plays, so the move after it is instant.
-        router.prefetch("/munshi?welcome=1", { kind: PrefetchKind.FULL })
+        // Munshi's skeleton loads while the welcome plays, so the move after it paints at once.
+        router.prefetch("/munshi?welcome=1", { kind: PrefetchKind.AUTO })
         setTimeout(() => router.push("/munshi?welcome=1"), 900)
     }
 

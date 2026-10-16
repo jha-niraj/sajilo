@@ -1,0 +1,641 @@
+{
+  "host": "sajilo.shunyatechofficial.workers.dev",
+  "date": "2026-10-16",
+  "runs": 1,
+  "startPath": "/munshi",
+  "throttle": "3g",
+  "idlePrefetches": 5,
+  "coldSummary": "Server responses from a fresh isolate (cold start): **1 of 391**, median first byte **2009 ms** against **2009 ms** warm.",
+  "results": [
+    {
+      "href": "/today",
+      "cold": {
+        "shownMs": 2105,
+        "readyMs": 12924,
+        "rscTtfbMs": 2007,
+        "rscEndMs": 2050,
+        "reads": 1,
+        "slowestReadMs": 2108,
+        "jsKb": 85,
+        "prefetchRequests": null,
+        "prefetchMs": null,
+        "prefetchKb": null,
+        "skeletonStuck": false,
+        "pagePrefetches": 13,
+        "lastRequest": "/_next/static/chunks/26zkdea4eqfmc.js 2191ms",
+        "coldRenders": 0
+      },
+      "warm": {
+        "shownMs": 2103,
+        "readyMs": 11666,
+        "rscTtfbMs": 2025,
+        "rscEndMs": 2061,
+        "reads": 1,
+        "slowestReadMs": 2118,
+        "jsKb": 5,
+        "prefetchRequests": 2,
+        "prefetchMs": 0,
+        "prefetchKb": 0,
+        "skeletonStuck": false,
+        "pagePrefetches": 11,
+        "lastRequest": "/_next/static/chunks/26zkdea4eqfmc.js 2006ms",
+        "coldRenders": 0
+      },
+      "raw": {
+        "cold": [
+          {
+            "shownMs": 2105,
+            "readyMs": 12924,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2007,
+            "rscEndMs": 2050,
+            "reads": 1,
+            "slowestReadMs": 2108,
+            "jsKb": 85,
+            "pagePrefetches": 13,
+            "lastRequest": "/_next/static/chunks/26zkdea4eqfmc.js 2191ms",
+            "coldRender": false
+          }
+        ],
+        "warm": [
+          {
+            "shownMs": 2103,
+            "readyMs": 11666,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2025,
+            "rscEndMs": 2061,
+            "reads": 1,
+            "slowestReadMs": 2118,
+            "jsKb": 5,
+            "pagePrefetches": 11,
+            "lastRequest": "/_next/static/chunks/26zkdea4eqfmc.js 2006ms",
+            "coldRender": false,
+            "prefetchRequests": 2,
+            "prefetchMs": 0,
+            "prefetchKb": 0
+          }
+        ]
+      }
+    },
+    {
+      "href": "/month",
+      "cold": {
+        "shownMs": 2122,
+        "readyMs": 6255,
+        "rscTtfbMs": 2034,
+        "rscEndMs": 2069,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 2,
+        "prefetchRequests": null,
+        "prefetchMs": null,
+        "prefetchKb": null,
+        "skeletonStuck": false,
+        "pagePrefetches": 13,
+        "lastRequest": "/_next/static/chunks/0vdtx3q3ejorf.js 2047ms",
+        "coldRenders": 0
+      },
+      "warm": {
+        "shownMs": 2100,
+        "readyMs": 10759,
+        "rscTtfbMs": 2018,
+        "rscEndMs": 2055,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 53,
+        "prefetchRequests": 2,
+        "prefetchMs": 0,
+        "prefetchKb": 0,
+        "skeletonStuck": false,
+        "pagePrefetches": 11,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2003ms",
+        "coldRenders": 0
+      },
+      "raw": {
+        "cold": [
+          {
+            "shownMs": 2122,
+            "readyMs": 6255,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2034,
+            "rscEndMs": 2069,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 2,
+            "pagePrefetches": 13,
+            "lastRequest": "/_next/static/chunks/0vdtx3q3ejorf.js 2047ms",
+            "coldRender": false
+          }
+        ],
+        "warm": [
+          {
+            "shownMs": 2100,
+            "readyMs": 10759,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2018,
+            "rscEndMs": 2055,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 53,
+            "pagePrefetches": 11,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2003ms",
+            "coldRender": false,
+            "prefetchRequests": 2,
+            "prefetchMs": 0,
+            "prefetchKb": 0
+          }
+        ]
+      }
+    },
+    {
+      "href": "/loans",
+      "cold": {
+        "shownMs": 2117,
+        "readyMs": 10865,
+        "rscTtfbMs": 2033,
+        "rscEndMs": 2069,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 4,
+        "prefetchRequests": null,
+        "prefetchMs": null,
+        "prefetchKb": null,
+        "skeletonStuck": false,
+        "pagePrefetches": 12,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2005ms",
+        "coldRenders": 0
+      },
+      "warm": {
+        "shownMs": 2107,
+        "readyMs": 10769,
+        "rscTtfbMs": 2008,
+        "rscEndMs": 2043,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 4,
+        "prefetchRequests": 2,
+        "prefetchMs": 0,
+        "prefetchKb": 0,
+        "skeletonStuck": false,
+        "pagePrefetches": 11,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2038ms",
+        "coldRenders": 0
+      },
+      "raw": {
+        "cold": [
+          {
+            "shownMs": 2117,
+            "readyMs": 10865,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2033,
+            "rscEndMs": 2069,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 4,
+            "pagePrefetches": 12,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2005ms",
+            "coldRender": false
+          }
+        ],
+        "warm": [
+          {
+            "shownMs": 2107,
+            "readyMs": 10769,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2008,
+            "rscEndMs": 2043,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 4,
+            "pagePrefetches": 11,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2038ms",
+            "coldRender": false,
+            "prefetchRequests": 2,
+            "prefetchMs": 0,
+            "prefetchKb": 0
+          }
+        ]
+      }
+    },
+    {
+      "href": "/manage",
+      "cold": {
+        "shownMs": 4316,
+        "readyMs": 12314,
+        "rscTtfbMs": 2028,
+        "rscEndMs": 2075,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 6,
+        "prefetchRequests": null,
+        "prefetchMs": null,
+        "prefetchKb": null,
+        "skeletonStuck": false,
+        "pagePrefetches": 12,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2038ms",
+        "coldRenders": 0
+      },
+      "warm": {
+        "shownMs": 4262,
+        "readyMs": 11681,
+        "rscTtfbMs": 2029,
+        "rscEndMs": 2060,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 6,
+        "prefetchRequests": 2,
+        "prefetchMs": 0,
+        "prefetchKb": 0,
+        "skeletonStuck": false,
+        "pagePrefetches": 10,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2004ms",
+        "coldRenders": 0
+      },
+      "raw": {
+        "cold": [
+          {
+            "shownMs": 4316,
+            "readyMs": 12314,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2028,
+            "rscEndMs": 2075,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 6,
+            "pagePrefetches": 12,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2038ms",
+            "coldRender": false
+          }
+        ],
+        "warm": [
+          {
+            "shownMs": 4262,
+            "readyMs": 11681,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2029,
+            "rscEndMs": 2060,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 6,
+            "pagePrefetches": 10,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2004ms",
+            "coldRender": false,
+            "prefetchRequests": 2,
+            "prefetchMs": 0,
+            "prefetchKb": 0
+          }
+        ]
+      }
+    },
+    {
+      "href": "/scan",
+      "cold": {
+        "shownMs": 2102,
+        "readyMs": 10911,
+        "rscTtfbMs": 2021,
+        "rscEndMs": 2059,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 26,
+        "prefetchRequests": null,
+        "prefetchMs": null,
+        "prefetchKb": null,
+        "skeletonStuck": false,
+        "pagePrefetches": 11,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2006ms",
+        "coldRenders": 0
+      },
+      "warm": {
+        "shownMs": 2112,
+        "readyMs": 10382,
+        "rscTtfbMs": 2034,
+        "rscEndMs": 2070,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 6,
+        "prefetchRequests": 2,
+        "prefetchMs": 0,
+        "prefetchKb": 0,
+        "skeletonStuck": false,
+        "pagePrefetches": 10,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2006ms",
+        "coldRenders": 0
+      },
+      "raw": {
+        "cold": [
+          {
+            "shownMs": 2102,
+            "readyMs": 10911,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2021,
+            "rscEndMs": 2059,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 26,
+            "pagePrefetches": 11,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2006ms",
+            "coldRender": false
+          }
+        ],
+        "warm": [
+          {
+            "shownMs": 2112,
+            "readyMs": 10382,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2034,
+            "rscEndMs": 2070,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 6,
+            "pagePrefetches": 10,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2006ms",
+            "coldRender": false,
+            "prefetchRequests": 2,
+            "prefetchMs": 0,
+            "prefetchKb": 0
+          }
+        ]
+      }
+    },
+    {
+      "href": "/cash",
+      "cold": {
+        "shownMs": 2083,
+        "readyMs": 11168,
+        "rscTtfbMs": 2003,
+        "rscEndMs": 2037,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 7,
+        "prefetchRequests": null,
+        "prefetchMs": null,
+        "prefetchKb": null,
+        "skeletonStuck": false,
+        "pagePrefetches": 12,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2009ms",
+        "coldRenders": 0
+      },
+      "warm": {
+        "shownMs": 2104,
+        "readyMs": 10431,
+        "rscTtfbMs": 2003,
+        "rscEndMs": 2043,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 5,
+        "prefetchRequests": 2,
+        "prefetchMs": 0,
+        "prefetchKb": 0,
+        "skeletonStuck": false,
+        "pagePrefetches": 10,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2036ms",
+        "coldRenders": 0
+      },
+      "raw": {
+        "cold": [
+          {
+            "shownMs": 2083,
+            "readyMs": 11168,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2003,
+            "rscEndMs": 2037,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 7,
+            "pagePrefetches": 12,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2009ms",
+            "coldRender": false
+          }
+        ],
+        "warm": [
+          {
+            "shownMs": 2104,
+            "readyMs": 10431,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2003,
+            "rscEndMs": 2043,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 5,
+            "pagePrefetches": 10,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2036ms",
+            "coldRender": false,
+            "prefetchRequests": 2,
+            "prefetchMs": 0,
+            "prefetchKb": 0
+          }
+        ]
+      }
+    },
+    {
+      "href": "/loans/calculator",
+      "cold": {
+        "shownMs": 2117,
+        "readyMs": 11244,
+        "rscTtfbMs": 2017,
+        "rscEndMs": 3284,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 18,
+        "prefetchRequests": null,
+        "prefetchMs": null,
+        "prefetchKb": null,
+        "skeletonStuck": false,
+        "pagePrefetches": 12,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2040ms",
+        "coldRenders": 0
+      },
+      "warm": {
+        "shownMs": 2116,
+        "readyMs": 10478,
+        "rscTtfbMs": 2025,
+        "rscEndMs": 2058,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 7,
+        "prefetchRequests": 2,
+        "prefetchMs": 0,
+        "prefetchKb": 0,
+        "skeletonStuck": false,
+        "pagePrefetches": 10,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2037ms",
+        "coldRenders": 0
+      },
+      "raw": {
+        "cold": [
+          {
+            "shownMs": 2117,
+            "readyMs": 11244,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2017,
+            "rscEndMs": 3284,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 18,
+            "pagePrefetches": 12,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2040ms",
+            "coldRender": false
+          }
+        ],
+        "warm": [
+          {
+            "shownMs": 2116,
+            "readyMs": 10478,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2025,
+            "rscEndMs": 2058,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 7,
+            "pagePrefetches": 10,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2037ms",
+            "coldRender": false,
+            "prefetchRequests": 2,
+            "prefetchMs": 0,
+            "prefetchKb": 0
+          }
+        ]
+      }
+    },
+    {
+      "href": "/settings",
+      "cold": {
+        "shownMs": 2109,
+        "readyMs": 12320,
+        "rscTtfbMs": 2018,
+        "rscEndMs": 2060,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 16,
+        "prefetchRequests": null,
+        "prefetchMs": null,
+        "prefetchKb": null,
+        "skeletonStuck": false,
+        "pagePrefetches": 12,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2035ms",
+        "coldRenders": 0
+      },
+      "warm": {
+        "shownMs": 2138,
+        "readyMs": 10560,
+        "rscTtfbMs": 2038,
+        "rscEndMs": 2069,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 8,
+        "prefetchRequests": 2,
+        "prefetchMs": 0,
+        "prefetchKb": 0,
+        "skeletonStuck": false,
+        "pagePrefetches": 10,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2039ms",
+        "coldRenders": 0
+      },
+      "raw": {
+        "cold": [
+          {
+            "shownMs": 2109,
+            "readyMs": 12320,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2018,
+            "rscEndMs": 2060,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 16,
+            "pagePrefetches": 12,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2035ms",
+            "coldRender": false
+          }
+        ],
+        "warm": [
+          {
+            "shownMs": 2138,
+            "readyMs": 10560,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2038,
+            "rscEndMs": 2069,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 8,
+            "pagePrefetches": 10,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2039ms",
+            "coldRender": false,
+            "prefetchRequests": 2,
+            "prefetchMs": 0,
+            "prefetchKb": 0
+          }
+        ]
+      }
+    },
+    {
+      "href": "/more",
+      "cold": {
+        "shownMs": 2112,
+        "readyMs": 6668,
+        "rscTtfbMs": 2035,
+        "rscEndMs": 2068,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 21,
+        "prefetchRequests": null,
+        "prefetchMs": null,
+        "prefetchKb": null,
+        "skeletonStuck": false,
+        "pagePrefetches": 13,
+        "lastRequest": "/_next/static/chunks/0qbecpidhsx-q.js 2062ms",
+        "coldRenders": 0
+      },
+      "warm": {
+        "shownMs": 2121,
+        "readyMs": 13214,
+        "rscTtfbMs": 2032,
+        "rscEndMs": 2065,
+        "reads": 0,
+        "slowestReadMs": null,
+        "jsKb": 55,
+        "prefetchRequests": 2,
+        "prefetchMs": 0,
+        "prefetchKb": 0,
+        "skeletonStuck": false,
+        "pagePrefetches": 12,
+        "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2008ms",
+        "coldRenders": 0
+      },
+      "raw": {
+        "cold": [
+          {
+            "shownMs": 2112,
+            "readyMs": 6668,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2035,
+            "rscEndMs": 2068,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 21,
+            "pagePrefetches": 13,
+            "lastRequest": "/_next/static/chunks/0qbecpidhsx-q.js 2062ms",
+            "coldRender": false
+          }
+        ],
+        "warm": [
+          {
+            "shownMs": 2121,
+            "readyMs": 13214,
+            "skeletonTimedOut": false,
+            "rscTtfbMs": 2032,
+            "rscEndMs": 2065,
+            "reads": 0,
+            "slowestReadMs": null,
+            "jsKb": 55,
+            "pagePrefetches": 12,
+            "lastRequest": "/_next/static/chunks/0kxfncg8ggahh.js 2008ms",
+            "coldRender": false,
+            "prefetchRequests": 2,
+            "prefetchMs": 0,
+            "prefetchKb": 0
+          }
+        ]
+      }
+    }
+  ]
+}

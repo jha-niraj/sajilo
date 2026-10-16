@@ -17,23 +17,42 @@ export const getSettings = cache(async (collectorId: string) => {
     return created ?? (await db.query.collectorSettings.findFirst({ where: eq(collectorSettings.userId, collectorId) }))!
 })
 
-/**
- * Make sure every active customer has a row for every day from their start (or last row) up to
- * `upTo`. A day nobody opened the app is still a collection day, so missed days become dues.
- */
-export async function ensureEntries(collectorId: string, upTo: string): Promise<void> {
-    const [settings, customers, lastDates] = await Promise.all([
-        getSettings(collectorId),
+type ActiveCustomer = typeof customer.$inferSelect
+
+/** Active customers in route order, and the last day each already has a row for. */
+function readRoute(collectorId: string) {
+    return [
         db
-            .select({ id: customer.id, defaultAmount: customer.defaultAmount, startDate: customer.startDate })
+            .select()
             .from(customer)
-            .where(and(eq(customer.collectorId, collectorId), eq(customer.isActive, true))),
+            .where(and(eq(customer.collectorId, collectorId), eq(customer.isActive, true)))
+            .orderBy(asc(customer.routeOrder), asc(customer.createdAt)),
         db
             .select({ customerId: collectionEntry.customerId, last: sql<string>`max(${collectionEntry.date})` })
             .from(collectionEntry)
             .where(eq(collectionEntry.collectorId, collectorId))
             .groupBy(collectionEntry.customerId),
-    ])
+    ] as const
+}
+
+/**
+ * Make sure every active customer has a row for every day from their start (or last row) up to
+ * `upTo`. A day nobody opened the app is still a collection day, so missed days become dues.
+ * Writes only what is missing: in practice the first open of a day; every later open writes nothing.
+ */
+export async function ensureEntries(collectorId: string, upTo: string): Promise<void> {
+    const [route, lastDates] = readRoute(collectorId)
+    const [settings, customers, last] = await Promise.all([getSettings(collectorId), route, lastDates])
+    await fillMissing(collectorId, upTo, settings, customers, last)
+}
+
+async function fillMissing(
+    collectorId: string,
+    upTo: string,
+    settings: { workingDays: number[] },
+    customers: Pick<ActiveCustomer, "id" | "defaultAmount" | "startDate">[],
+    lastDates: { customerId: string; last: string }[],
+): Promise<void> {
     if (customers.length === 0) return
 
     const lastByCustomer = new Map(lastDates.map((r) => [r.customerId, r.last]))
@@ -113,20 +132,24 @@ function toSnapshotEntry(e: typeof collectionEntry.$inferSelect): SnapshotEntry 
     }
 }
 
+/**
+ * Today's screen in two round trips: one wave reads settings, the route, each customer's last row
+ * and the day together (the "anything missing?" check rides along for free; missing days are filled
+ * only when there are some, i.e. the first open of a day), then the entries. It used to check, then
+ * read settings and customers again, then the entries: three trips in a row.
+ */
 export async function getDaySnapshot(collectorId: string, date: string): Promise<DaySnapshot> {
-    await ensureEntries(collectorId, date)
-
-    const [settings, customers, day] = await Promise.all([
+    const [route, lastDates] = readRoute(collectorId)
+    const [settings, active, last, day] = await Promise.all([
         getSettings(collectorId),
-        db
-            .select()
-            .from(customer)
-            .where(and(eq(customer.collectorId, collectorId), eq(customer.isActive, true), lte(customer.startDate, date)))
-            .orderBy(asc(customer.routeOrder), asc(customer.createdAt)),
+        route,
+        lastDates,
         db.query.collectionDay.findFirst({
             where: and(eq(collectionDay.collectorId, collectorId), eq(collectionDay.date, date)),
         }),
     ])
+    await fillMissing(collectorId, date, settings, active, last)
+    const customers = active.filter((c) => c.startDate <= date)
 
     const ids = customers.map((c) => c.id)
     const entries = ids.length

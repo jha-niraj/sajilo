@@ -35,7 +35,7 @@ Rules for anyone (person or agent) changing `apps/main`. They come from the fast
 
 - `import Link from "@/components/app-link"`. `next/link` is banned elsewhere by eslint. It prefetches the page's SHELL on intent (100 ms of pointer movement, or touch, or focus), not every link on screen.
 - Always pass a kind to `router.prefetch` (`PrefetchKind` from `lib/prefetch-kind.ts`). FULL only for the home.
-- The bottom bar warms its pages one at a time, 350 ms apart, from idle, at most once per 150 s (`use-staggered-prefetch.ts`): the four main tabs (Today, Munshi, Month, Loans) in FULL, the pages behind More as shells (decided with measurements, 2026-10-16). Never fire many prefetches at once: on Workers they land on cold isolates.
+- The bottom bar warms its pages one at a time, 350 ms apart, from idle, at most once per 150 s (`use-staggered-prefetch.ts`): every page as a SHELL only, never FULL (decided with him after measuring, 2026-10-16: full prefetches competed with the tapped page on a slow network). Never fire many prefetches at once: on Workers they land on cold isolates.
 - `staleTimes: { dynamic: 30, static: 180 }` (`next.config.js`). A write that changes a page refreshes it.
 - The offline warm-up (`OfflineBar` -> `public/sw.js` `warm`) waits for the page to load and the phone to be idle, then fetches one page every 350 ms. Bump `VERSION` in `sw.js` when its caching changes.
 

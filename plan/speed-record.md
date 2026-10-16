@@ -78,7 +78,7 @@ No hand-rolled `overflow-auto|scroll` anywhere; all scroll containers are `Scrol
 | Server-Timing on auth | fixed | `db;dur;desc="N queries"`, `app;dur` |
 | A skeleton per page with the real title | fixed | 14 `loading.tsx`, `components/skeletons/page-skeletons.tsx`; verified in the browser on sign-in (Today) |
 | Shared link, intent prefetch, eslint ban on `next/link` | fixed | `components/app-link.tsx` |
-| Bottom-bar queue | fixed | Today, Munshi, Month, Loans FULL; More pages AUTO; 350 ms apart from idle, once per 150 s (it restarted on every page at first) |
+| Bottom-bar queue | fixed | every page AUTO (shell only, decided after the 3G run); 350 ms apart from idle, once per 150 s |
 | `staleTimes` | fixed | `{ dynamic: 30, static: 180 }` |
 | `getSettings`, `receivedBetween` per request | fixed | `cache()`; removes the second settings read on Loans pages and the duplicate print query |
 | Today refreshed twice per sync | fixed | one refresh (`OfflineBar`) |
@@ -119,3 +119,10 @@ What the "after" run actually showed:
 - 16 s samples were the service worker's offline warm-up (assets fetched after load). Fixed in the benchmark: service workers blocked. Same cause broke the 3G run (the worker served its offline page, which has no bottom bar).
 - First byte rose ~3x: the Singapore pin. Reverted to smart placement.
 - Shells only for Month and Loans cost ~150 ms of "ready" on wifi against full prefetch. Main tabs back to FULL, queued.
+
+## Second round (2026-10-16, after his wifi and 3G runs)
+
+- Wifi: Loans 295 -> 255 ms, Month 325 -> 272 ms ready (full prefetch); warm first byte 211 ms with smart placement (375 ms pinned).
+- 3G: ~2.1 s to shown (one round trip of the preset's 2 s latency), 6-13 s to ready: full prefetches of four tabs shared the 400 kbit/s line with the tapped page.
+- Decided with him: every page prefetched as a SHELL only, on every network (no full prefetches, no page-code preloading). A tap paints the skeleton and loads only that page.
+- Today's snapshot (813 ms, three round trips in a row) now reads in two: the "missing days?" check rides in the first wave with settings, route and day; days are written only when missing (the first open of a day). Verified on the test account: identical totals, rows and flags.

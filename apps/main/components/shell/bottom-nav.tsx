@@ -25,15 +25,16 @@ const RIGHT: Item[] = [
 ]
 
 /**
- * The four main tabs in full (small pages, used all day: a tap shows the finished page), the pages
- * behind More as shells. One at a time from idle, never all at once (measured 2026-10-16: shells
- * only for Month and Loans moved "ready" from ~300 ms to ~450 ms on wifi).
+ * Every page as a SHELL only (layout + its loading.tsx skeleton, a few kB), one at a time from idle.
+ * A tap paints the skeleton at once and fetches only that page's data. Full prefetches were measured
+ * on 2026-10-16: fine on wifi, but on a slow network four full pages shared the line with the page he
+ * tapped (6-13 s to ready on 3G). Decided with him: skeletons only, on every network.
  */
 const WARM: QueuedPrefetch[] = [
-    { href: "/today", kind: PrefetchKind.FULL },
-    { href: "/munshi", kind: PrefetchKind.FULL },
-    { href: "/month", kind: PrefetchKind.FULL },
-    { href: "/loans", kind: PrefetchKind.FULL },
+    { href: "/today", kind: PrefetchKind.AUTO },
+    { href: "/munshi", kind: PrefetchKind.AUTO },
+    { href: "/month", kind: PrefetchKind.AUTO },
+    { href: "/loans", kind: PrefetchKind.AUTO },
     ...MORE_LINKS.map((l) => ({ href: l.href, kind: PrefetchKind.AUTO })),
     { href: "/more", kind: PrefetchKind.AUTO },
 ]
