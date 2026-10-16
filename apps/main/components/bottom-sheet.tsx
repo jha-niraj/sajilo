@@ -11,6 +11,7 @@ export function BottomSheet({
     description,
     children,
     className,
+    half,
 }: {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -18,13 +19,16 @@ export function BottomSheet({
     description?: string
     children: React.ReactNode
     className?: string
+    /** Stop at about half the screen and scroll inside (long lists) */
+    half?: boolean
 }) {
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
                 side="bottom"
                 className={cn(
-                    "mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] border-line bg-paper px-0 pb-safe pt-3 [&>button:last-child]:hidden",
+                    "mx-auto flex w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] border-line bg-paper px-0 pb-safe pt-3 [&>button:last-child]:hidden",
+                    half ? "max-h-[60dvh]" : "max-h-[92dvh]",
                     className,
                 )}
             >
@@ -37,7 +41,7 @@ export function BottomSheet({
                         <SheetDescription className="sr-only">{title}</SheetDescription>
                     )}
                 </div>
-                <ScrollArea orientation="vertical" className="min-h-0 flex-1" viewportClassName="max-h-[calc(92dvh-7rem)]">
+                <ScrollArea orientation="vertical" className="min-h-0 flex-1" viewportClassName={half ? "max-h-[calc(60dvh-6rem)]" : "max-h-[calc(92dvh-7rem)]"}>
                     <div className="px-5 pb-5 pt-4">{children}</div>
                 </ScrollArea>
             </SheetContent>

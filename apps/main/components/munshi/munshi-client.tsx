@@ -377,8 +377,8 @@ function HistorySheet({
 
     return (
         <>
-            <BottomSheet open={open} onOpenChange={onOpenChange} title={t("pastChats")}>
-                <div className="px-4 pb-4">
+            <BottomSheet open={open} onOpenChange={onOpenChange} title={t("pastChats")} half>
+                <div>
                     {!online ? (
                         <p className="py-8 text-center text-[14px] text-ink-3">{t("munshiOfflineBody")}</p>
                     ) : items === null ? (
@@ -487,7 +487,7 @@ function VoiceView(props: {
                 {latest && (
                     <ProposalCard p={latest} busy={props.confirming === latest.id} onConfirm={() => props.onConfirm(latest)} onCancel={() => props.onCancel(latest)} />
                 )}
-                {!props.hasCustomers && <StartCards />}
+                {props.empty && !props.hasCustomers && <StartCards />}
             </div>
             </div>
         </ScrollArea>
@@ -590,7 +590,7 @@ function ChatView(props: {
                             <Loader size={18} dotSize={2} /> {t("thinking")}
                         </div>
                     )}
-                    {!props.hasCustomers && <StartCards />}
+                    {props.empty && !props.hasCustomers && <StartCards />}
                     {props.empty && props.hasCustomers && <ChatWelcome onPick={props.onSend} />}
                 </div>
             </ScrollArea>

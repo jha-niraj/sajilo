@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Camera, ChevronDown, Images, Plus, Sparkles, Trash2 } from "lucide-react"
@@ -79,8 +79,8 @@ export function ScanClient({
     const [aiUsed, setAiUsed] = useState(true)
     const [preview, setPreview] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
-    const cameraRef = useRef<HTMLInputElement>(null)
-    const galleryRef = useRef<HTMLInputElement>(null)
+    const cameraId = useId()
+    const galleryId = useId()
 
     useEffect(() => {
         if (!scanId || (phase !== "reading" && phase !== "structuring")) return
@@ -174,6 +174,13 @@ export function ScanClient({
         }
     }
 
+    const pickFile = (input: HTMLInputElement) => {
+        const file = input.files?.[0]
+        // Cleared so picking the same photo again still fires onChange.
+        input.value = ""
+        void onFile(file)
+    }
+
     const update = (key: string, patch: Partial<EditRow>) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch, low: false } : r)))
 
     const save = async () => {
@@ -244,23 +251,22 @@ export function ScanClient({
                             </span>
                             <p className="mt-3 text-[15px] text-ink-2">{t(KIND_LABEL[kind])}</p>
                             <div className="mt-5 grid gap-2.5">
-                                <button
-                                    type="button"
-                                    onClick={() => cameraRef.current?.click()}
-                                    className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-ink text-[16px] font-semibold text-paper"
+                                {/* Labels, not input.click() on a hidden input: iPhone home-screen apps ignore the scripted click. */}
+                                <label
+                                    htmlFor={cameraId}
+                                    className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-ink text-[16px] font-semibold text-paper active:opacity-90"
                                 >
                                     <Camera className="h-6 w-6" /> {t("takePhoto")}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => galleryRef.current?.click()}
-                                    className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-paper-2 text-[15px] font-semibold text-ink"
+                                </label>
+                                <label
+                                    htmlFor={galleryId}
+                                    className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-paper-2 text-[15px] font-semibold text-ink active:bg-line"
                                 >
                                     <Images className="h-5 w-5" /> {t("choosePhoto")}
-                                </button>
+                                </label>
                             </div>
-                            <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => onFile(e.target.files?.[0])} />
-                            <input ref={galleryRef} type="file" accept="image/*,application/pdf" hidden onChange={(e) => onFile(e.target.files?.[0])} />
+                            <input id={cameraId} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} onChange={(e) => pickFile(e.currentTarget)} />
+                            <input id={galleryId} type="file" accept="image/*,application/pdf" className="sr-only" tabIndex={-1} onChange={(e) => pickFile(e.currentTarget)} />
                         </div>
                     </>
                 )}

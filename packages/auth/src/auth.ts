@@ -116,6 +116,12 @@ export const auth = betterAuth({
     // localhost:3100 and :3001 share cookies (cookies ignore ports), so each app gets its own prefix.
     advanced: {
         cookiePrefix: process.env.AUTH_COOKIE_PREFIX || 'better-auth',
+        // Without a readable client IP, the rate limiter puts everyone in one shared bucket, so five
+        // PIN sign-ins by anyone lock out the next person (and the sign-in right after sign-up).
+        // Cloudflare sets cf-connecting-ip to the real visitor address.
+        ipAddress: {
+            ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'],
+        },
     },
 
     // A 4-digit PIN has only 10,000 combinations, so PIN sign-in is tightly limited and the

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useId, useState } from "react"
 import { toast } from "sonner"
 import { Camera, ImageIcon, Trash2 } from "lucide-react"
 import { DotmSquare11 } from "@repo/ui/components/ui/dotm-square-11"
@@ -17,15 +17,25 @@ export function ProfilePhoto({ name, initialUrl, size = 56 }: { name: string; in
     const [broken, setBroken] = useState(false)
     const [open, setOpen] = useState(false)
     const [busy, setBusy] = useState(false)
-    const cameraRef = useRef<HTMLInputElement>(null)
-    const galleryRef = useRef<HTMLInputElement>(null)
+    const cameraId = useId()
+    const galleryId = useId()
 
     const initials = name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "?"
 
-    const pick = (ref: React.RefObject<HTMLInputElement | null>) => {
-        if (!isOnline()) return toast.error(t("needsInternet"))
-        setOpen(false)
-        ref.current?.click()
+    // The label opens the picker itself; close the sheet only after that has happened.
+    const pick = (e: React.MouseEvent) => {
+        if (!isOnline()) {
+            e.preventDefault()
+            toast.error(t("needsInternet"))
+            return
+        }
+        setTimeout(() => setOpen(false), 0)
+    }
+
+    const pickFile = (input: HTMLInputElement) => {
+        const file = input.files?.[0]
+        input.value = ""
+        void onFile(file)
     }
 
     const onFile = async (file: File | undefined) => {
@@ -46,8 +56,6 @@ export function ProfilePhoto({ name, initialUrl, size = 56 }: { name: string; in
             toast.error(t("photoFailed"))
         } finally {
             setBusy(false)
-            if (cameraRef.current) cameraRef.current.value = ""
-            if (galleryRef.current) galleryRef.current.value = ""
         }
     }
 
@@ -94,13 +102,14 @@ export function ProfilePhoto({ name, initialUrl, size = 56 }: { name: string; in
                 )}
             </button>
 
-            <input ref={cameraRef} type="file" accept="image/*" capture="user" hidden onChange={(e) => void onFile(e.target.files?.[0])} />
-            <input ref={galleryRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => void onFile(e.target.files?.[0])} />
+            {/* Opened by labels: iPhone home-screen apps ignore input.click() on a hidden input. */}
+            <input id={cameraId} type="file" accept="image/*" capture="user" className="sr-only" tabIndex={-1} onChange={(e) => pickFile(e.currentTarget)} />
+            <input id={galleryId} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" tabIndex={-1} onChange={(e) => pickFile(e.currentTarget)} />
 
             <BottomSheet open={open} onOpenChange={setOpen} title={t("profilePhoto")}>
-                <div className="space-y-2 px-5 pb-5 pt-2">
-                    <SheetAction icon={Camera} label={t("takePhoto")} onClick={() => pick(cameraRef)} />
-                    <SheetAction icon={ImageIcon} label={t("choosePhoto")} onClick={() => pick(galleryRef)} />
+                <div className="space-y-2">
+                    <SheetAction icon={Camera} label={t("takePhoto")} htmlFor={cameraId} onClick={pick} />
+                    <SheetAction icon={ImageIcon} label={t("choosePhoto")} htmlFor={galleryId} onClick={pick} />
                     {url && <SheetAction icon={Trash2} label={t("removePhoto")} onClick={() => void remove()} danger />}
                 </div>
             </BottomSheet>
@@ -108,13 +117,30 @@ export function ProfilePhoto({ name, initialUrl, size = 56 }: { name: string; in
     )
 }
 
-function SheetAction({ icon: Icon, label, onClick, danger }: { icon: typeof Camera; label: string; onClick: () => void; danger?: boolean }) {
+function SheetAction({
+    icon: Icon,
+    label,
+    onClick,
+    htmlFor,
+    danger,
+}: {
+    icon: typeof Camera
+    label: string
+    onClick: (e: React.MouseEvent) => void
+    htmlFor?: string
+    danger?: boolean
+}) {
+    const cls = `flex w-full cursor-pointer items-center gap-3 rounded-2xl bg-card px-4 py-3.5 text-left text-[15px] font-medium ring-1 ring-line active:bg-paper-2 ${danger ? "text-miss" : "text-ink"}`
+    if (htmlFor) {
+        return (
+            <label htmlFor={htmlFor} onClick={onClick} className={cls}>
+                <Icon className="h-5 w-5" />
+                {label}
+            </label>
+        )
+    }
     return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={`flex w-full items-center gap-3 rounded-2xl bg-card px-4 py-3.5 text-left text-[15px] font-medium ring-1 ring-line active:bg-paper-2 ${danger ? "text-miss" : "text-ink"}`}
-        >
+        <button type="button" onClick={onClick} className={cls}>
             <Icon className="h-5 w-5" />
             {label}
         </button>

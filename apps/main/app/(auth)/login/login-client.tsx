@@ -6,7 +6,7 @@ import { RotateCcw } from "lucide-react"
 import { signIn } from "@repo/auth/client"
 import { updateSettings } from "@/actions/settings.action"
 import { Loader } from "@repo/ui/components/ui/loader"
-import { AuthFrame, AuthHeading } from "@/components/auth/auth-frame"
+import { AuthBody, AuthFrame, AuthHeading } from "@/components/auth/auth-frame"
 import { PhoneInput } from "@/components/auth/phone-input"
 import { PinInput } from "@/components/pin-input"
 import { useI18n } from "@/lib/i18n"
@@ -74,23 +74,25 @@ export function LoginClient() {
     if (mode === "phone") {
         return (
             <AuthFrame stepKey="phone" direction={direction}>
-                <AuthHeading art="phone" title={t("phoneOnceTitle")} sub={t("phoneOnceSub")} />
-                <div className="mt-9">
-                    <PhoneInput
-                        value={phone}
-                        onChange={(v) => {
-                            setError(null)
-                            setPhone(v)
-                        }}
-                        onComplete={confirmPhone}
-                        error={!!error}
-                        onClear={() => {
-                            setError(null)
-                            setPhone("")
-                        }}
-                    />
-                    <p className="mt-3 min-h-6 text-center text-[15px] text-miss">{error}</p>
-                </div>
+                <AuthBody>
+                    <AuthHeading art="phone" title={t("phoneOnceTitle")} sub={t("phoneOnceSub")} />
+                    <div className="mt-9">
+                        <PhoneInput
+                            value={phone}
+                            onChange={(v) => {
+                                setError(null)
+                                setPhone(v)
+                            }}
+                            onComplete={confirmPhone}
+                            error={!!error}
+                            onClear={() => {
+                                setError(null)
+                                setPhone("")
+                            }}
+                        />
+                        <p className="mt-3 min-h-6 text-center text-[15px] text-miss">{error}</p>
+                    </div>
+                </AuthBody>
                 <Footer />
             </AuthFrame>
         )
@@ -99,39 +101,41 @@ export function LoginClient() {
     const firstName = account?.name?.split(" ")[0]
     return (
         <AuthFrame stepKey="pin" direction={direction}>
-            <AuthHeading art="welcome" title={firstName ? t("welcomeBackName", { name: firstName }) : t("welcomeBack")} sub={t("pinSub")} />
-            <div className="mt-9">
-                <PinInput
-                    key={attempt}
-                    value={pin}
-                    onChange={(v) => {
-                        setError(null)
-                        setPin(v)
-                    }}
-                    onComplete={(v) => void submit(v)}
-                    disabled={busy}
-                    error={!!error}
-                />
-                <div className="mt-4 flex min-h-8 items-center justify-center">
-                    {busy ? <Loader size={24} dotSize={3} /> : <p className="text-center text-[15px] text-miss">{error}</p>}
+            <AuthBody>
+                <AuthHeading art="welcome" title={firstName ? t("welcomeBackName", { name: firstName }) : t("welcomeBack")} sub={t("pinSub")} />
+                <div className="mt-9">
+                    <PinInput
+                        key={attempt}
+                        value={pin}
+                        onChange={(v) => {
+                            setError(null)
+                            setPin(v)
+                        }}
+                        onComplete={(v) => void submit(v)}
+                        disabled={busy}
+                        error={!!error}
+                    />
+                    <div className="mt-4 flex min-h-8 items-center justify-center">
+                        {busy ? <Loader size={24} dotSize={3} /> : <p className="text-center text-[15px] text-miss">{error}</p>}
+                    </div>
                 </div>
-            </div>
-            <div className="mt-2 flex flex-col items-center gap-1.5 text-[15px] text-ink-2">
-                <span className="tabular">+977 {displayPhone(account?.phone)}</span>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setPin("")
-                        setError(null)
-                        setPhone("")
-                        setDirection(-1)
-                        setMode("phone")
-                    }}
-                    className="inline-flex items-center gap-1 font-semibold text-saffron"
-                >
-                    <RotateCcw className="h-4 w-4" /> {t("useAnotherNumber")}
-                </button>
-            </div>
+                <div className="mt-2 flex flex-col items-center gap-1.5 text-[15px] text-ink-2">
+                    <span className="tabular">+977 {displayPhone(account?.phone)}</span>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setPin("")
+                            setError(null)
+                            setPhone("")
+                            setDirection(-1)
+                            setMode("phone")
+                        }}
+                        className="inline-flex items-center gap-1 font-semibold text-saffron"
+                    >
+                        <RotateCcw className="h-4 w-4" /> {t("useAnotherNumber")}
+                    </button>
+                </div>
+            </AuthBody>
             <Footer />
         </AuthFrame>
     )
@@ -140,7 +144,7 @@ export function LoginClient() {
 function Footer() {
     const { t } = useI18n()
     return (
-        <div className="mt-auto pb-8 pt-10">
+        <div className="pb-8 pt-6">
             <Link
                 href="/signup"
                 className="flex h-12 w-full items-center justify-center rounded-2xl bg-card text-[16px] font-semibold text-ink ring-1 ring-line transition-colors active:bg-paper-2"

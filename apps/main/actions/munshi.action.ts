@@ -42,7 +42,7 @@ export async function listConversations(): Promise<MunshiConversationSummary[]> 
         .from(munshiConversation)
         .where(eq(munshiConversation.collectorId, collectorId))
         .orderBy(desc(munshiConversation.updatedAt))
-        .limit(50)
+        .limit(300)
     return rows.map((r) => ({ ...r, updatedAt: r.updatedAt.toISOString() }))
 }
 

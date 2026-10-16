@@ -91,9 +91,14 @@ export function AuthArt({ name, className }: { name: AuthArtName; className?: st
     )
 }
 
+/** A step's main content, centred in the space left over so a short step doesn't leave a bare bottom half. */
+export function AuthBody({ children, className }: { children: React.ReactNode; className?: string }) {
+    return <div className={cn("flex flex-1 flex-col justify-center pb-[4dvh]", className)}>{children}</div>
+}
+
 export function AuthHeading({ title, sub, art }: { title: string; sub?: React.ReactNode; art?: AuthArtName }) {
     return (
-        <div className={cn("text-center", art ? "mt-4" : "mt-10")}>
+        <div className={cn("text-center", art ? "mt-2" : "mt-8")}>
             {art && <AuthArt name={art} className="mb-3" />}
             <h1 className="text-[26px] font-semibold leading-[1.15] tracking-[-0.01em] text-ink">{title}</h1>
             {sub && <p className="mt-2 text-[15px] leading-snug text-ink-2">{sub}</p>}

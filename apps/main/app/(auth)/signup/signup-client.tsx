@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import { signIn } from "@repo/auth/client"
 import { Loader } from "@repo/ui/components/ui/loader"
-import { AuthArt, AuthFrame, AuthHeading } from "@/components/auth/auth-frame"
+import { AuthArt, AuthBody, AuthFrame, AuthHeading } from "@/components/auth/auth-frame"
 import { PhoneInput } from "@/components/auth/phone-input"
 import { PinInput } from "@/components/pin-input"
 import { useI18n } from "@/lib/i18n"
@@ -140,22 +140,24 @@ export function SignupClient() {
                         if (name.trim()) go("phone")
                     }}
                 >
-                    <AuthHeading art="name" title={t("nameTitle")} sub={t("nameSub")} />
-                    <input
-                        ref={nameRef}
-                        autoFocus
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        autoComplete="name"
-                        placeholder={t("namePlaceholder")}
-                        className="mt-9 h-12 w-full rounded-2xl border border-line bg-card px-5 text-[19px] font-medium text-ink outline-none transition-shadow placeholder:text-ink-3/50 focus:ring-2 focus:ring-saffron"
-                    />
+                    <AuthBody>
+                        <AuthHeading art="name" title={t("nameTitle")} sub={t("nameSub")} />
+                        <input
+                            ref={nameRef}
+                            autoFocus
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            autoComplete="name"
+                            placeholder={t("namePlaceholder")}
+                            className="mt-9 h-12 w-full rounded-2xl border border-line bg-card px-5 text-[19px] font-medium text-ink outline-none transition-shadow placeholder:text-ink-3/50 focus:ring-2 focus:ring-saffron"
+                        />
+                    </AuthBody>
                     <PrimaryButton disabled={!name.trim()} label={t("continue")} />
                 </form>
             )}
 
             {step === "phone" && (
-                <div className="flex flex-1 flex-col">
+                <AuthBody>
                     <AuthHeading art="phone" title={t("phoneOnceTitle")} sub={t("phoneSignupSub")} />
                     <div className="mt-9">
                         <PhoneInput
@@ -196,11 +198,11 @@ export function SignupClient() {
                             )}
                         </div>
                     </div>
-                </div>
+                </AuthBody>
             )}
 
             {(step === "pin" || step === "confirm") && (
-                <div className="flex flex-1 flex-col">
+                <AuthBody>
                     <AuthHeading
                         art={step === "pin" ? "pin" : "confirm"}
                         title={step === "pin" ? t("choosePin") : t("confirmPin")}
@@ -232,7 +234,7 @@ export function SignupClient() {
                             )}
                         </div>
                     </div>
-                </div>
+                </AuthBody>
             )}
 
             {step === "name" && (
@@ -249,7 +251,7 @@ export function SignupClient() {
 
 function PrimaryButton({ disabled, label }: { disabled?: boolean; label: string }) {
     return (
-        <div className="mt-auto pb-5 pt-10">
+        <div className="pb-5 pt-6">
             <button
                 type="submit"
                 disabled={disabled}
