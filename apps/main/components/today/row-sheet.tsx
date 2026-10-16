@@ -128,7 +128,7 @@ export function RowSheet({
 
             <div className="mt-2 flex items-center justify-between">
                 <Link
-                    href={`/customers/${row.customer.id}`}
+                    href={`/customers/${row.customer.id}?from=today`}
                     className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[15px] font-medium text-ink-2 active:bg-paper-2"
                 >
                     <History className="h-5 w-5" /> {t("history")}

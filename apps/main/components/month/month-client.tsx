@@ -138,7 +138,7 @@ export function MonthClient({
                         className={cn(pending && "opacity-60")}
                         empty={<p className="px-4 py-8 text-center text-[14px] text-ink-3">-</p>}
                         render={(c, i) => (
-                            <Link href={`/customers/${c.id}?y=${report.year}&m=${report.month}`} className="flex items-center gap-3 px-4 py-2.5 active:bg-paper-2">
+                            <Link href={`/customers/${c.id}?y=${report.year}&m=${report.month}&from=month`} className="flex items-center gap-3 px-4 py-2.5 active:bg-paper-2">
                                 <span className="w-6 text-[13px] text-ink-3 tabular">{num(i + 1)}</span>
                                 <span className="min-w-0 flex-1">
                                     <span className="block truncate text-[15px] font-semibold text-ink">{c.name}</span>

@@ -1,5 +1,7 @@
 "use server"
 
+import type { CustomerRow } from "./customer.action"
+
 import { db, and, eq, asc } from "@repo/db"
 import { customer } from "@repo/db/schema"
 import { adToBs, bsMonthRange } from "@repo/calendar"
@@ -45,7 +47,7 @@ export interface CustomerHistoryDay {
 }
 
 export interface CustomerHistory {
-    customer: { id: string; name: string; phone: string | null; bankAccountNo: string | null; defaultAmount: number; startDate: string; isActive: boolean }
+    customer: CustomerRow
     year: number
     month: number
     days: CustomerHistoryDay[]
@@ -92,6 +94,8 @@ export async function fetchCustomerHistory(customerId: string, year?: number, mo
             defaultAmount: c.defaultAmount,
             startDate: c.startDate,
             isActive: c.isActive,
+            routeOrder: c.routeOrder,
+            note: c.note,
         },
         year: y,
         month: m,

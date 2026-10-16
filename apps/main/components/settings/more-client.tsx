@@ -1,26 +1,18 @@
 "use client"
 
 import Link from "next/link"
-import { Calculator, Camera, ChevronRight, LogOut, Settings, Users, Wallet } from "lucide-react"
+import { ChevronRight, LogOut } from "lucide-react"
 import { toast } from "sonner"
 import { signOut } from "@repo/auth/client"
 import { useConfirm } from "@repo/ui/components/ui/use-confirm"
 import { PageTop } from "@/components/shell/page-top"
 import { InstallCard } from "@/components/shell/install-card"
+import { MORE_LINKS } from "@/components/shell/more-links"
 import { ProfilePhoto } from "@/components/settings/profile-photo"
 import { useI18n } from "@/lib/i18n"
 import { displayPhone } from "@/lib/phone"
 import { clearLocalData, idb } from "@/lib/offline/store"
 import { flush } from "@/lib/offline/sync"
-import type { DictKey } from "@/lib/dict"
-
-const LINKS: { href: string; label: DictKey; icon: typeof Users }[] = [
-    { href: "/manage", label: "manageTitle", icon: Users },
-    { href: "/scan", label: "scanTitle", icon: Camera },
-    { href: "/cash", label: "cashOnHand", icon: Wallet },
-    { href: "/loans/calculator", label: "calculator", icon: Calculator },
-    { href: "/settings", label: "settingsTitle", icon: Settings },
-]
 
 export function MoreClient({ name, phone, photo }: { name: string; phone: string | null; photo: string | null }) {
     const { t } = useI18n()
@@ -61,7 +53,7 @@ export function MoreClient({ name, phone, photo }: { name: string; phone: string
                 <InstallCard />
 
                 <ul className="divide-y divide-line overflow-hidden rounded-[24px] bg-card ring-1 ring-line">
-                    {LINKS.map(({ href, label, icon: Icon }) => (
+                    {MORE_LINKS.map(({ href, label, icon: Icon }) => (
                         <li key={href}>
                             <Link href={href} className="flex items-center gap-3 px-4 py-4 active:bg-paper-2">
                                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-paper-2 text-ink-2">

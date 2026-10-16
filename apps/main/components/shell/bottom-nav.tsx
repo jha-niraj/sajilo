@@ -4,10 +4,12 @@ import { useLayoutEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
-import { CalendarCheck2, ChartColumnBig, HandCoins, LayoutGrid } from "lucide-react"
+import { CalendarCheck2, ChartColumnBig, ChevronRight, HandCoins, LayoutGrid, UserRound } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@repo/ui/components/ui/dropdown-menu"
 import { cn } from "@repo/ui/lib/utils"
 import { useI18n } from "@/lib/i18n"
 import type { DictKey } from "@/lib/dict"
+import { MORE_LINKS } from "./more-links"
 
 type Item = { href: string; label: DictKey; icon: typeof CalendarCheck2; match: string[] }
 
@@ -17,7 +19,7 @@ const LEFT: Item[] = [
 ]
 const RIGHT: Item[] = [
     { href: "/loans", label: "navLoans", icon: HandCoins, match: ["/loans", "/cash"] },
-    { href: "/more", label: "navMore", icon: LayoutGrid, match: ["/more", "/manage", "/settings", "/scan"] },
+    { href: "/more", label: "navMore", icon: LayoutGrid, match: ["/more", "/manage", "/settings", "/scan", "/loans/calculator"] },
 ]
 
 /** Room above the bar for the selected tab to rise into. */
@@ -79,6 +81,7 @@ export function BottomNav() {
     const tab = (item: Item, index: number) => {
         const active = index === activeIndex
         const Icon = item.icon
+        if (item.href === "/more") return <MoreMenu key={item.href} item={item} active={active} />
         return (
             <li key={item.href}>
                 <Link
@@ -144,5 +147,60 @@ export function BottomNav() {
                 {RIGHT.map((it, i) => tab(it, i + 3))}
             </ul>
         </nav>
+    )
+}
+
+/** "More" opens a menu of the places behind it instead of a page; the More page stays for the profile and sign out. */
+function MoreMenu({ item, active }: { item: Item; active: boolean }) {
+    const { t } = useI18n()
+    const pathname = usePathname()
+    const Icon = item.icon
+    return (
+        <li>
+            <DropdownMenu modal={false}>
+                <DropdownMenuTrigger
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                        "flex w-full flex-col items-center justify-center gap-1 text-[11px] font-medium outline-none transition-colors data-[state=open]:text-saffron",
+                        active ? "text-saffron" : "text-ink-3",
+                    )}
+                    style={{ height: BAR + (active ? 8 : 0), marginTop: active ? -8 : 0 }}
+                >
+                    <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 2} />
+                    <span className={cn(active && "font-semibold")}>{t(item.label)}</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    side="top"
+                    align="end"
+                    sideOffset={10}
+                    collisionPadding={12}
+                    className="w-64 rounded-[22px] border-line bg-card p-1.5 shadow-[0_18px_40px_-16px_rgb(42_33_24/0.45)]"
+                >
+                    {MORE_LINKS.map(({ href, label, icon: LinkIcon }) => {
+                        const here = pathname === href || pathname.startsWith(href + "/")
+                        return (
+                            <DropdownMenuItem key={href} asChild className="cursor-pointer rounded-2xl px-3 py-2.5 focus:bg-paper-2">
+                                <Link href={href} className={cn("flex items-center gap-3 text-[15px] font-medium", here ? "text-saffron" : "text-ink")}>
+                                    <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", here ? "bg-saffron-soft text-saffron" : "bg-paper-2 text-ink-2")}>
+                                        <LinkIcon className="h-[18px] w-[18px]" />
+                                    </span>
+                                    <span className="min-w-0 flex-1 truncate">{t(label)}</span>
+                                </Link>
+                            </DropdownMenuItem>
+                        )
+                    })}
+                    <DropdownMenuSeparator className="mx-2 my-1 bg-line" />
+                    <DropdownMenuItem asChild className="cursor-pointer rounded-2xl px-3 py-2.5 focus:bg-paper-2">
+                        <Link href="/more" className={cn("flex items-center gap-3 text-[15px] font-medium", pathname === "/more" ? "text-saffron" : "text-ink")}>
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-2 text-ink-2">
+                                <UserRound className="h-[18px] w-[18px]" />
+                            </span>
+                            <span className="min-w-0 flex-1 truncate">{t("profileAndAccount")}</span>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" />
+                        </Link>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </li>
     )
 }

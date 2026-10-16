@@ -9,12 +9,13 @@ export default async function CustomerPage({
     searchParams,
 }: {
     params: Promise<{ id: string }>
-    searchParams: Promise<{ y?: string; m?: string }>
+    searchParams: Promise<{ y?: string; m?: string; from?: string }>
 }) {
     const [{ id }, sp] = await Promise.all([params, searchParams])
     const today = nepalToday()
     const bs = adToBs(today)
     const history = await fetchCustomerHistory(id, Number(sp.y) || undefined, Number(sp.m) || undefined)
     if (!history) notFound()
-    return <HistoryClient initial={history} today={today} max={{ year: bs.year, month: bs.month }} />
+    const backHref = sp.from === "today" ? "/today" : sp.from === "month" ? "/month" : "/manage"
+    return <HistoryClient initial={history} today={today} max={{ year: bs.year, month: bs.month }} backHref={backHref} />
 }

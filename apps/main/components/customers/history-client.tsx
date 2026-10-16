@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Pencil, Phone } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { adDayOfWeek, adToBs, bsMonthRange, toNepaliDigits, WEEKDAYS_EN, WEEKDAYS_NE } from "@repo/calendar"
@@ -12,6 +12,7 @@ import { displayPhone } from "@/lib/phone"
 import { fetchCustomerHistory, type CustomerHistory, type CustomerHistoryDay } from "@/actions/collection.action"
 import { isOnline } from "@/lib/offline/network"
 import { toast } from "sonner"
+import { CustomerEditSheet } from "./customer-edit-sheet"
 
 type Tone = "paid" | "late" | "miss" | "holiday" | "today" | "future" | "part" | "none"
 
@@ -35,11 +36,23 @@ const TONE_CLASS: Record<Tone, string> = {
     none: "bg-transparent text-ink-3/60",
 }
 
-export function HistoryClient({ initial, today, max }: { initial: CustomerHistory; today: string; max: { year: number; month: number } }) {
+export function HistoryClient({
+    initial,
+    today,
+    max,
+    backHref,
+}: {
+    initial: CustomerHistory
+    today: string
+    max: { year: number; month: number }
+    backHref: string
+}) {
     const { t, money, num, lang, date } = useI18n()
     const [h, setH] = useState(initial)
     const [pending, startTransition] = useTransition()
     const [picked, setPicked] = useState<string | null>(null)
+    const [editing, setEditing] = useState(false)
+    const router = useRouter()
 
     const range = bsMonthRange(h.year, h.month)
     const byDate = new Map(h.days.map((d) => [d.date, d]))
@@ -71,15 +84,15 @@ export function HistoryClient({ initial, today, max }: { initial: CustomerHistor
             <PageTop
                 title={h.customer.name}
                 subtitle={`${money(h.customer.defaultAmount)} / ${lang === "ne" ? "दिन" : "day"}`}
-                backHref="/today"
+                backHref={backHref}
                 right={
-                    <Link
-                        href={`/manage?edit=${h.customer.id}`}
-                        aria-label={t("edit")}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-paper-2 text-ink-2"
+                    <button
+                        type="button"
+                        onClick={() => setEditing(true)}
+                        className="flex h-10 items-center gap-1.5 rounded-full bg-paper-2 px-3.5 text-[14px] font-semibold text-ink-2 active:bg-line"
                     >
-                        <Pencil className="h-5 w-5" />
-                    </Link>
+                        <Pencil className="h-4 w-4" /> {t("edit")}
+                    </button>
                 }
             />
 
@@ -168,6 +181,16 @@ export function HistoryClient({ initial, today, max }: { initial: CustomerHistor
                     </section>
                 )}
             </div>
+            <CustomerEditSheet
+                customer={editing ? h.customer : null}
+                today={today}
+                onClose={() => setEditing(false)}
+                onDone={(synced) => {
+                    if (!synced) return
+                    void fetchCustomerHistory(h.customer.id, h.year, h.month).then((next) => next && setH(next))
+                    router.refresh()
+                }}
+            />
         </>
     )
 }

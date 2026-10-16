@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { Camera, ClipboardPaste, CloudUpload, GripVertical, Plus, Users } from "lucide-react"
+import { Camera, ChevronRight, ClipboardPaste, CloudUpload, GripVertical, Plus, Users } from "lucide-react"
 import {
     DndContext,
     KeyboardSensor,
@@ -24,9 +24,8 @@ import { useI18n } from "@/lib/i18n"
 import { parseCustomerList } from "@/lib/parse-list"
 import { newOpId, queueOp } from "@/lib/offline/sync"
 import { usePendingCustomerOps, withPendingCustomers } from "@/lib/offline/pending-customers"
-import type { CustomerFields } from "@/lib/offline/ops"
-import type { CustomerInput, CustomerRow } from "@/actions/customer.action"
-import { CustomerForm } from "./customer-form"
+import type { CustomerRow } from "@/actions/customer.action"
+import { CustomerEditSheet } from "@/components/customers/customer-edit-sheet"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 
@@ -80,31 +79,6 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
         void queueOp({ kind: "reorder", orderedIds: next.map((c) => c.id) })
     }
 
-    const save = (input: CustomerInput) =>
-        startTransition(async () => {
-            try {
-                const fields = toFields(input)
-                const res =
-                    editing === "new"
-                        ? await queueOp({ kind: "addCustomers", customers: [{ ...fields, startDate: fields.startDate ?? today, id: newOpId() }] }, { wait: 4000 })
-                        : editing
-                          ? await queueOp({ kind: "editCustomer", id: editing.id, fields }, { wait: 4000 })
-                          : null
-                setEditing(null)
-                if (res) afterChange(res.synced, t("saved"))
-            } catch {
-                toast.error(t("somethingWrong"))
-            }
-        })
-
-    const toggleActive = () =>
-        startTransition(async () => {
-            if (!editing || editing === "new") return
-            const res = await queueOp({ kind: "customerActive", id: editing.id, isActive: !editing.isActive }, { wait: 4000 })
-            setEditing(null)
-            afterChange(res.synced, t("saved"))
-        })
-
     const parsed = useMemo(() => parseCustomerList(pasteText), [pasteText])
     const pasteValid = parsed.filter((p) => p.defaultAmount && p.defaultAmount > 0)
 
@@ -140,11 +114,11 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                     </div>
                 )}
 
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                <DndContext id="customer-route" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
                     <SortableContext items={active.map((c) => c.id)} strategy={verticalListSortingStrategy}>
                         <ul className={cn("space-y-2", busy && "opacity-80")}>
                             {active.map((c, i) => (
-                                <SortableRow key={c.id} c={c} index={i} pending={pendingIds.has(c.id)} onOpen={() => setEditing(c)} money={money} num={num} />
+                                <SortableRow key={c.id} c={c} index={i} pending={pendingIds.has(c.id)} onEdit={() => setEditing(c)} money={money} num={num} />
                             ))}
                         </ul>
                     </SortableContext>
@@ -156,14 +130,13 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                         <ul className="space-y-2">
                             {stopped.map((c) => (
                                 <li key={c.id}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setEditing(c)}
-                                        className="flex w-full items-center justify-between rounded-2xl bg-paper-2 px-4 py-3 text-left text-ink-3"
+                                    <Link
+                                        href={`/customers/${c.id}`}
+                                        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-paper-2 px-4 py-3 text-left text-ink-3"
                                     >
-                                        <span className="truncate text-[15px]">{c.name}</span>
-                                        <span className="tabular">{money(c.defaultAmount)}</span>
-                                    </button>
+                                        <span className="min-w-0 truncate text-[15px]">{c.name}</span>
+                                        <span className="shrink-0 tabular">{money(c.defaultAmount)}</span>
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
@@ -171,27 +144,15 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                 )}
             </div>
 
-            <BottomSheet
-                open={editing !== null}
-                onOpenChange={(o) => {
-                    if (!o) {
-                        setEditing(null)
-                        if (params.get("edit")) router.replace("/manage")
-                    }
+            <CustomerEditSheet
+                customer={editing}
+                today={today}
+                onClose={() => {
+                    setEditing(null)
+                    if (params.get("edit")) router.replace("/manage")
                 }}
-                title={editing === "new" ? t("addCustomer") : editing ? editing.name : ""}
-            >
-                {editing !== null && (
-                    <CustomerForm
-                        key={editing === "new" ? "new" : editing.id}
-                        initial={editing === "new" ? undefined : editing}
-                        today={today}
-                        busy={busy}
-                        onSubmit={save}
-                        onToggleActive={toggleActive}
-                    />
-                )}
-            </BottomSheet>
+                onDone={(synced) => synced && router.refresh()}
+            />
 
             <BottomSheet open={pasteOpen} onOpenChange={setPasteOpen} title={t("importPaste")} description={t("pasteHint")}>
                 <Textarea
@@ -232,18 +193,28 @@ function SortableRow({
     c,
     index,
     pending,
-    onOpen,
+    onEdit,
     money,
     num,
 }: {
     c: CustomerRow
     index: number
     pending?: boolean
-    onOpen: () => void
+    onEdit: () => void
     money: (n: number) => string
     num: (n: number) => string
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id })
+    const rowCls = "flex min-w-0 flex-1 items-center gap-3 text-left"
+    const inner = (
+        <>
+            <span className="w-7 shrink-0 text-[14px] text-ink-3 tabular">{num(index + 1)}</span>
+            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{c.name}</span>
+            {pending && <CloudUpload aria-label="Waiting to sync" className="h-4 w-4 shrink-0 text-[#b07a10]" />}
+            <span className="shrink-0 text-[16px] font-semibold text-ink-2 tabular">{money(c.defaultAmount)}</span>
+            {!pending && <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" />}
+        </>
+    )
     return (
         <li
             ref={setNodeRef}
@@ -261,12 +232,16 @@ function SortableRow({
             >
                 <GripVertical className="h-6 w-6" />
             </span>
-            <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                <span className="w-7 text-[14px] text-ink-3 tabular">{num(index + 1)}</span>
-                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{c.name}</span>
-                {pending && <CloudUpload aria-label="Waiting to sync" className="h-4 w-4 shrink-0 text-[#b07a10]" />}
-                <span className="text-[16px] font-semibold text-ink-2 tabular">{money(c.defaultAmount)}</span>
-            </button>
+            {/* A customer still waiting to sync has no page on the server yet, so it opens the edit sheet. */}
+            {pending ? (
+                <button type="button" onClick={onEdit} className={rowCls}>
+                    {inner}
+                </button>
+            ) : (
+                <Link href={`/customers/${c.id}`} className={rowCls}>
+                    {inner}
+                </Link>
+            )}
         </li>
     )
 }
@@ -301,15 +276,4 @@ function ActionTile({
             {label}
         </button>
     )
-}
-
-function toFields(input: CustomerInput): CustomerFields {
-    return {
-        name: input.name.trim(),
-        defaultAmount: Number(input.defaultAmount),
-        phone: input.phone || null,
-        bankAccountNo: input.bankAccountNo || null,
-        startDate: input.startDate,
-        note: input.note || null,
-    }
 }
