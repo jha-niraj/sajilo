@@ -17,7 +17,7 @@ import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { useI18n } from "@/lib/i18n"
 import { refreshDay } from "@/lib/offline/sync"
 import { confirmProposal, deleteConversation, listConversations, munshiSpeak, saveConversation } from "@/actions/munshi.action"
-import type { MunshiConversationSummary, MunshiMessage, MunshiTurnResult, Proposal } from "@/lib/munshi/types"
+import type { MunshiConversationSummary, MunshiMessage, MunshiStreamFrame, MunshiTurnResult, Proposal } from "@/lib/munshi/types"
 import type { DictKey } from "@/lib/dict"
 import { Orb, type OrbState } from "./orb"
 import { ProposalCard } from "./proposal-card"
@@ -67,6 +67,8 @@ export function MunshiClient({
               : [],
     )
     const [busy, setBusy] = useState(false)
+    // The assistant message whose text is still arriving (chat streams; voice gets the whole reply).
+    const [streamingId, setStreamingId] = useState<string | null>(null)
     const [confirming, setConfirming] = useState<string | null>(null)
     const [hasCustomers, setHasCustomers] = useState(initialHasCustomers)
     const [transcribing, setTranscribing] = useState(false)
@@ -123,10 +125,21 @@ export function MunshiClient({
     }, [])
 
     const applyResult = useCallback(
-        (res: MunshiTurnResult, userText: string | undefined, via?: "voice") => {
+        (res: MunshiTurnResult, userText: string | undefined, via?: "voice", streamedId?: string) => {
             for (const r of res.resolved) setProposalStatus(r.id, r.status)
             if (res.error === "no_speech") {
                 toast(t("didntHear"))
+                return
+            }
+            // A reply that already streamed in keeps its text; it only gains its cards (or an error note).
+            if (streamedId) {
+                setMessages((ms) =>
+                    ms.map((m) =>
+                        m.id === streamedId
+                            ? { ...m, content: res.error ? `${m.content}\n\n${t("munshiError")}` : res.reply || m.content, proposals: res.proposals }
+                            : m,
+                    ),
+                )
                 return
             }
             const additions: MunshiMessage[] = []
@@ -153,21 +166,34 @@ export function MunshiClient({
             const gen = chatGen.current
             setBusy(true)
             setMessages((ms) => [...ms, { id: newId(), role: "user", content: clean, at: Date.now(), ...(speakReply ? { via: "voice" as const } : {}) }])
+            const replyId = newId()
+            let started = false
             try {
-                const res = (await fetch("/api/munshi", {
+                const http = await fetch("/api/munshi", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ text: clean, history: history(), pending: pendingNow(), voice: speakReply }),
-                }).then((r) => r.json())) as MunshiTurnResult
+                })
+                const res = await readTurn(http, (delta) => {
+                    if (gen !== chatGen.current) return
+                    if (!started) {
+                        started = true
+                        setStreamingId(replyId)
+                        setMessages((ms) => [...ms, { id: replyId, role: "assistant", content: delta, at: Date.now() }])
+                    } else {
+                        setMessages((ms) => ms.map((m) => (m.id === replyId ? { ...m, content: m.content + delta } : m)))
+                    }
+                })
                 if (gen !== chatGen.current) return
-                applyResult(res, undefined)
+                applyResult(res, undefined, undefined, started ? replyId : undefined)
                 if (speakReply && res.reply) {
                     const audio = await munshiSpeak(res.reply)
                     if (audio) await voice.sayOnce(audio)
                 }
             } catch {
-                if (gen === chatGen.current) applyResult({ reply: "", proposals: [], resolved: [], error: "failed" }, undefined)
+                if (gen === chatGen.current) applyResult({ reply: "", proposals: [], resolved: [], error: "failed" }, undefined, undefined, started ? replyId : undefined)
             } finally {
+                setStreamingId(null)
                 setBusy(false)
             }
         },
@@ -294,6 +320,7 @@ export function MunshiClient({
                 <ChatView
                     messages={messages}
                     busy={busy}
+                    streaming={streamingId !== null}
                     confirming={confirming}
                     onConfirm={confirm}
                     onCancel={(p) => setProposalStatus(p.id, "cancelled")}
@@ -515,6 +542,7 @@ function StartCards() {
 function ChatView(props: {
     messages: MunshiMessage[]
     busy: boolean
+    streaming: boolean
     transcribing: boolean
     confirming: string | null
     onConfirm: (p: Proposal) => void
@@ -529,10 +557,11 @@ function ChatView(props: {
     const viewportRef = useRef<HTMLDivElement>(null)
     const dictation = useDictation((blob) => void props.onAudio(blob))
 
+    const lastLength = props.messages.at(-1)?.content.length ?? 0
     useEffect(() => {
         const el = viewportRef.current
         if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
-    }, [props.messages.length, props.busy, props.transcribing])
+    }, [props.messages.length, lastLength, props.busy, props.transcribing])
 
     const toggleMic = async () => {
         if (dictation.recording) return dictation.stop()
@@ -585,7 +614,7 @@ function ChatView(props: {
                             </span>
                         </div>
                     )}
-                    {props.busy && !props.transcribing && (
+                    {props.busy && !props.transcribing && !props.streaming && (
                         <div className="flex items-center gap-2 px-1 text-[14px] text-ink-3">
                             <Loader size={18} dotSize={2} /> {t("thinking")}
                         </div>
@@ -681,4 +710,37 @@ function ChatWelcome({ onPick }: { onPick: (text: string) => void }) {
             </div>
         </div>
     )
+}
+
+/**
+ * Reads one chat turn. The route streams NDJSON frames (`text` deltas, then `done` or `error`);
+ * early failures (no model, signed out) still come back as one JSON object.
+ */
+async function readTurn(http: Response, onDelta: (delta: string) => void): Promise<MunshiTurnResult> {
+    const failed: MunshiTurnResult = { reply: "", proposals: [], resolved: [], error: "failed" }
+    if (!http.body || !(http.headers.get("content-type") ?? "").includes("ndjson")) {
+        return ((await http.json().catch(() => null)) as MunshiTurnResult | null) ?? failed
+    }
+    const reader = http.body.getReader()
+    const dec = new TextDecoder()
+    let buf = ""
+    let out: MunshiTurnResult = failed
+    for (;;) {
+        const { value, done } = await reader.read()
+        buf += dec.decode(value ?? new Uint8Array(), { stream: !done })
+        // A frame can be split across two chunks, so only whole lines are parsed.
+        let nl = buf.indexOf("\n")
+        while (nl >= 0) {
+            const line = buf.slice(0, nl).trim()
+            buf = buf.slice(nl + 1)
+            nl = buf.indexOf("\n")
+            if (!line) continue
+            const f = JSON.parse(line) as MunshiStreamFrame
+            if (f.type === "text") onDelta(f.delta)
+            else if (f.type === "done") out = { ...f.result }
+            else out = failed
+        }
+        if (done) break
+    }
+    return out
 }

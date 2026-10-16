@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/session"
 import { nepalToday } from "@/lib/today"
 import { getSettings } from "@/lib/collection/server"
-import { runMunshi } from "@/lib/munshi/agent"
+import { runMunshi, streamMunshi } from "@/lib/munshi/agent"
 import { munshiModel } from "@/lib/munshi/model"
 import { knownNames } from "@/lib/munshi/agenttools/resolve"
 import { speak, transcribe } from "@/lib/munshi/speech"
@@ -28,7 +28,7 @@ const fail = (error: MunshiTurnResult["error"], extra: Partial<MunshiTurnResult>
 
 /**
  * One Munshi turn.
- * - JSON `{ text, history, pending }`               -> typed chat
+ * - JSON `{ text, history, pending }`               -> typed chat, streamed as NDJSON frames
  * - multipart `audio`, `history`, `pending`, `speak` -> voice (Saaras -> agent -> Bulbul)
  */
 export async function POST(req: Request) {
@@ -46,8 +46,10 @@ export async function POST(req: Request) {
             const body = (await req.json()) as { text?: string; history?: unknown; pending?: unknown; voice?: boolean }
             const text = String(body.text ?? "").trim().slice(0, 2000)
             if (!text) return fail("no_speech")
-            const out = await runMunshi({ ...base, history: cleanHistory(body.history), text, pending: cleanPending(body.pending), voice: body.voice === true })
-            return NextResponse.json(out satisfies MunshiTurnResult)
+            const stream = await streamMunshi({ ...base, history: cleanHistory(body.history), text, pending: cleanPending(body.pending), voice: body.voice === true })
+            return new Response(stream, {
+                headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store, no-transform", "X-Accel-Buffering": "no" },
+            })
         }
 
         const form = await req.formData()

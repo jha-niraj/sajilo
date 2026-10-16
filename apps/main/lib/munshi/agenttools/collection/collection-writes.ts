@@ -51,9 +51,7 @@ export const markPaymentDef: MunshiWriteDef = {
                 }
                 const slot = ctx.claimWriteSlot("markPayment")
                 if (slot) return slot
-                const res = await markPaymentDef.commit(payload, ctx)
-                ctx.resolve("mark_payment", res.ok ? "done" : "failed")
-                return res
+                return ctx.commit("mark_payment", payload, () => markPaymentDef.commit(payload, ctx))
             },
         }),
 }
@@ -91,9 +89,7 @@ export const addCustomerDef: MunshiWriteDef = {
                 }
                 const slot = ctx.claimWriteSlot("addCustomer")
                 if (slot) return slot
-                const res = await addCustomerDef.commit(payload, ctx)
-                ctx.resolve("add_customer", res.ok ? "done" : "failed")
-                return res
+                return ctx.commit("add_customer", payload, () => addCustomerDef.commit(payload, ctx))
             },
         }),
 }

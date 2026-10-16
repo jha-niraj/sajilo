@@ -4,7 +4,7 @@ import { generateText } from "ai"
 import { logAiUsage } from "@repo/ai/usage"
 import { adToBs } from "@repo/calendar"
 import { parseCustomerList } from "@/lib/parse-list"
-import { munshiModel } from "@/lib/munshi/model"
+import { munshiModel, samplingFor } from "@/lib/munshi/model"
 
 export type ScanKind = "customers" | "collections" | "loans"
 
@@ -96,7 +96,7 @@ export async function structureScan(kind: ScanKind, text: string, today: string,
             model: m.model,
             system: PROMPTS[kind],
             prompt: `Current BS date: ${bs.year}-${bs.month}-${bs.day}\n\nOCR TEXT:\n${text.slice(0, 20_000)}\n\nReturn only the JSON object.`,
-            temperature: 0,
+            ...samplingFor(m, 0),
             abortSignal: AbortSignal.timeout(60_000),
         })
         reply = res.text

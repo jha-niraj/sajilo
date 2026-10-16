@@ -38,3 +38,9 @@ export interface MunshiTurnResult {
     audio?: string | null
     error?: "no_llm" | "no_speech" | "failed"
 }
+
+/** One line of the streamed chat reply (POST /api/munshi with JSON) */
+export type MunshiStreamFrame =
+    | { type: "text"; delta: string }
+    | { type: "done"; result: Omit<MunshiTurnResult, "heard" | "audio" | "error"> }
+    | { type: "error" }

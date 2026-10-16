@@ -52,9 +52,7 @@ export const addLoanDef: MunshiWriteDef = {
                 }
                 const slot = ctx.claimWriteSlot("addLoan")
                 if (slot) return slot
-                const res = await addLoanDef.commit(payload, ctx)
-                ctx.resolve("add_loan", res.ok ? "done" : "failed")
-                return res
+                return ctx.commit("add_loan", payload, () => addLoanDef.commit(payload, ctx))
             },
         }),
 }
@@ -95,9 +93,7 @@ export const addRepaymentDef: MunshiWriteDef = {
                 }
                 const slot = ctx.claimWriteSlot("addRepayment")
                 if (slot) return slot
-                const res = await addRepaymentDef.commit(payload, ctx)
-                ctx.resolve("add_repayment", res.ok ? "done" : "failed")
-                return res
+                return ctx.commit("add_repayment", payload, () => addRepaymentDef.commit(payload, ctx))
             },
         }),
 }

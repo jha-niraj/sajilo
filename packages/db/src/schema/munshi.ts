@@ -18,3 +18,15 @@ export const munshiConversation = pgTable(
     },
     (t) => [index('munshi_conversation_collector_idx').on(t.collectorId, t.updatedAt)],
 )
+
+// One row per confirm card that has been saved. Saying "yes" and tapping Confirm can both reach the
+// same card (and a slow phone can tap twice), so a commit first claims the card's id here; a second
+// claim finds the row and saves nothing.
+export const munshiCommit = pgTable('munshi_commit', {
+    proposalId: text('proposal_id').primaryKey(),
+    collectorId: text('collector_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+})

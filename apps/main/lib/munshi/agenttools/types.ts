@@ -7,7 +7,8 @@
  * Write tools follow the preview/confirm protocol: called with confirm=false they save nothing
  * and return a preview, which also becomes a Confirm card on screen. Only after he approves
  * (tap or "yes") is the same tool called with confirm=true. One write per turn, enforced by
- * `claimWriteSlot`, so a single "yes" can never commit two things.
+ * `claimWriteSlot`, so a single "yes" can never commit two things; `commit` claims the card's id,
+ * so the same card can never be saved twice.
  */
 
 import type { CoreTool } from "ai"
@@ -20,8 +21,11 @@ export interface MunshiToolContext {
     lang: "ne" | "en"
     /** A write tool's preview: shown as a Confirm card */
     propose: (p: Omit<Proposal, "id" | "status">) => Proposal
-    /** Mark a pending card as done/cancelled after a confirm=true call */
-    resolve: (kind: ProposalKind, status: Proposal["status"]) => void
+    /**
+     * A confirm=true call: finds the card being confirmed, claims it so it can never be saved twice
+     * (voice "yes" and the Confirm button both reach it), runs `save`, and closes the card.
+     */
+    commit: (kind: ProposalKind, payload: Record<string, unknown>, save: () => Promise<{ ok: boolean; message: string }>) => Promise<{ ok: boolean; message: string }>
     claimWriteSlot: (toolName: string) => null | { error: string; alreadyCommitted: string }
 }
 

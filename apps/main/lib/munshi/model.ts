@@ -16,7 +16,18 @@ export interface MunshiModel {
  */
 export function munshiModel(): MunshiModel | null {
     if (process.env.ANTHROPIC_API_KEY) {
-        const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+        const anthropic = createAnthropic({
+            apiKey: process.env.ANTHROPIC_API_KEY,
+            // Haiku 5.5 rejects `temperature`, and AI SDK v4 always sends one (0 when unset); drop it.
+            fetch: async (input, init) => {
+                if (init?.body && typeof init.body === "string") {
+                    const body = JSON.parse(init.body) as Record<string, unknown>
+                    delete body.temperature
+                    init = { ...init, body: JSON.stringify(body) }
+                }
+                return fetch(input, init)
+            },
+        })
         return { model: anthropic("claude-haiku-5-5"), id: "claude-haiku-5-5", provider: "anthropic" }
     }
     if (process.env.OPENAI_API_KEY) {
@@ -41,4 +52,9 @@ export function munshiModel(): MunshiModel | null {
         return { model: sarvam("sarvam-105b-conversations"), id: "sarvam-105b-conversations", provider: "sarvam" }
     }
     return null
+}
+
+/** Claude Haiku 5.5 rejects `temperature` (the fetch above also strips the SDK's default); other models take it. */
+export function samplingFor(m: MunshiModel, temperature: number): { temperature?: number } {
+    return m.provider === "anthropic" ? {} : { temperature }
 }

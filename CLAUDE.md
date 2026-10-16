@@ -209,9 +209,9 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 
 ### Munshi (AI bookkeeper, `/munshi`)
 - Voice: Sarvam Saaras v4 STT (customer/borrower names as keyterms) -> agent -> Sarvam Bulbul v3 TTS (Hindi voice reads Nepali Devanagari; no Nepali TTS yet). Chat uses the same agent.
-- Agent: Vercel AI SDK `generateText` with tools built by `makeTool` (`@repo/ai/agent`), same layout as Gurukul Saathi: `lib/munshi/agenttools/<area>/<area>-reads.ts|-writes.ts`, registry in `agenttools/index.ts`.
-- Model (`lib/munshi/model.ts`, also used by scan): Claude Haiku 5.5 (`ANTHROPIC_API_KEY`, `@ai-sdk/anthropic` 1.x for AI SDK v4), else GPT (`OPENAI_API_KEY`), else Sarvam `sarvam-105b-conversations` via the AI SDK OpenAI-compatible provider.
-- Write tools follow preview/confirm: `confirm=false` saves nothing and shows a Confirm card; `confirm=true` only after he says yes; one write per turn (`claimWriteSlot`). Writes wrap existing server actions.
+- Agent: Vercel AI SDK with tools; chat streams NDJSON frames (`streamMunshi`: `text` deltas then `done`/`error`), voice uses `generateText` (`runMunshi`) because the reply is spoken whole. Tools built by `makeTool` (`@repo/ai/agent`), same layout as Gurukul Saathi: `lib/munshi/agenttools/<area>/<area>-reads.ts|-writes.ts`, registry in `agenttools/index.ts`.
+- Model (`lib/munshi/model.ts`, also used by scan): Claude Haiku 5.5 (`ANTHROPIC_API_KEY`, `@ai-sdk/anthropic` 1.x for AI SDK v4; the model rejects `temperature`, so its fetch strips the SDK's default), else GPT (`OPENAI_API_KEY`), else Sarvam `sarvam-105b-conversations` via the AI SDK OpenAI-compatible provider.
+- Write tools follow preview/confirm: `confirm=false` saves nothing and shows a Confirm card; `confirm=true` only after he says yes; one write per turn (`claimWriteSlot`). Writes wrap existing server actions and go through `ctx.commit`, which claims the card's id in `munshi_commit` first, so a card is saved at most once (voice "yes" and the Confirm button can both reach it) and same-turn re-proposals are folded in.
 - Turns go through `POST /api/munshi` (JSON = chat, multipart = voice). Confirm button -> `confirmProposal` server action.
 - New tool: add a def in the right area file and list it in `agenttools/index.ts`.
 
