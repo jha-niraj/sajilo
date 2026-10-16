@@ -1,6 +1,7 @@
 "use server"
 
 import { z } from "zod"
+import { headers } from "next/headers"
 import { auth } from "@repo/auth"
 import { db, eq } from "@repo/db"
 import { user, collectorSettings } from "@repo/db/schema"
@@ -24,8 +25,11 @@ export async function signUpCollector(input: z.input<typeof signupInput>): Promi
     const existing = await db.query.user.findFirst({ where: eq(user.phoneNumber, phone) })
     if (existing) return { ok: false, error: "phone_taken" }
 
+    // Creates the account AND signs it in: better-auth's nextCookies() puts the session cookie on
+    // this action's reply, so the browser doesn't make a second sign-in request.
     const created = await auth.api.signUpEmail({
         body: { email: phoneTempEmail(phone), password: parsed.data.pin, name: parsed.data.name },
+        headers: await headers(),
     })
     const userId = created.user.id
 

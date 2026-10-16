@@ -2,6 +2,7 @@ import { neon, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { isTransient, noteQuotaExhausted, clearQuotaSignal } from '@repo/errors';
 import * as schema from './schema/index';
+import { noteQuery } from './request-timing';
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
@@ -98,6 +99,15 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit | un
 }
 
 const retryingFetch: typeof fetch = async (input, init) => {
+    const t0 = Date.now();
+    try {
+        return await retryingFetchInner(input, init);
+    } finally {
+        noteQuery(Date.now() - t0);
+    }
+};
+
+const retryingFetchInner: typeof fetch = async (input, init) => {
     let lastErr: unknown;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {

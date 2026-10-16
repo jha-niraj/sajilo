@@ -1,15 +1,16 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "sajilo",
-	"main": ".open-next/worker.js",
+	// worker.ts wraps OpenNext's handler so sign-out is answered before the Next bundle loads.
+	"main": "worker.ts",
 	"compatibility_date": "2026-10-01",
 	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
 	"minify": true,
 
-	// Smart placement: Cloudflare moves the Worker toward Neon (ap-southeast-1) once it has seen
-	// enough traffic. With one user it may stay near Kathmandu, which is fine for these few-query
-	// pages. Switch to { "region": "aws:ap-southeast-1" } to pin it if pages ever feel slow.
-	"placement": { "mode": "smart" },
+	// Pinned next to Neon (ap-southeast-1): every query is its own HTTPS request, so the Worker runs
+	// beside the database. A response header `Cf-Placement` names where it ran. Repeat this under any
+	// env.* block added later; it is not inherited.
+	"placement": { "region": "aws:ap-southeast-1" },
 
 	"assets": {
 		"directory": ".open-next/assets",

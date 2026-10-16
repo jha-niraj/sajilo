@@ -1,3 +1,4 @@
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import type { Metadata } from "next"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
@@ -71,8 +72,9 @@ export default async function PrintMonthPage({ searchParams }: { searchParams: P
                 </div>
             </header>
 
-            <div className="overflow-hidden">
-                <table className="w-full border-collapse text-[8.5px] leading-tight tabular">
+            {/* On a phone the A4 register is wider than the screen: it scrolls sideways there, and prints whole. */}
+            <ScrollArea orientation="horizontal" className="print:overflow-visible">
+                <table className="w-full min-w-[960px] border-collapse text-[8.5px] leading-tight tabular print:min-w-0">
                     <thead>
                         <tr className="bg-[#f3efe6]">
                             <th className="w-[18px] px-0.5 py-1 text-center">#</th>
@@ -92,7 +94,7 @@ export default async function PrintMonthPage({ searchParams }: { searchParams: P
                             <tr key={c.id}>
                                 <td className="px-0.5 py-[3px] text-center">{lang === "ne" ? toNepaliDigits(i + 1) : i + 1}</td>
                                 <td className="max-w-[120px] truncate px-1 py-[3px] font-semibold">{c.name}</td>
-                                <td className="px-1 py-[3px]">{c.bankAccountNo ?? ""}</td>
+                                <td className="max-w-[90px] truncate px-1 py-[3px]">{c.bankAccountNo ?? ""}</td>
                                 {days.map((d) => {
                                     const v = cells[c.id]?.[d.date]
                                     return (
@@ -129,7 +131,7 @@ export default async function PrintMonthPage({ searchParams }: { searchParams: P
                         </tr>
                     </tfoot>
                 </table>
-            </div>
+            </ScrollArea>
 
             <section className="mt-4 flex items-start justify-between gap-8 text-[12px]">
                 <div className="space-y-0.5">

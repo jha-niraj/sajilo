@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState, useTransition } from "react"
-import Link from "next/link"
+import Link from "@/components/app-link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { Camera, ChevronRight, ClipboardPaste, CloudUpload, GripVertical, Plus, Users } from "lucide-react"
@@ -166,9 +166,9 @@ export function ManageClient({ initial, today }: { initial: CustomerRow[]; today
                     <ScrollArea orientation="vertical" className="mt-3 rounded-2xl bg-card ring-1 ring-line" viewportClassName="max-h-56">
                     <ul className="divide-y divide-line">
                         {parsed.map((p, i) => (
-                            <li key={i} className="flex items-center justify-between px-4 py-2.5 text-[16px]">
-                                <span className="truncate text-ink">{p.name}</span>
-                                <span className={cn("font-semibold tabular", p.defaultAmount ? "text-ink" : "text-miss")}>
+                            <li key={i} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[16px]">
+                                <span className="min-w-0 truncate text-ink">{p.name}</span>
+                                <span className={cn("shrink-0 font-semibold tabular", p.defaultAmount ? "text-ink" : "text-miss")}>
                                     {p.defaultAmount ? money(p.defaultAmount) : t("unsure")}
                                 </span>
                             </li>

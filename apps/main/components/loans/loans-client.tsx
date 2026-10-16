@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import Link from "next/link"
+import Link from "@/components/app-link"
 import { Calculator, Camera, HandCoins, Plus, Wallet } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { PageTop } from "@/components/shell/page-top"

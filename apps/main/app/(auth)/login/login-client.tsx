@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
+import Link from "@/components/app-link"
+import { useRouter } from "next/navigation"
 import { RotateCcw } from "lucide-react"
 import { signIn } from "@repo/auth/client"
-import { updateSettings } from "@/actions/settings.action"
 import { Loader } from "@repo/ui/components/ui/loader"
 import { AuthBody, AuthFrame, AuthHeading } from "@/components/auth/auth-frame"
 import { PhoneInput } from "@/components/auth/phone-input"
@@ -12,12 +12,17 @@ import { PinInput } from "@/components/pin-input"
 import { useI18n } from "@/lib/i18n"
 import { displayPhone, normalizePhone } from "@/lib/phone"
 import { readDeviceAccount, saveDeviceAccount, type DeviceAccount } from "@/lib/device-account"
+import { signInDestination } from "@/lib/sign-in-destination"
+import { LandingShell } from "@/components/shell/landing-shell"
+import { LANG_SYNC_KEY } from "@/components/shell/lang-sync"
 
 type Mode = "loading" | "phone" | "pin"
 
 export function LoginClient() {
-    const { t, lang } = useI18n()
+    const { t, ready } = useI18n()
+    const router = useRouter()
     const [mode, setMode] = useState<Mode>("loading")
+    const [landing, setLanding] = useState<string | null>(null)
     const [account, setAccount] = useState<DeviceAccount | null>(null)
     const [phone, setPhone] = useState("")
     const [pin, setPin] = useState("")
@@ -57,11 +62,20 @@ export function LoginClient() {
             return
         }
         saveDeviceAccount({ phone: account.phone, name: res.data?.user?.name ?? account.name })
-        await updateSettings({ language: lang }).catch(() => {})
-        window.location.replace("/munshi")
+        try {
+            sessionStorage.setItem(LANG_SYNC_KEY, "1")
+        } catch {
+            // the language still applies on this phone through its cookie
+        }
+        // The screen moves now: the app's frame and the destination's skeleton, then one RSC fetch.
+        const to = signInDestination(window.location.search)
+        setLanding(to)
+        router.push(to)
     }
 
-    if (mode === "loading") {
+    if (landing) return <LandingShell path={landing} />
+
+    if (mode === "loading" || !ready) {
         return (
             <AuthFrame>
                 <div className="flex flex-1 items-center justify-center">

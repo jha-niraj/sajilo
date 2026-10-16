@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import Link from "next/link"
+import Link from "@/components/app-link"
+import { useRouter } from "next/navigation"
+import { PrefetchKind } from "@/lib/prefetch-kind"
 import { motion } from "framer-motion"
 import { ArrowLeft, ArrowRight } from "lucide-react"
-import { signIn } from "@repo/auth/client"
 import { Loader } from "@repo/ui/components/ui/loader"
 import { AuthArt, AuthBody, AuthFrame, AuthHeading } from "@/components/auth/auth-frame"
 import { PhoneInput } from "@/components/auth/phone-input"
@@ -18,7 +19,8 @@ type Step = "name" | "phone" | "pin" | "confirm" | "done"
 const ORDER: Step[] = ["name", "phone", "pin", "confirm"]
 
 export function SignupClient() {
-    const { t, lang } = useI18n()
+    const { t, lang, ready } = useI18n()
+    const router = useRouter()
     const [step, setStep] = useState<Step>("name")
     const [direction, setDirection] = useState<1 | -1>(1)
     const [name, setName] = useState("")
@@ -89,15 +91,24 @@ export function SignupClient() {
             }
             return
         }
-        const login = await signIn.phoneNumber({ phoneNumber: res.phone, password: pin, rememberMe: true })
+        // signUpCollector already signed him in (better-auth's nextCookies set the session cookie on
+        // that same reply), so there is no second sign-in request here.
         saveDeviceAccount({ phone: res.phone, name: name.trim() })
-        if (login.error) {
-            window.location.replace("/")
-            return
-        }
         setDirection(1)
         setStep("done")
-        setTimeout(() => window.location.replace("/munshi?welcome=1"), 1400)
+        // Munshi loads while the welcome plays, so the move after it is instant.
+        router.prefetch("/munshi?welcome=1", { kind: PrefetchKind.FULL })
+        setTimeout(() => router.push("/munshi?welcome=1"), 900)
+    }
+
+    if (!ready) {
+        return (
+            <AuthFrame>
+                <div className="flex flex-1 items-center justify-center">
+                    <Loader size={28} dotSize={3} />
+                </div>
+            </AuthFrame>
+        )
     }
 
     if (step === "done") {

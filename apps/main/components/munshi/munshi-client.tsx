@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import Link from "next/link"
+import Link from "@/components/app-link"
 import { AnimatePresence, motion } from "framer-motion"
 import { toast } from "sonner"
 import { ArrowUp, Camera, Keyboard, Mic, Square, UserPlus, AudioLines, UserRoundX, ChartColumnBig, TrendingUp, HandCoins, History, SquarePen, Trash2, WifiOff } from "lucide-react"
@@ -267,7 +267,7 @@ export function MunshiClient({
 
             <header className="flex items-center justify-between gap-3 px-4 pt-safe">
                 <div className="min-w-0 pt-4">
-                    <h1 className="text-[22px] font-semibold leading-tight text-ink">{t("munshi")}</h1>
+                    <h1 className="truncate text-[22px] font-semibold leading-tight text-ink">{t("munshi")}</h1>
                     <p className="truncate whitespace-nowrap text-[13px] text-ink-3">{t("munshiTagline")}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5 pt-4">

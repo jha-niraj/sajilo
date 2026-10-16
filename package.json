@@ -7,10 +7,15 @@
 		"lint": "turbo run lint",
 		"format": "prettier --write \"**/*.{ts,tsx,md}\"",
 		"check-types": "turbo run check-types",
-		"test": "turbo run test"
+		"test": "turbo run test",
+		"bench:nav": "tsx scripts/bench-navigation.mts",
+		"bench:install": "playwright install chromium",
+		"bundle:size": "pnpm --filter main bundle:size"
 	},
 	"devDependencies": {
+		"playwright": "1.55.0",
 		"prettier": "^3.7.4",
+		"tsx": "^4.19.2",
 		"turbo": "^2.6.3",
 		"typescript": "5.9.2",
 		"vitest": "^5.0.4"

@@ -2,6 +2,8 @@
 
 Production-ready Next.js monorepo. Clone, fill `.env` files, run `pnpm --filter @repo/db db:push && pnpm --filter @repo/db db:seed`, then `pnpm dev`.
 
+**Speed rules (sign-in, sign-out, skeletons, prefetching, Workers) live in [`AGENTS.md`](AGENTS.md); the map and decisions in `plan/speed-record.md`. Read it before touching auth, middleware, links or a page's loading state.**
+
 ## Writing conventions
 
 - Use hyphens (`-`) not em-dashes (`—`) everywhere in copy, comments, and JSX text.

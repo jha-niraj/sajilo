@@ -1,9 +1,10 @@
 "use client"
 
-import Link from "next/link"
+import { useEffect, useState } from "react"
+import Link from "@/components/app-link"
+import { useRouter } from "next/navigation"
 import { ChevronRight, LogOut } from "lucide-react"
 import { toast } from "sonner"
-import { signOut } from "@repo/auth/client"
 import { useConfirm } from "@repo/ui/components/ui/use-confirm"
 import { PageTop } from "@/components/shell/page-top"
 import { InstallCard } from "@/components/shell/install-card"
@@ -11,12 +12,20 @@ import { MORE_LINKS } from "@/components/shell/more-links"
 import { ProfilePhoto } from "@/components/settings/profile-photo"
 import { useI18n } from "@/lib/i18n"
 import { displayPhone } from "@/lib/phone"
-import { clearLocalData, idb } from "@/lib/offline/store"
+import { idb } from "@/lib/offline/store"
+import { prefetchLogin, signOutNow } from "@/lib/sign-out"
+import { DotmSquare11 } from "@repo/ui/components/ui/dotm-square-11"
 import { flush } from "@/lib/offline/sync"
 
 export function MoreClient({ name, phone, photo }: { name: string; phone: string | null; photo: string | null }) {
     const { t } = useI18n()
     const { confirm, confirmDialog } = useConfirm()
+    const router = useRouter()
+    const [leaving, setLeaving] = useState(false)
+
+    // The login page in the router cache before the tap, so sign-out never waits on a cold Worker.
+    useEffect(() => prefetchLogin(router), [router])
+
     const logout = async () => {
         const ok = await confirm({ title: t("signOutTitle"), description: t("signOutBody"), confirmText: t("signOut"), cancelText: t("cancel") })
         if (!ok) return
@@ -26,9 +35,13 @@ export function MoreClient({ name, phone, photo }: { name: string; phone: string
             toast.error(t("signOutUnsynced"))
             return
         }
-        await signOut()
-        await clearLocalData()
-        window.location.replace("/")
+        setLeaving(true)
+        try {
+            await signOutNow(router)
+        } catch {
+            setLeaving(false)
+            toast.error(t("somethingWrong"))
+        }
     }
 
     return (
@@ -44,9 +57,12 @@ export function MoreClient({ name, phone, photo }: { name: string; phone: string
                     <button
                         type="button"
                         onClick={() => void logout()}
-                        className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-paper-2 px-3.5 text-[14px] font-semibold text-miss active:bg-line"
+                        onPointerDown={() => prefetchLogin(router)}
+                        onFocus={() => prefetchLogin(router)}
+                        disabled={leaving}
+                        className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-paper-2 px-3.5 text-[14px] font-semibold text-miss active:bg-line disabled:opacity-60"
                     >
-                        <LogOut className="h-4 w-4" /> {t("signOut")}
+                        {leaving ? <DotmSquare11 size={16} dotSize={2} /> : <LogOut className="h-4 w-4" />} {t("signOut")}
                     </button>
                 </div>
 

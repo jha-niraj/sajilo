@@ -112,8 +112,8 @@ export function SettingsClient({ initial, today }: { initial: SettingsView; toda
                     {s.holidays.length > 0 && (
                         <ul className="mb-3 divide-y divide-line">
                             {s.holidays.map((h) => (
-                                <li key={h.id} className="flex items-center justify-between py-2">
-                                    <span className="text-[16px] text-ink">
+                                <li key={h.id} className="flex items-center justify-between gap-3 py-2">
+                                    <span className="min-w-0 text-[16px] text-ink">
                                         {date(h.date, true)}
                                         {h.label && <span className="text-ink-3"> · {h.label}</span>}
                                     </span>

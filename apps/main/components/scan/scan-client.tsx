@@ -503,7 +503,7 @@ export function ScanClient({
                                                 />
                                             </div>
                                         ) : (
-                                            <input value={r.name} onChange={(e) => update(r.key, { name: e.target.value })} placeholder={t("name")} className={cn(inputCls, "flex-1")} />
+                                            <input value={r.name} onChange={(e) => update(r.key, { name: e.target.value })} placeholder={t("name")} className={cn(inputCls, "min-w-0 flex-1")} />
                                         )}
                                         <button
                                             type="button"

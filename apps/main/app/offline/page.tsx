@@ -1,5 +1,5 @@
 import { WifiOff } from "lucide-react"
-import Link from "next/link"
+import Link from "@/components/app-link"
 
 export const dynamic = "force-static"
 

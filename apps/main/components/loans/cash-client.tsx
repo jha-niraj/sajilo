@@ -37,8 +37,8 @@ export function CashClient({ cash }: { cash: CashOnHand }) {
 function Line({ label, value, className }: { label: string; value: string; className?: string }) {
     return (
         <div className={`flex items-baseline justify-between gap-3 ${className ?? ""}`}>
-            <span className="text-ink-2">{label}</span>
-            <span className="font-semibold tabular">{value}</span>
+            <span className="min-w-0 text-ink-2">{label}</span>
+            <span className="shrink-0 font-semibold tabular">{value}</span>
         </div>
     )
 }

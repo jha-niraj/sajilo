@@ -3,9 +3,8 @@
 import { useEffect } from "react"
 import { Toaster } from "@repo/ui/components/ui/sonner"
 import { I18nProvider } from "@/lib/i18n"
-import type { Lang } from "@/lib/dict"
 
-export function Providers({ lang, children }: { lang: Lang; children: React.ReactNode }) {
+export function Providers({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!("serviceWorker" in navigator)) return
         if (process.env.NODE_ENV === "production") {
@@ -19,7 +18,7 @@ export function Providers({ lang, children }: { lang: Lang; children: React.Reac
     }, [])
 
     return (
-        <I18nProvider initialLang={lang}>
+        <I18nProvider>
             {children}
             <Toaster position="bottom-center" offset={{ bottom: "calc(7rem + env(safe-area-inset-bottom))" }} mobileOffset={{ bottom: "calc(7rem + env(safe-area-inset-bottom))" }} />
         </I18nProvider>

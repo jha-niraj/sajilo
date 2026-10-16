@@ -1,9 +1,11 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { emailOTP, phoneNumber } from 'better-auth/plugins'
+import { nextCookies } from 'better-auth/next-js'
 import { db } from '@repo/db'
 import { user, session, account, verification, rateLimit } from '@repo/db/schema'
 import { resetPasswordEmail, verifyEmailTemplate, welcomeEmail } from './email-templates'
+import { COOKIE_CACHE } from './session-config'
 
 async function sendEmail(to: string, subject: string, html: string) {
     const resendKey = process.env.RESEND_API_KEY
@@ -109,6 +111,7 @@ export const auth = betterAuth({
     session: {
         expiresIn: 60 * 60 * 24 * 30,
         updateAge: 60 * 60 * 24,
+        cookieCache: COOKIE_CACHE,
     },
 
     baseURL: process.env.BETTER_AUTH_URL,
@@ -165,6 +168,10 @@ export const auth = betterAuth({
             otpLength: 6,
             expiresIn: 600, // 10 minutes
         }),
+        // LAST, always: lets Server Actions and route handlers pass better-auth's Set-Cookie through
+        // (sign-up signs in here; the cookie cache is refreshed after maxAge instead of falling back
+        // to a database read on every request).
+        nextCookies(),
     ],
 })
 

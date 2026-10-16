@@ -18,7 +18,9 @@
 		"icon": "node --env-file=.env scripts/generate-icon.mjs",
 		"icon:build": "node scripts/build-icons.mjs",
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-		"test": "vitest run"
+		"test": "vitest run",
+		"bundle:size": "tsx ../../scripts/bundle-size.ts",
+		"bundle:size:fast": "tsx ../../scripts/bundle-size.ts --no-build"
 	},
 	"dependencies": {
 		"@ai-sdk/anthropic": "^1.2.12",

@@ -1,4 +1,5 @@
 import "server-only"
+import { cache } from "react"
 import { db, and, eq, gte, lte, inArray, asc, sql } from "@repo/db"
 import { customer, collectionEntry, collectionDay, collectorSettings, holiday } from "@repo/db/schema"
 import { addAdDays, adDayOfWeek, diffAdDays } from "@repo/calendar"
@@ -8,12 +9,13 @@ import type { ApplyOpsResult, CarryIn, DaySnapshot, MarkOp, SnapshotEntry } from
 const MAX_BACKFILL_DAYS = 400
 const INSERT_CHUNK = 500
 
-export async function getSettings(collectorId: string) {
+/** Once per request (React `cache`): pages that need settings in two places read them once. */
+export const getSettings = cache(async (collectorId: string) => {
     const row = await db.query.collectorSettings.findFirst({ where: eq(collectorSettings.userId, collectorId) })
     if (row) return row
     const [created] = await db.insert(collectorSettings).values({ userId: collectorId }).onConflictDoNothing().returning()
     return created ?? (await db.query.collectorSettings.findFirst({ where: eq(collectorSettings.userId, collectorId) }))!
-}
+})
 
 /**
  * Make sure every active customer has a row for every day from their start (or last row) up to
@@ -277,7 +279,8 @@ export async function entriesUpTo(customerIds: string[], upTo: string) {
         .where(and(inArray(collectionEntry.customerId, customerIds), lte(collectionEntry.date, upTo)))
 }
 
-export async function receivedBetween(collectorId: string, start: string, end: string) {
+/** Once per request: the month report and the printed register read the same range. */
+export const receivedBetween = cache(async (collectorId: string, start: string, end: string) => {
     return db
         .select({
             customerId: collectionEntry.customerId,
@@ -293,5 +296,5 @@ export async function receivedBetween(collectorId: string, start: string, end: s
                 sql`${collectionEntry.amountReceived} > 0`,
             ),
         )
-}
+})
 

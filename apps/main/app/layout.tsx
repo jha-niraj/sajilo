@@ -1,11 +1,9 @@
 import type { Metadata, Viewport } from "next"
-import { cookies } from "next/headers"
 import { Bricolage_Grotesque, Mukta } from "next/font/google"
 import "./sajilo.css"
 import "@/lib/env"
 import { INSTALL_CAPTURE_SCRIPT } from "@/lib/install-script"
 import { Providers } from "./providers"
-import type { Lang } from "@/lib/dict"
 
 // Bricolage Grotesque for Latin text; Mukta covers Devanagari (Bricolage has no Nepali glyphs).
 const bricolage = Bricolage_Grotesque({
@@ -58,14 +56,14 @@ export const viewport: Viewport = {
     viewportFit: "cover",
 }
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-    const jar = await cookies()
-    const lang: Lang = jar.get("sajilo.lang")?.value === "ne" ? "ne" : "en"
+// Reads no cookies or headers, so the login and sign-up pages can be served static. The signed-in
+// app reads the language in its own (dynamic) layout; static pages read it in the browser.
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
-        <html lang={lang} className={`${bricolage.variable} ${mukta.variable}`}>
+        <html lang="en" className={`${bricolage.variable} ${mukta.variable}`}>
             <body className="min-h-dvh bg-paper text-ink antialiased">
                 <script dangerouslySetInnerHTML={{ __html: INSTALL_CAPTURE_SCRIPT }} />
-                <Providers lang={lang}>{children}</Providers>
+                <Providers>{children}</Providers>
             </body>
         </html>
     )

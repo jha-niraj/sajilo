@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
+import Link from "@/components/app-link"
 import { Ban, Check, History, Store, Undo2 } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { BottomSheet } from "@/components/bottom-sheet"

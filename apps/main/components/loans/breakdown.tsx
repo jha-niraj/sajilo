@@ -29,20 +29,20 @@ export function Breakdown({ statement, className }: { statement: LoanStatement; 
                 if (r.kind === "compound") {
                     return (
                         <li key={i} className="flex items-center justify-between gap-3 py-2.5 text-late">
-                            <span className="text-[14px]">
+                            <span className="min-w-0 text-[14px]">
                                 {date(r.date)} · {t("compoundedRow")}
                             </span>
-                            <span className="text-[14px] font-semibold tabular">{money(r.amount)}</span>
+                            <span className="shrink-0 text-[14px] font-semibold tabular">{money(r.amount)}</span>
                         </li>
                     )
                 }
                 return (
                     <li key={i} className="py-2.5 text-paid">
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-[15px] font-medium">
+                            <span className="min-w-0 text-[15px] font-medium">
                                 {date(r.date)} · {t("repaymentRow", { amount: money(r.amount) })}
                             </span>
-                            <span className="text-[15px] font-semibold tabular">- {money(r.amount)}</span>
+                            <span className="shrink-0 text-[15px] font-semibold tabular">- {money(r.amount)}</span>
                         </div>
                         <p className="text-[13px] opacity-80">
                             {t("toInterest", { amount: money(r.toInterest) })} · {t("toPrincipal", { amount: money(r.toPrincipal) })}

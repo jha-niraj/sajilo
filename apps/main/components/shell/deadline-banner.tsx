@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import Link from "next/link"
+import Link from "@/components/app-link"
 import { Landmark } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { useI18n } from "@/lib/i18n"

@@ -32,7 +32,7 @@ export function OfflineBar() {
     useEffect(() => startSyncLoop(), [])
 
     useEffect(() => {
-        if (online) warmPages()
+        if (online) return warmPagesLater()
     }, [online])
 
     useEffect(() => {
@@ -52,6 +52,7 @@ export function OfflineBar() {
     }, [justBack, pending, syncing])
 
     useEffect(() => {
+        // One refresh after a sync (the server-rendered bits, e.g. Today's deposit banner, catch up).
         const onSynced = () => {
             if (!pathname.startsWith("/munshi")) router.refresh()
             sessionStorage.removeItem("sajilo.warmedAt")
@@ -120,6 +121,28 @@ export function OfflineBar() {
 
 const WARM_PAGES = ["/today", "/today/finish", "/month", "/loans", "/loans/new", "/loans/calculator", "/cash", "/manage", "/more", "/settings", "/munshi"]
 const WARM_EVERY_MS = 10 * 60_000
+
+/**
+ * After the page has loaded and the phone is idle (and the bottom bar's own prefetch queue has had
+ * its turn), so the offline copy never competes with what he is opening. Returns a cancel.
+ */
+function warmPagesLater(): () => void {
+    let handle: ReturnType<typeof setTimeout> | null = null
+    let idle: number | null = null
+    const start = () => {
+        handle = setTimeout(() => {
+            if (typeof window.requestIdleCallback === "function") idle = window.requestIdleCallback(warmPages, { timeout: 5000 })
+            else warmPages()
+        }, 4000)
+    }
+    if (document.readyState === "complete") start()
+    else window.addEventListener("load", start, { once: true })
+    return () => {
+        window.removeEventListener("load", start)
+        if (handle) clearTimeout(handle)
+        if (idle !== null) window.cancelIdleCallback(idle)
+    }
+}
 
 /** Ask the service worker to keep a fresh copy of the main screens for offline use. */
 function warmPages() {

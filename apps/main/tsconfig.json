@@ -19,6 +19,7 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
+    "worker.ts",
     "node_modules"
   ]
 }

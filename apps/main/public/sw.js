@@ -6,7 +6,7 @@
  * - Everything else (server actions, auth): straight to the network. Marks made offline are
  *   kept in IndexedDB by the app and sent later, not by this worker.
  */
-const VERSION = "v5"
+const VERSION = "v6"
 const STATIC_CACHE = `sajilo-static-${VERSION}`
 const PAGE_CACHE = `sajilo-pages-${VERSION}`
 const PRECACHE = ["/offline", "/icons/icon-192.png", "/icons/icon-512.png", "/manifest.webmanifest"]
@@ -82,9 +82,14 @@ self.addEventListener("fetch", (event) => {
     }
 })
 
+// One page at a time, 350 ms apart: on Workers, requests fired together land on fresh (cold)
+// isolates; a queue keeps reusing the warm one.
+const WARM_GAP_MS = 350
+
 async function warm(urls) {
     const cache = await caches.open(PAGE_CACHE)
-    for (const path of urls) {
+    for (const [i, path] of urls.entries()) {
+        if (i > 0) await new Promise((r) => setTimeout(r, WARM_GAP_MS))
         try {
             const url = new URL(path, self.location.origin)
             const res = await fetch(url, { credentials: "same-origin", headers: { Accept: "text/html" } })

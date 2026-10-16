@@ -7,8 +7,20 @@ const PUBLIC_ROUTES = ["/login", "/signup"]
 // "/" is the login screen itself, so it is public for exactly that path.
 const COOKIE_PREFIX = process.env.AUTH_COOKIE_PREFIX || "better-auth"
 
+// Which isolate answered: 1 = a fresh one (a cold start). Cloudflare adds nothing like this, and a
+// Worker can't time its own cold start, so it is read from outside (scripts/bench-navigation.mts).
+let isolateRequests = 0
+const isolateStart = Date.now()
+
+function stamp(res: NextResponse): NextResponse {
+    res.headers.set("x-isolate-requests", String(isolateRequests))
+    res.headers.set("x-isolate-age-ms", String(Date.now() - isolateStart))
+    return res
+}
+
 export function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl
+    isolateRequests++
+    const { pathname, search } = request.nextUrl
 
     const isLoggedIn = Boolean(
         request.cookies.get(`${COOKIE_PREFIX}.session_token`)?.value ||
@@ -17,12 +29,20 @@ export function middleware(request: NextRequest) {
     const isPublic = pathname === "/" || PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"))
 
     if (!isLoggedIn && !isPublic) {
-        return NextResponse.redirect(new URL("/", request.nextUrl.origin))
+        // Back to this page after signing in (validated by lib/sign-in-destination.ts).
+        const to = new URL("/", request.nextUrl.origin)
+        to.searchParams.set("returnTo", pathname + search)
+        return stamp(NextResponse.redirect(to))
     }
-    if (isLoggedIn && isPublic) {
-        return NextResponse.redirect(new URL("/munshi", request.nextUrl.origin))
+    // A signed-in person who OPENS the login page goes home. Only a document load: the router's
+    // background fetches (Sec-Fetch-Dest: empty) must get the page, because the sign-out button
+    // prefetches `/` while he is still signed in, and a cached redirect would send sign-out back to
+    // Munshi. Next strips its own router headers before this runs, so this header is how to tell.
+    const dest = request.headers.get("sec-fetch-dest")
+    if (isLoggedIn && isPublic && (!dest || dest === "document")) {
+        return stamp(NextResponse.redirect(new URL("/munshi", request.nextUrl.origin)))
     }
-    return NextResponse.next()
+    return stamp(NextResponse.next())
 }
 
 export const config = {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useLayoutEffect, useRef, useState } from "react"
-import Link from "next/link"
+import Link from "@/components/app-link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { CalendarCheck2, ChartColumnBig, ChevronRight, HandCoins, LayoutGrid, UserRound } from "lucide-react"
@@ -10,6 +10,8 @@ import { cn } from "@repo/ui/lib/utils"
 import { useI18n } from "@/lib/i18n"
 import type { DictKey } from "@/lib/dict"
 import { MORE_LINKS } from "./more-links"
+import { useStaggeredPrefetch, type QueuedPrefetch } from "./use-staggered-prefetch"
+import { PrefetchKind } from "@/lib/prefetch-kind"
 
 type Item = { href: string; label: DictKey; icon: typeof CalendarCheck2; match: string[] }
 
@@ -20,6 +22,16 @@ const LEFT: Item[] = [
 const RIGHT: Item[] = [
     { href: "/loans", label: "navLoans", icon: HandCoins, match: ["/loans", "/cash"] },
     { href: "/more", label: "navMore", icon: LayoutGrid, match: ["/more", "/manage", "/settings", "/scan", "/loans/calculator"] },
+]
+
+/** Today in full (the page he uses all day), every other page as a shell, in bar order. */
+const WARM: QueuedPrefetch[] = [
+    { href: "/today", kind: PrefetchKind.FULL },
+    { href: "/munshi", kind: PrefetchKind.AUTO },
+    { href: "/month", kind: PrefetchKind.AUTO },
+    { href: "/loans", kind: PrefetchKind.AUTO },
+    ...MORE_LINKS.map((l) => ({ href: l.href, kind: PrefetchKind.AUTO })),
+    { href: "/more", kind: PrefetchKind.AUTO },
 ]
 
 /** Room above the bar for the selected tab to rise into. */
@@ -55,11 +67,15 @@ function archFor(w: number, index: number) {
     }
 }
 
-export function BottomNav() {
-    const pathname = usePathname()
+/** `activePath` lets the sign-in landing screen highlight where he is going rather than `/`. */
+export function BottomNav({ activePath }: { activePath?: string } = {}) {
+    const currentPath = usePathname()
+    const pathname = (activePath ?? currentPath).split("?")[0]!
     const { t } = useI18n()
     const ref = useRef<HTMLElement>(null)
     const [size, setSize] = useState({ w: 0, h: 0 })
+    // Not on the sign-in landing screen: that one is gone the moment the real page arrives.
+    useStaggeredPrefetch(WARM, pathname, activePath === undefined)
 
     useLayoutEffect(() => {
         const el = ref.current
@@ -86,7 +102,6 @@ export function BottomNav() {
             <li key={item.href}>
                 <Link
                     href={item.href}
-                    prefetch
                     aria-current={active ? "page" : undefined}
                     className={cn(
                         "flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors",
@@ -128,8 +143,7 @@ export function BottomNav() {
                 <li className="flex justify-center">
                     <Link
                         href="/munshi"
-                        prefetch
-                        aria-label={t("navMunshi")}
+                            aria-label={t("navMunshi")}
                         aria-current={munshiActive ? "page" : undefined}
                         className="group -mt-4 flex flex-col items-center gap-1"
                     >

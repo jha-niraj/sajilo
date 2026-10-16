@@ -137,9 +137,9 @@ export function LoanDetailClient({ loan: serverLoan, today, basis }: { loan: Loa
                         <p className="text-[16px] font-semibold text-ink">{t("addRepayment")}</p>
                         <ul className="mt-1 divide-y divide-line">
                             {loan.repayments.map((r) => (
-                                <li key={r.id} className="flex items-center justify-between py-2.5">
-                                    <span className="text-[15px] text-ink">{date(r.date, true)}</span>
-                                    <span className="flex items-center gap-2">
+                                <li key={r.id} className="flex items-center justify-between gap-3 py-2.5">
+                                    <span className="min-w-0 text-[15px] text-ink">{date(r.date, true)}</span>
+                                    <span className="flex shrink-0 items-center gap-2">
                                         {pendingReps.has(r.id) && <PendingBadge />}
                                         <span className="font-semibold text-paid tabular">{money(r.amount)}</span>
                                         <button

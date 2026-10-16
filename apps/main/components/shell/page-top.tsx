@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/components/app-link"
 import { ChevronLeft } from "lucide-react"
 import { SyncPill } from "./sync-pill"
 
@@ -10,7 +10,8 @@ export function PageTop({
     backHref,
     right,
 }: {
-    title: string
+    /** A node only for a skeleton whose title is data (a name still loading) */
+    title: React.ReactNode
     subtitle?: React.ReactNode
     backHref?: string
     right?: React.ReactNode
