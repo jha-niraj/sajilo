@@ -74,11 +74,11 @@ No hand-rolled `overflow-auto|scroll` anywhere; all scroll containers are `Scrol
 | Login and sign-up static | fixed | build route table: `/` and `/signup` are static (`index.html`, `signup.html` prerendered) |
 | Native hashing | ok | no `@noble/hashes` scrypt in the server bundle |
 | Sign-out | fixed | `worker.ts` answers `POST /api/sign-out` before Next; `/` prefetched; in-app push + refresh; offline copy wiped |
-| Placement | fixed | `aws:ap-southeast-1` |
+| Placement | left (smart) | pinned to `aws:ap-southeast-1` then measured: page first byte 64-131 ms -> 347-503 ms from Nepal, every request forwarded to SIN. Reverted to smart on 2026-10-16 |
 | Server-Timing on auth | fixed | `db;dur;desc="N queries"`, `app;dur` |
 | A skeleton per page with the real title | fixed | 14 `loading.tsx`, `components/skeletons/page-skeletons.tsx`; verified in the browser on sign-in (Today) |
 | Shared link, intent prefetch, eslint ban on `next/link` | fixed | `components/app-link.tsx` |
-| Bottom-bar queue | fixed | Today FULL, rest AUTO, 350 ms apart, from idle |
+| Bottom-bar queue | fixed | Today, Munshi, Month, Loans FULL; More pages AUTO; 350 ms apart from idle, once per 150 s (it restarted on every page at first) |
 | `staleTimes` | fixed | `{ dynamic: 30, static: 180 }` |
 | `getSettings`, `receivedBetween` per request | fixed | `cache()`; removes the second settings read on Loans pages and the duplicate print query |
 | Today refreshed twice per sync | fixed | one refresh (`OfflineBar`) |
@@ -102,3 +102,20 @@ No hand-rolled `overflow-auto|scroll` anywhere; all scroll containers are `Scrol
 7. Placement pinned next to Neon; isolate + `Server-Timing` headers.
 8. Overflow fixes above.
 9. Measure before/after on the deployed site.
+
+## Measurements (production, 2026-10-16, his machine, no throttling)
+
+| | Before deploy | After deploy (first build) |
+|---|---|---|
+| Pages measured | 4 (More's pages were not reachable by the first script) | 9 |
+| Click to shown (median) | 49-63 ms | 52-62 ms |
+| Click to ready (median) | 295-729 ms | 612-4058 ms (inflated, see below) |
+| Page first byte | 64-131 ms (often a prefetched page) | 347-503 ms |
+| Start-page prefetches | 9 (5 FULL on sight) | 19 (the queue, two requests per page in 16.3) |
+| Cold isolates | no headers | 100 of 1236 responses, median 1787 ms vs 375 ms warm |
+
+What the "after" run actually showed:
+- "ready" waited for the prefetch queue, which restarted on every page (last request `/munshi (rsc)` in most samples). Fixed: once per 150 s; the benchmark now leaves prefetches out of "ready".
+- 16 s samples were the service worker's offline warm-up (assets fetched after load). Fixed in the benchmark: service workers blocked. Same cause broke the 3G run (the worker served its offline page, which has no bottom bar).
+- First byte rose ~3x: the Singapore pin. Reverted to smart placement.
+- Shells only for Month and Loans cost ~150 ms of "ready" on wifi against full prefetch. Main tabs back to FULL, queued.

@@ -24,12 +24,16 @@ const RIGHT: Item[] = [
     { href: "/more", label: "navMore", icon: LayoutGrid, match: ["/more", "/manage", "/settings", "/scan", "/loans/calculator"] },
 ]
 
-/** Today in full (the page he uses all day), every other page as a shell, in bar order. */
+/**
+ * The four main tabs in full (small pages, used all day: a tap shows the finished page), the pages
+ * behind More as shells. One at a time from idle, never all at once (measured 2026-10-16: shells
+ * only for Month and Loans moved "ready" from ~300 ms to ~450 ms on wifi).
+ */
 const WARM: QueuedPrefetch[] = [
     { href: "/today", kind: PrefetchKind.FULL },
-    { href: "/munshi", kind: PrefetchKind.AUTO },
-    { href: "/month", kind: PrefetchKind.AUTO },
-    { href: "/loans", kind: PrefetchKind.AUTO },
+    { href: "/munshi", kind: PrefetchKind.FULL },
+    { href: "/month", kind: PrefetchKind.FULL },
+    { href: "/loans", kind: PrefetchKind.FULL },
     ...MORE_LINKS.map((l) => ({ href: l.href, kind: PrefetchKind.AUTO })),
     { href: "/more", kind: PrefetchKind.AUTO },
 ]

@@ -4,7 +4,7 @@ Rules for anyone (person or agent) changing `apps/main`. They come from the fast
 
 ## Measure, don't guess
 
-- `pnpm bench:nav --url=<deployed site> --allow-production` (from the repo root) times every bottom-bar page and every page behind More, cold and after a hover. Add `--throttle=3g` for a slow phone and `--probe=30 --probe-path=/,/munshi` for cold starts. It signs in with `BENCH_PHONE` / `BENCH_PIN` from your shell: a TEST account (98000000xx), never his. Reports go to `plan/benchmarks/`. First time: `pnpm bench:install` (Playwright's Chromium).
+- `pnpm bench:nav --url=<deployed site> --allow-production` (from the repo root; add `--runs=1` for a quick pass) times every bottom-bar page and every page behind More, cold and after a hover. Add `--throttle=3g` for a slow phone and `--probe=30 --probe-path=/,/munshi` for cold starts. It signs in with `BENCH_PHONE` / `BENCH_PIN` from your shell: a TEST account (98000000xx), never his. Reports go to `plan/benchmarks/`. First time: `pnpm bench:install` (Playwright's Chromium).
 - `pnpm bundle:size` (repo root, or in `apps/main`) builds and runs `wrangler deploy --dry-run` to print the Worker's size. Nothing is uploaded. `pnpm --filter main bundle:size:fast` skips the build.
 - Every response carries `x-isolate-requests` (1 = a cold Worker) and `x-isolate-age-ms` (`middleware.ts`). Auth routes carry `Server-Timing: db;dur=..;desc="N queries", app;dur=..` (`app/api/auth/[...all]/route.ts`, timed in `packages/db/src/request-timing.ts`). The browser's wait minus `app` is the cold start.
 - Never judge speed on `next dev`: it turns prefetching off and compiles on first use.
@@ -35,13 +35,13 @@ Rules for anyone (person or agent) changing `apps/main`. They come from the fast
 
 - `import Link from "@/components/app-link"`. `next/link` is banned elsewhere by eslint. It prefetches the page's SHELL on intent (100 ms of pointer movement, or touch, or focus), not every link on screen.
 - Always pass a kind to `router.prefetch` (`PrefetchKind` from `lib/prefetch-kind.ts`). FULL only for the home.
-- The bottom bar warms its pages one at a time, 350 ms apart, from idle (`use-staggered-prefetch.ts`): Today in FULL, everything else as a shell. Never fire many prefetches at once: on Workers they land on cold isolates.
+- The bottom bar warms its pages one at a time, 350 ms apart, from idle, at most once per 150 s (`use-staggered-prefetch.ts`): the four main tabs (Today, Munshi, Month, Loans) in FULL, the pages behind More as shells (decided with measurements, 2026-10-16). Never fire many prefetches at once: on Workers they land on cold isolates.
 - `staleTimes: { dynamic: 30, static: 180 }` (`next.config.js`). A write that changes a page refreshes it.
 - The offline warm-up (`OfflineBar` -> `public/sw.js` `warm`) waits for the page to load and the phone to be idle, then fetches one page every 350 ms. Bump `VERSION` in `sw.js` when its caching changes.
 
 ## Workers
 
-- Placement is pinned next to Neon: `"placement": { "region": "aws:ap-southeast-1" }` (`wrangler.jsonc`). Repeat it in any `env.*` block.
+- Placement is SMART, not pinned. Pinning to `aws:ap-southeast-1` was measured (2026-10-16) and made every response ~3x slower from Nepal: each request, even the static login page, was forwarded to Singapore. Re-measure before pinning again.
 - `wrangler.jsonc` `main` is `worker.ts`, which wraps `.open-next/worker.js`. Paths that need no Next.js (sign-out) are answered there.
 - Password hashing is native scrypt on Workers (better-auth's `workerd` export condition; OpenNext keeps it). If the built bundle ever contains `@noble/hashes` scrypt, the condition was lost: 1 s per sign-in.
 

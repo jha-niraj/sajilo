@@ -7,6 +7,10 @@ import { PrefetchKind } from "@/lib/prefetch-kind"
 export type QueuedPrefetch = { href: string; kind: PrefetchKind }
 
 const GAP_MS = 350
+// The router keeps a prefetched shell for 180 s (staleTimes.static), so one pass per 150 s is
+// enough. Without this the queue restarted on every page he opened.
+const AGAIN_AFTER_MS = 150_000
+let lastPass = 0
 
 /**
  * Warms the bottom bar's pages ONE AT A TIME, from idle, 350 ms apart, skipping the page on screen.
@@ -19,11 +23,12 @@ export function useStaggeredPrefetch(items: QueuedPrefetch[], current: string, e
     const key = items.map((i) => `${i.href}:${i.kind}`).join("|")
 
     useEffect(() => {
-        if (!enabled) return
+        if (!enabled || Date.now() - lastPass < AGAIN_AFTER_MS) return
         let stop = false
         const timers: ReturnType<typeof setTimeout>[] = []
         const queue = items.filter((i) => i.href !== current)
         const run = (i: number) => {
+            if (i === 0) lastPass = Date.now()
             if (stop || i >= queue.length) return
             router.prefetch(queue[i]!.href, { kind: queue[i]!.kind })
             timers.push(setTimeout(() => run(i + 1), GAP_MS))

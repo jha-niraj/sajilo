@@ -120,6 +120,8 @@ interface Rec {
   serverMs: number | null;
   /** A Server Action POST (header `next-action`): how apps/main's client queries read. */
   action: boolean;
+  /** A router prefetch (background warm-up for the NEXT tap), not part of opening this page. */
+  prefetch: boolean;
   /** x-isolate-requests from the middleware: 1 means a fresh isolate answered. */
   isolateRequests: number | null;
   isolateAgeMs: number | null;
@@ -137,6 +139,7 @@ function track(page: Page) {
       type: req.resourceType(),
       rsc: req.headers()["rsc"] === "1",
       action: req.method() === "POST" && Boolean(req.headers()["next-action"]),
+      prefetch: Boolean(req.headers()["next-router-prefetch"] || req.headers()["next-router-segment-prefetch"]),
       start: Date.now(),
       end: null,
       ttfb: null,
@@ -170,7 +173,8 @@ function track(page: Page) {
   page.on("requestfailed", finish);
   return {
     recs,
-    inflight: () => open.size,
+    // "Quiet" means the page is done: background prefetches for the next tap are counted, not waited on.
+    inflight: () => [...open.values()].filter((r) => !r.prefetch).length,
     since: (t: number) => recs.filter((r) => r.start >= t),
   };
 }
@@ -305,10 +309,11 @@ async function measure(page: Page, t: Tracker, href: string, warm: boolean): Pro
   if ((await skeletonCount(page)) > 0) skeletonTimedOut = true;
 
   const after = t.since(t0);
-  const lastEnd = Math.max(skeletonGoneAt, ...after.map((r) => r.end ?? t0));
+  const lastEnd = Math.max(skeletonGoneAt, ...after.filter((r) => !r.prefetch).map((r) => r.end ?? t0));
   const rscAll = after.filter((r) => r.rsc && r.type === "fetch");
-  const rsc = rscAll[0];
-  const last = [...after].filter((r) => r.end !== null).sort((a, b) => (b.end ?? 0) - (a.end ?? 0))[0];
+  // The page's own render: the first RSC request that is not a background prefetch.
+  const rsc = rscAll.find((r) => !r.prefetch) ?? rscAll[0];
+  const last = [...after].filter((r) => r.end !== null && !r.prefetch).sort((a, b) => (b.end ?? 0) - (a.end ?? 0))[0];
   const short = (u: string) => {
     const x = new URL(u);
     return `${x.pathname}${x.search.includes("_rsc") ? " (rsc)" : ""}`.slice(0, 60);
@@ -326,7 +331,7 @@ async function measure(page: Page, t: Tracker, href: string, warm: boolean): Pro
     reads: reads.length,
     slowestReadMs: readTimes.length ? Math.max(...readTimes) : null,
     jsKb: Math.round(after.filter((r) => r.type === "script").reduce((a, r) => a + r.bytes, 0) / 1024),
-    pagePrefetches: Math.max(0, rscAll.length - 1),
+    pagePrefetches: rscAll.filter((r) => r.prefetch).length,
     lastRequest: last ? `${short(last.url)} ${last.end! - last.start}ms` : null,
     coldRender: rsc?.isolateRequests === 1,
     ...prefetch,
@@ -428,7 +433,10 @@ if (probeCount) {
 
 const browser = await chromium.launch({ headless: !flag("headed") });
 // Phone-sized: Sajilo is a phone app and the bottom bar is its navigation.
-const context = await browser.newContext({ viewport: { width: 430, height: 900 }, isMobile: false, hasTouch: false });
+// Service workers blocked: Sajilo's worker warms 11 pages for offline use a few seconds after each
+// load (which "ready" would wait for), and on a throttled network it answers navigations from its
+// offline copy, which has no bottom bar. The benchmark measures the network path.
+const context = await browser.newContext({ viewport: { width: 430, height: 900 }, isMobile: false, hasTouch: false, serviceWorkers: "block" });
 
 // Signed in from inside the page, as the app's own form does, so the cookie lands in this browser.
 // Errors are reduced to their first line everywhere below: Playwright's full error text can quote

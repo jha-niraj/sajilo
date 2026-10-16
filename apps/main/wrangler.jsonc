@@ -7,10 +7,11 @@
 	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
 	"minify": true,
 
-	// Pinned next to Neon (ap-southeast-1): every query is its own HTTPS request, so the Worker runs
-	// beside the database. A response header `Cf-Placement` names where it ran. Repeat this under any
-	// env.* block added later; it is not inherited.
-	"placement": { "region": "aws:ap-southeast-1" },
+	// Smart placement. Pinning to aws:ap-southeast-1 (next to Neon) was measured on 2026-10-16 and made
+	// every response ~3x slower from Nepal (page first byte 64-131 ms -> 347-503 ms): every request,
+	// even the static login page, was forwarded to Singapore (Cf-Placement: remote-SIN), and Sajilo's
+	// pages make only a few queries. Re-measure with `pnpm bench:nav` before pinning again.
+	"placement": { "mode": "smart" },
 
 	"assets": {
 		"directory": ".open-next/assets",
