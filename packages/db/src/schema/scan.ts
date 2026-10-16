@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, json, index, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, json, index, pgEnum, integer } from 'drizzle-orm/pg-core'
 import { user } from './auth'
 
 export const scanKindEnum = pgEnum('scan_kind', ['customers', 'collections', 'loans'])
@@ -22,6 +22,9 @@ export const scanJob = pgTable(
         sarvamJobId: text('sarvam_job_id'),
         rawText: text('raw_text'),
         result: json('result'),
+        // His edits on the review screen, saved as he types, so a refresh or a closed app keeps them.
+        draft: json('draft'),
+        appliedCount: integer('applied_count'),
         error: text('error'),
         createdAt: timestamp('created_at').notNull().defaultNow(),
         appliedAt: timestamp('applied_at'),

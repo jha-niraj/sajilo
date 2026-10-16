@@ -225,7 +225,7 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 `/login` is PIN-only when the phone is remembered on the device (`lib/device-account.ts`); otherwise it asks the number once (joined +977 boxes, `components/auth/phone-input.tsx`). `/signup` = name -> number -> PIN -> confirm -> `/munshi?welcome=1`.
 
 ### Scan import
-Photo -> `@repo/sarvamai` digitise (ne-IN, handwritten, md) -> `lib/scan/structure.ts` (JSON from the `munshiModel()` model; falls back to a line parser without one) -> review screen -> `applyScan`. Photo kept in R2 when `R2_*` is set.
+Photo -> `@repo/sarvamai` digitise (ne-IN, handwritten, md) -> `lib/scan/structure.ts` (JSON from the `munshiModel()` model; falls back to a line parser without one) -> review screen -> `applyScan`. Photo kept in R2 when `R2_*` is set (shown via `/api/scan-photo/[id]`). Every scan is a `scan_job` row: `/scan?id=` reopens it, edits autosave to `scan_job.draft` (`saveScanDraft`), `applyScan` claims the job (`review` -> `applied`) before saving so it can't apply twice, and the pick screen lists Recent scans (`recentScans`, `deleteScan`).
 
 ### Env (`apps/main/.env`)
 `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `AUTH_COOKIE_PREFIX=sajilo`, `SARVAM_API_KEY`, optional `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`, `R2_*`, `RESEND_*`.

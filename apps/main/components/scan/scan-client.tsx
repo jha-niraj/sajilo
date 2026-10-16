@@ -1,20 +1,22 @@
 "use client"
 
-import { useEffect, useId, useState } from "react"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Camera, ChevronDown, Images, Plus, Sparkles, Trash2 } from "lucide-react"
+import { CalendarDays, Camera, Check, ChevronDown, ChevronRight, FileText, HandCoins, Images, Plus, Trash2, Users } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@repo/ui/components/ui/collapsible"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { cn } from "@repo/ui/lib/utils"
 import { Loader } from "@repo/ui/components/ui/loader"
+import { useConfirm } from "@repo/ui/components/ui/use-confirm"
 import { DateField } from "@/components/day-picker"
 import { bsToAd } from "@repo/calendar"
+import { toNepalDateStr } from "@repo/calendar"
 import { PageTop } from "@/components/shell/page-top"
 import { useI18n } from "@/lib/i18n"
 import { toAsciiDigits } from "@/lib/phone"
 import { refreshDay } from "@/lib/offline/sync"
-import { applyScan, pollScan, startScan, type ScanState } from "@/actions/scan.action"
+import { applyScan, deleteScan, pollScan, recentScans, saveScanDraft, startScan, type RecentScan, type ScanDraftRow, type ScanState } from "@/actions/scan.action"
 import type { CustomerRow } from "@/actions/customer.action"
 import type { DictKey } from "@/lib/dict"
 import type { ScanKind } from "@/lib/scan/structure"
@@ -22,21 +24,28 @@ import { compressImage } from "./compress"
 import { Choice } from "@/components/choice"
 import { isOnline } from "@/lib/offline/network"
 
-type Phase = "pick" | "uploading" | "reading" | "structuring" | "review" | "failed"
+type Phase = "pick" | "opening" | "uploading" | "reading" | "structuring" | "review" | "applied" | "failed"
 
-interface EditRow {
-    key: string
-    name: string
-    amount: string
-    phone: string
-    account: string
-    date: string
-    rate: string
-    customerId: string
-    low: boolean
-}
+type EditRow = ScanDraftRow
 
 const KIND_LABEL: Record<ScanKind, DictKey> = { customers: "scanCustomers", collections: "scanCollections", loans: "scanLoans" }
+const KIND_HINT: Record<ScanKind, DictKey> = { customers: "scanHintCustomers", collections: "scanHintCollections", loans: "scanHintLoans" }
+const KIND_ICON: Record<ScanKind, typeof Users> = { customers: Users, collections: CalendarDays, loans: HandCoins }
+const STATUS_LABEL: Record<RecentScan["status"], DictKey> = {
+    reading: "scanStatusReading",
+    structuring: "scanStatusReading",
+    review: "scanStatusReview",
+    applied: "scanStatusApplied",
+    failed: "scanStatusFailed",
+}
+
+/** Keeps the open scan in the address (?id=), so a refresh or coming back reopens it. */
+function setUrlScan(id: string | null) {
+    const url = new URL(window.location.href)
+    if (id) url.searchParams.set("id", id)
+    else url.searchParams.delete("id")
+    window.history.replaceState(null, "", url.pathname + url.search)
+}
 
 function safeBsToAd(d: { year: number; month: number; day: number } | null, fallback: string): string {
     if (!d) return fallback
@@ -60,20 +69,27 @@ function matchCustomer(name: string, customers: CustomerRow[]): string {
 
 export function ScanClient({
     initialKind,
+    initialId,
+    initialRecent,
     customers,
     today,
     defaultRate,
 }: {
     initialKind: ScanKind
+    initialId: string | null
+    initialRecent: RecentScan[]
     customers: CustomerRow[]
     today: string
     defaultRate: number
 }) {
-    const { t, money } = useI18n()
+    const { t, money, date } = useI18n()
     const router = useRouter()
     const [kind, setKind] = useState<ScanKind>(initialKind)
-    const [phase, setPhase] = useState<Phase>("pick")
-    const [scanId, setScanId] = useState<string | null>(null)
+    const [phase, setPhase] = useState<Phase>(initialId ? "opening" : "pick")
+    const [scanId, setScanId] = useState<string | null>(initialId)
+    const [recent, setRecent] = useState<RecentScan[]>(initialRecent)
+    const [applied, setApplied] = useState<{ at: string | null; count: number } | null>(null)
+    const { confirm: ask, confirmDialog } = useConfirm()
     const [rows, setRows] = useState<EditRow[]>([])
     const [rawText, setRawText] = useState("")
     const [aiUsed, setAiUsed] = useState(true)
@@ -82,24 +98,55 @@ export function ScanClient({
     const cameraId = useId()
     const galleryId = useId()
 
+    // The rows as last loaded or saved, so the draft is only written when he actually changed something.
+    const savedRows = useRef("")
+
+    const showState = useCallback(
+        (s: ScanState) => {
+            setKind(s.kind)
+            if (!preview && s.hasPhoto && !s.isPdf) setPreview(`/api/scan-photo/${s.id}`)
+            if (s.status === "review" || s.status === "applied") {
+                setRawText(s.rawText)
+                setAiUsed(s.result.ai)
+                const next = s.draft ?? toEditRows(s.result)
+                savedRows.current = JSON.stringify(next)
+                setRows(next)
+                if (s.status === "applied") setApplied({ at: s.appliedAt, count: s.appliedCount })
+                setPhase(s.status)
+            } else if (s.status === "failed") {
+                setPhase("failed")
+            } else {
+                setPhase(s.status === "structuring" ? "structuring" : "reading")
+            }
+        },
+        [preview], // eslint-disable-line react-hooks/exhaustive-deps
+    )
+
+    // Reopen the scan in the address (after a refresh, or from Recent scans).
+    useEffect(() => {
+        if (phase !== "opening" || !scanId) return
+        let stop = false
+        pollScan(scanId)
+            .then((s) => {
+                if (stop) return
+                if (s.status === "failed" && s.error === "not_found") return reset()
+                showState(s)
+            })
+            .catch(() => !stop && setPhase("failed"))
+        return () => {
+            stop = true
+        }
+    }, [phase, scanId]) // eslint-disable-line react-hooks/exhaustive-deps
+
     useEffect(() => {
         if (!scanId || (phase !== "reading" && phase !== "structuring")) return
         let stop = false
         const tick = async () => {
             if (stop) return
-            const s: ScanState = await pollScan(scanId).catch(() => ({ id: scanId, status: "reading" as const }))
+            const s: ScanState = await pollScan(scanId).catch(() => ({ id: scanId, kind, status: "reading" as const, hasPhoto: false, isPdf: false }))
             if (stop) return
-            if (s.status === "review") {
-                setRawText(s.rawText)
-                setAiUsed(s.result.ai)
-                setRows(toEditRows(s))
-                setPhase("review")
-            } else if (s.status === "failed") {
-                setPhase("failed")
-            } else {
-                setPhase(s.status === "structuring" ? "structuring" : "reading")
-                setTimeout(tick, 3000)
-            }
+            showState(s)
+            if (s.status === "reading" || s.status === "structuring") setTimeout(tick, 3000)
         }
         const id = setTimeout(tick, 2500)
         return () => {
@@ -108,8 +155,19 @@ export function ScanClient({
         }
     }, [scanId, phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const toEditRows = (s: Extract<ScanState, { status: "review" }>): EditRow[] => {
-        const r = s.result
+    // Save his edits as he goes, so nothing is lost if the app is closed before Save all.
+    useEffect(() => {
+        if (phase !== "review" || !scanId) return
+        const json = JSON.stringify(rows)
+        if (json === savedRows.current) return
+        const timer = setTimeout(() => {
+            savedRows.current = json
+            void saveScanDraft(scanId, rows).catch(() => {})
+        }, 700)
+        return () => clearTimeout(timer)
+    }, [rows, phase, scanId])
+
+    const toEditRows = (r: Extract<ScanState, { status: "review" }>["result"]): EditRow[] => {
         if (r.kind === "customers")
             return r.rows.map((x, i) => ({
                 key: `r${i}`,
@@ -167,6 +225,7 @@ export function ScanClient({
                 return
             }
             setScanId(res.id)
+            setUrlScan(res.id)
             setPhase("reading")
         } catch {
             toast.error(t("scanFailed"))
@@ -187,7 +246,7 @@ export function ScanClient({
         if (!scanId) return
         setSaving(true)
         try {
-            let res: { count: number }
+            let res: { count: number; already?: boolean }
             if (kind === "customers") {
                 res = await applyScan(scanId, {
                     kind,
@@ -210,6 +269,11 @@ export function ScanClient({
                         .map((r) => ({ name: r.name, amount: Number(r.amount), date: r.date, ratePer100: Number(r.rate) || defaultRate, phone: r.phone || null })),
                 })
             }
+            if (res.already) {
+                toast(t("scanAlreadySaved"))
+                setPhase("opening")
+                return
+            }
             toast.success(`${t("saved")} · ${res.count}`)
             void refreshDay()
             router.push(kind === "customers" ? "/manage" : kind === "loans" ? "/loans" : "/month")
@@ -220,11 +284,30 @@ export function ScanClient({
         }
     }
 
-    const reset = () => {
+    function reset() {
         setPhase("pick")
         setScanId(null)
         setRows([])
         setPreview(null)
+        setApplied(null)
+        setRawText("")
+        setUrlScan(null)
+        void recentScans().then(setRecent).catch(() => {})
+    }
+
+    const openScan = (id: string) => {
+        if (!isOnline()) return void toast(t("needsInternet"))
+        setPreview(null)
+        setScanId(id)
+        setUrlScan(id)
+        setPhase("opening")
+    }
+
+    const removeScan = async (r: RecentScan) => {
+        const ok = await ask({ title: t("deleteScanTitle"), description: t("deleteScanBody"), confirmText: t("delete"), cancelText: t("cancel"), destructive: true })
+        if (!ok) return
+        setRecent((xs) => xs.filter((x) => x.id !== r.id))
+        await deleteScan(r.id).catch(() => toast.error(t("somethingWrong")))
     }
 
     return (
@@ -233,24 +316,35 @@ export function ScanClient({
             <div className="space-y-4 px-4 pt-4">
                 {phase === "pick" && (
                     <>
-                        <div className="grid grid-cols-3 gap-1 rounded-2xl bg-paper-2 p-1 text-[14px] font-semibold">
-                            {(Object.keys(KIND_LABEL) as ScanKind[]).map((k) => (
-                                <button
-                                    key={k}
-                                    type="button"
-                                    onClick={() => setKind(k)}
-                                    className={cn("min-h-11 rounded-xl px-1 leading-tight transition-colors", kind === k ? "bg-card text-ink shadow-sm" : "text-ink-3")}
-                                >
-                                    {t(KIND_LABEL[k])}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="rounded-[22px] bg-card p-6 text-center ring-1 ring-line">
-                            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-saffron-soft text-saffron">
-                                <Sparkles className="h-8 w-8" />
-                            </span>
-                            <p className="mt-3 text-[15px] text-ink-2">{t(KIND_LABEL[kind])}</p>
-                            <div className="mt-5 grid gap-2.5">
+                        <section className="space-y-2">
+                            <p className="px-1 text-[13px] font-semibold uppercase tracking-wide text-ink-3">{t("scanWhatPage")}</p>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(Object.keys(KIND_LABEL) as ScanKind[]).map((k) => {
+                                    const Icon = KIND_ICON[k]
+                                    const on = kind === k
+                                    return (
+                                        <button
+                                            key={k}
+                                            type="button"
+                                            onClick={() => setKind(k)}
+                                            aria-pressed={on}
+                                            className={cn(
+                                                "flex min-h-[88px] flex-col items-center justify-center gap-1.5 rounded-2xl px-1.5 py-2.5 text-center text-[13.5px] font-semibold leading-tight transition-colors",
+                                                on ? "bg-card text-ink ring-2 ring-saffron" : "bg-paper-2 text-ink-2",
+                                            )}
+                                        >
+                                            <Icon className={cn("h-6 w-6", on ? "text-saffron" : "text-ink-3")} />
+                                            {t(KIND_LABEL[k])}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </section>
+
+                        <div className="rounded-[24px] bg-card p-5 ring-1 ring-line">
+                            <p className="text-[17px] font-semibold text-ink">{t(KIND_LABEL[kind])}</p>
+                            <p className="mt-1 text-[14.5px] leading-snug text-ink-2">{t(KIND_HINT[kind])}</p>
+                            <div className="mt-4 grid gap-2.5">
                                 {/* Labels, not input.click() on a hidden input: iPhone home-screen apps ignore the scripted click. */}
                                 <label
                                     htmlFor={cameraId}
@@ -265,10 +359,72 @@ export function ScanClient({
                                     <Images className="h-5 w-5" /> {t("choosePhoto")}
                                 </label>
                             </div>
+                            <p className="mt-3 text-center text-[13px] text-ink-3">{t("scanTip")}</p>
                             <input id={cameraId} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} onChange={(e) => pickFile(e.currentTarget)} />
                             <input id={galleryId} type="file" accept="image/*,application/pdf" className="sr-only" tabIndex={-1} onChange={(e) => pickFile(e.currentTarget)} />
                         </div>
+
+                        {recent.length > 0 && (
+                            <section className="space-y-2 pb-4">
+                                <p className="px-1 text-[13px] font-semibold uppercase tracking-wide text-ink-3">{t("recentScans")}</p>
+                                <ul className="divide-y divide-line overflow-hidden rounded-[22px] bg-card ring-1 ring-line">
+                                    {recent.map((r) => {
+                                        const Icon = KIND_ICON[r.kind]
+                                        const counted = r.status === "review" || r.status === "applied"
+                                        return (
+                                            <li key={r.id} className="flex items-center gap-1 pl-3 pr-1.5">
+                                                <button type="button" onClick={() => openScan(r.id)} className="flex min-w-0 flex-1 items-center gap-3 py-3 text-left">
+                                                    <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-paper-2 text-ink-3 ring-1 ring-line">
+                                                        {r.hasPhoto && !r.isPdf ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element -- signed R2 link behind /api/scan-photo
+                                                            <img src={`/api/scan-photo/${r.id}`} alt="" loading="lazy" className="h-full w-full object-cover" />
+                                                        ) : r.isPdf ? (
+                                                            <FileText className="h-5 w-5" />
+                                                        ) : (
+                                                            <Icon className="h-5 w-5" />
+                                                        )}
+                                                    </span>
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="block truncate text-[15px] font-medium text-ink">{t(KIND_LABEL[r.kind])}</span>
+                                                        <span className="block text-[12.5px] text-ink-3">
+                                                            {date(toNepalDateStr(new Date(r.createdAt)), true)}
+                                                            {counted && ` · ${t("scanRowsCount", { count: r.count })}`}
+                                                        </span>
+                                                    </span>
+                                                    <span
+                                                        className={cn(
+                                                            "shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold",
+                                                            r.status === "review" && "bg-saffron-soft text-saffron",
+                                                            r.status === "applied" && "bg-paid-soft text-paid",
+                                                            r.status === "failed" && "bg-miss-soft text-miss",
+                                                            (r.status === "reading" || r.status === "structuring") && "bg-paper-2 text-ink-2",
+                                                        )}
+                                                    >
+                                                        {t(STATUS_LABEL[r.status])}
+                                                    </span>
+                                                    <ChevronRight className="h-4 w-4 shrink-0 text-ink-3" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void removeScan(r)}
+                                                    aria-label={t("delete")}
+                                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-3 active:bg-paper-2"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </li>
+                                        )
+                                    })}
+                                </ul>
+                            </section>
+                        )}
                     </>
+                )}
+
+                {phase === "opening" && (
+                    <div className="flex justify-center py-16">
+                        <Loader size={28} dotSize={3} />
+                    </div>
                 )}
 
                 {(phase === "uploading" || phase === "reading" || phase === "structuring") && (
@@ -293,9 +449,46 @@ export function ScanClient({
                     </div>
                 )}
 
+                {phase === "applied" && (
+                    <>
+                        <div className="flex items-start gap-3 rounded-[22px] bg-paid-soft p-4">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paid text-white">
+                                <Check className="h-5 w-5" />
+                            </span>
+                            <div className="min-w-0">
+                                <p className="text-[16px] font-semibold text-ink">{t("scanSavedTitle", { count: applied?.count ?? 0 })}</p>
+                                {applied?.at && <p className="text-[14px] text-ink-2">{date(toNepalDateStr(new Date(applied.at)), true)} · {t(KIND_LABEL[kind])}</p>}
+                            </div>
+                        </div>
+                        {rows.length > 0 && (
+                            <ul className="divide-y divide-line overflow-hidden rounded-[22px] bg-card ring-1 ring-line">
+                                {rows.map((r) => (
+                                    <li key={r.key} className="flex items-center justify-between gap-3 px-4 py-3">
+                                        <span className="min-w-0 truncate text-[15px] text-ink">{r.name || customers.find((c) => c.id === r.customerId)?.name || "-"}</span>
+                                        {r.amount && <span className="shrink-0 text-[15px] font-medium tabular-nums text-ink-2">{money(Number(r.amount) || 0)}</span>}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        <button type="button" onClick={reset} className="flex h-12 w-full items-center justify-center rounded-2xl bg-ink text-[16px] font-semibold text-paper">
+                            {t("scanAnother")}
+                        </button>
+                    </>
+                )}
+
                 {phase === "review" && (
                     <>
-                        <p className="rounded-2xl bg-saffron-soft px-4 py-3 text-[15px] text-[#7a3d10]">{aiUsed ? t("reviewRows") : t("aiNotReady")}</p>
+                        {rows.length === 0 ? (
+                            <div className="rounded-[22px] bg-card p-5 text-center ring-1 ring-line">
+                                <p className="text-[16px] font-semibold text-ink">{t("scanNothingTitle")}</p>
+                                <p className="mt-1.5 text-[15px] text-ink-2">{t("scanNothingBody", { what: t(KIND_LABEL[kind]) })}</p>
+                                <button type="button" onClick={reset} className="mt-4 h-12 w-full rounded-2xl bg-ink text-[16px] font-semibold text-paper">
+                                    {t("scanAnother")}
+                                </button>
+                            </div>
+                        ) : (
+                            <p className="rounded-2xl bg-saffron-soft px-4 py-3 text-[15px] text-[#7a3d10]">{aiUsed ? t("reviewRows") : t("aiNotReady")}</p>
+                        )}
                         <ul className="space-y-2.5">
                             {rows.map((r) => (
                                 <li key={r.key} className={cn("space-y-2 rounded-[20px] bg-card p-3 ring-1", r.low ? "ring-2 ring-flag" : "ring-line")}>
@@ -360,15 +553,17 @@ export function ScanClient({
                         >
                             <Plus className="h-5 w-5" /> {t("addRow")}
                         </button>
+                        {rows.length > 0 && (
                         <button
                             type="button"
-                            disabled={saving || rows.length === 0}
+                            disabled={saving}
                             onClick={save}
                             className="flex h-12 w-full items-center justify-center rounded-2xl bg-ink text-[16px] font-semibold text-paper disabled:opacity-30"
                         >
                             {t("saveAll")} · {rows.length}
-                            {kind !== "customers" && rows.length > 0 && ` · ${money(rows.reduce((s, r) => s + (Number(r.amount) || 0), 0))}`}
+                            {kind !== "customers" && ` · ${money(rows.reduce((s, r) => s + (Number(r.amount) || 0), 0))}`}
                         </button>
+                        )}
                         {rawText && (
                             <Collapsible className="rounded-2xl bg-card ring-1 ring-line">
                                 <CollapsibleTrigger className="group flex w-full items-center justify-between px-4 py-3 text-[15px] font-medium text-ink-2">
@@ -385,6 +580,7 @@ export function ScanClient({
                     </>
                 )}
             </div>
+            {confirmDialog}
         </>
     )
 }
