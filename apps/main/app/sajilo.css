@@ -102,3 +102,10 @@ a {
     75% { transform: translateX(8px); }
 }
 
+
+/* Vertical scroll bars are hidden in Sajilo (a phone app: he scrolls by touch, the bar only adds a
+   grey line beside the chat and lists). Scrolling itself is unchanged. Horizontal bars stay: they
+   are the only hint that the print register scrolls sideways. */
+[data-radix-scroll-area-viewport] ~ [data-orientation="vertical"] {
+    display: none !important;
+}
