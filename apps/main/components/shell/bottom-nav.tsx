@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Link from "@/components/app-link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
-import { CalendarCheck2, ChartColumnBig, ChevronRight, HandCoins, LayoutGrid, UserRound } from "lucide-react"
+import { CalendarCheck2, ChartColumnBig, ChevronRight, LayoutGrid, Smartphone, UserRound } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@repo/ui/components/ui/dropdown-menu"
 import { cn } from "@repo/ui/lib/utils"
 import { useI18n } from "@/lib/i18n"
@@ -20,8 +20,9 @@ const LEFT: Item[] = [
     { href: "/month", label: "navMonth", icon: ChartColumnBig, match: ["/month"] },
 ]
 const RIGHT: Item[] = [
-    { href: "/loans", label: "navLoans", icon: HandCoins, match: ["/loans", "/cash"] },
-    { href: "/more", label: "navMore", icon: LayoutGrid, match: ["/more", "/manage", "/settings", "/scan", "/loans/calculator", "/recharge"] },
+    // Recharge took Loans' place (2026-11-06): he sells recharge many times a day and lends rarely.
+    { href: "/recharge", label: "rcTitle", icon: Smartphone, match: ["/recharge", "/print/recharge"] },
+    { href: "/more", label: "navMore", icon: LayoutGrid, match: ["/more", "/manage", "/settings", "/scan", "/loans", "/cash"] },
 ]
 
 /**
@@ -34,7 +35,7 @@ const WARM: QueuedPrefetch[] = [
     { href: "/today", kind: PrefetchKind.AUTO },
     { href: "/munshi", kind: PrefetchKind.AUTO },
     { href: "/month", kind: PrefetchKind.AUTO },
-    { href: "/loans", kind: PrefetchKind.AUTO },
+    { href: "/recharge", kind: PrefetchKind.AUTO },
     ...MORE_LINKS.map((l) => ({ href: l.href, kind: PrefetchKind.AUTO })),
     { href: "/more", kind: PrefetchKind.AUTO },
 ]

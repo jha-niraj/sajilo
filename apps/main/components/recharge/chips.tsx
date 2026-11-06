@@ -18,12 +18,15 @@ export function AmountChips({
     onOther,
     tone = "ink",
     disabled,
+    short,
 }: {
     amounts: number[]
     onPick: (amount: number) => void
     onOther: () => void
     tone?: "ink" | "credit"
     disabled?: boolean
+    /** Amounts above the stock in hand: shown faded; a tap explains instead of selling */
+    short?: (amount: number) => boolean
 }) {
     const { t, num } = useI18n()
     const chip = cn(
@@ -41,7 +44,7 @@ export function AmountChips({
                         if ("vibrate" in navigator) navigator.vibrate?.(12)
                         onPick(a)
                     }}
-                    className={chip}
+                    className={cn(chip, short?.(a) && "opacity-40")}
                 >
                     {num(a)}
                 </button>

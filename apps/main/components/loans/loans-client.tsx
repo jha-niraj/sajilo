@@ -43,7 +43,7 @@ export function LoansClient({
 
     return (
         <>
-            <PageTop title={t("loansTitle")} />
+            <PageTop title={t("loansTitle")} backHref="/more" />
             <div className="space-y-4 px-4 pt-4">
                 <section className="rounded-[22px] bg-ink p-4 text-paper">
                     <p className="text-[15px] text-paper/70">{t("owedToday")}</p>

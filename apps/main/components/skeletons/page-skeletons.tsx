@@ -96,7 +96,7 @@ export function LoansSkeleton() {
     const { t } = useI18n()
     return (
         <>
-            <PageTop title={t("loansTitle")} />
+            <PageTop title={t("loansTitle")} backHref="/more" />
             <Body>
                 <InkCard tiles />
                 <div className="grid grid-cols-3 gap-2.5">
@@ -246,7 +246,7 @@ export function RechargeSkeleton() {
     const { t } = useI18n()
     return (
         <>
-            <PageTop title={t("rcTitle")} subtitle={<Line className="mt-1.5 w-36" />} backHref="/more" />
+            <PageTop title={t("rcTitle")} subtitle={<Line className="mt-1.5 w-36" />} />
             <div className="space-y-4 px-4 pt-3">
                 <div className="grid grid-cols-2 gap-2">
                     <Block className="h-12 rounded-2xl" />

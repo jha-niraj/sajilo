@@ -71,6 +71,8 @@ export const rechargeSellDef: MunshiWriteDef = {
             execute: async ({ provider: pr, stock: st, amount, udharo_to, confirm }) => {
                 const s = st ?? "eload"
                 if (!(amount > 0)) return { error: "need an amount above zero" }
+                const inHand = (await rechargeBook(ctx)).ledger.state[poolOf(pr, s)].stock
+                if (amount > inHand) return { error: "not_enough_stock", in_hand: Math.max(0, inHand), hint: "Tell him only that much is in hand; ask if he bought stock to add first." }
                 let person: { personId: string | null; newPerson: unknown; label: string | null } = { personId: null, newPerson: null, label: null }
                 if (udharo_to) {
                     const r = await udharoPerson(ctx, udharo_to)

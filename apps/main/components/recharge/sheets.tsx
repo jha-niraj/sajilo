@@ -35,10 +35,12 @@ export function UdharoSheet({
     people,
     customers,
     onSell,
+    short,
 }: {
     open: boolean
     onOpenChange: (open: boolean) => void
     what: string
+    short?: (amount: number) => boolean
     amounts: number[]
     people: RechargePerson[]
     customers: RechargeData["customers"]
@@ -77,7 +79,7 @@ export function UdharoSheet({
                             {people.find((p) => p.id === who.id && p.owed > 0) && (
                                 <p className="text-[14px] text-[#8a5a08]">{t("rcOwes", { amount: money(people.find((p) => p.id === who.id)!.owed) })}</p>
                             )}
-                            <AmountChips amounts={amounts} tone="credit" onPick={sell} onOther={() => setOther(true)} />
+                            <AmountChips amounts={amounts} tone="credit" short={short} onPick={sell} onOther={() => setOther(true)} />
                         </>
                     )}
                 </div>
