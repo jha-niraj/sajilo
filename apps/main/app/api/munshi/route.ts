@@ -1,3 +1,4 @@
+import { stripMarkdown } from "@/lib/munshi/plain-text"
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/session"
 import { nepalToday } from "@/lib/today"
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
         const heard = await transcribe(audio, base.lang, [...names.customers, ...names.borrowers])
         if (!heard.text) return fail("no_speech")
         const out = await runMunshi({ ...base, history: cleanHistory(parse("history")), text: heard.text, pending: cleanPending(parse("pending")), voice: wantVoice })
-        const voice = wantVoice && out.reply ? await speak(out.reply).catch((e) => (console.error("[munshi] tts", e), null)) : null
+        const voice = wantVoice && out.reply ? await speak(stripMarkdown(out.reply)).catch((e) => (console.error("[munshi] tts", e), null)) : null
         return NextResponse.json({ ...out, heard: heard.text, audio: voice } satisfies MunshiTurnResult)
     } catch (e) {
         console.error("[munshi] turn failed", e)

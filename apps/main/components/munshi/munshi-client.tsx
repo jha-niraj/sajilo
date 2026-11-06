@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { toast } from "sonner"
 import { ArrowUp, Camera, Mic, Square, UserPlus, UserRoundX, ChartColumnBig, TrendingUp, HandCoins, Trash2, WifiOff } from "lucide-react"
 import { NewChatIcon, PastChatsIcon, TalkIcon, TypeIcon } from "./munshi-icons"
+import { replyParts, stripMarkdown } from "@/lib/munshi/plain-text"
 import { useRouter } from "next/navigation"
 import { toNepalDateStr } from "@repo/calendar"
 import { useConfirm } from "@repo/ui/components/ui/use-confirm"
@@ -157,7 +158,15 @@ export function MunshiClient({
     // Bumped when a new chat starts, so a reply still on its way doesn't land in the new chat.
     const chatGen = useRef(0)
 
-    const history = () => messagesRef.current.map(({ role, content, id, at }) => ({ role, content, id, at }))
+    // A card he confirmed or cancelled with the buttons leaves no words in the chat, so its outcome rides
+    // along with the reply that proposed it; otherwise Munshi still thinks it is waiting and brings it up again.
+    const history = () =>
+        messagesRef.current.map(({ role, content, id, at, proposals }) => {
+            const outcomes = (proposals ?? [])
+                .filter((p) => p.status !== "pending")
+                .map((p) => `[card "${p.title}": ${p.status === "done" ? "saved" : p.status === "cancelled" ? "cancelled by him" : "failed to save"}]`)
+            return { role, content: outcomes.length ? `${content}\n${outcomes.join("\n")}` : content, id, at }
+        })
     const pendingNow = () => messagesRef.current.flatMap((m) => m.proposals ?? []).filter((p) => p.status === "pending")
 
     const sendText = useCallback(
@@ -522,7 +531,7 @@ function VoiceView(props: {
                                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                                 className="mt-1.5 px-1 text-[16px] font-medium leading-snug text-ink"
                             >
-                                {props.lastAssistant}
+                                {stripMarkdown(props.lastAssistant)}
                             </motion.p>
                         )}
                     </AnimatePresence>
@@ -617,7 +626,7 @@ function ChatView(props: {
                                         </span>
                                     )}
                                     {m.via === "voice" && m.role === "user" && <Mic className="-mt-0.5 mr-1.5 inline h-3.5 w-3.5 opacity-60" />}
-                                    {m.content}
+                                    {m.role === "assistant" ? <RichReply text={m.content} /> : m.content}
                                 </div>
                             )}
                             {m.proposals?.map((p) => (
@@ -763,4 +772,17 @@ async function readTurn(http: Response, onDelta: (delta: string) => void): Promi
         if (done) break
     }
     return out
+}
+
+/** A reply as he should read it: **bold** shown bold, any other markdown removed (lib/munshi/plain-text.ts). */
+function RichReply({ text }: { text: string }) {
+    return replyParts(text).map((p, i) =>
+        p.bold ? (
+            <strong key={i} className="font-semibold">
+                {p.text}
+            </strong>
+        ) : (
+            <span key={i}>{p.text}</span>
+        ),
+    )
 }
