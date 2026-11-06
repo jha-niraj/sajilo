@@ -3,7 +3,7 @@
 import { fetchDaySnapshot } from "@/actions/collection.action"
 import { syncOutbox } from "@/actions/sync.action"
 import type { DaySnapshot, MarkOp } from "@/lib/collection/types"
-import { applyOpToSnapshot, opKind, type QueuedOp } from "./ops"
+import { applyOpToSnapshot, opKind, RECHARGE_KINDS, type QueuedOp } from "./ops"
 import { idb, type OutboxOp } from "./store"
 import { isNetworkError, isOnline, setReachable } from "./network"
 
@@ -138,7 +138,9 @@ async function doFlush() {
         }
         if (res.stoppedAt) await db.outbox.update(res.stoppedAt, { tries: (ops.find((o) => o.opId === res.stoppedAt)?.tries ?? 0) + 1 })
         if (res.applied.length || res.rejected.length) {
-            const dates = new Set(ops.filter((o) => done.includes(o.opId) && "date" in o).map((o) => (o as { date: string }).date))
+            // Recharge has its own page and data; only collection days need pulling again.
+            const isRecharge = (o: OutboxOp) => (RECHARGE_KINDS as readonly string[]).includes(opKind(o))
+            const dates = new Set(ops.filter((o) => done.includes(o.opId) && "date" in o && !isRecharge(o)).map((o) => (o as { date: string }).date))
             for (const d of dates) await refreshDay(d)
             window.dispatchEvent(new Event("sajilo:synced"))
         }

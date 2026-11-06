@@ -1,4 +1,4 @@
-export type ProposalKind = "mark_payment" | "add_customer" | "add_loan" | "add_repayment"
+export type ProposalKind = "mark_payment" | "add_customer" | "add_loan" | "add_repayment" | "recharge_sale" | "recharge_buy" | "recharge_count" | "recharge_payback"
 
 /** An action Munshi wants to take. Nothing changes until he confirms it on screen (or says yes). */
 export interface Proposal {

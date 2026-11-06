@@ -6,7 +6,7 @@ import openNextHandler from "./.open-next/worker.js"
 import { signOutBeforeNext } from "./lib/sign-out-edge"
 
 type Ctx = { waitUntil: (p: Promise<unknown>) => void }
-type Env = { AUTH_COOKIE_PREFIX?: string }
+type Env = { AUTH_COOKIE_PREFIX?: string; BETTER_AUTH_SECRET?: string; BETTER_AUTH_URL?: string }
 const next = openNextHandler as { fetch: (r: Request, env: unknown, ctx: Ctx) => Promise<Response> }
 
 export default {
@@ -17,5 +17,12 @@ export default {
             return signOutBeforeNext(request, env.AUTH_COOKIE_PREFIX || "better-auth", (p) => ctx.waitUntil(p), (r) => next.fetch(r, env, ctx))
         }
         return next.fetch(request, env, ctx)
+    },
+    // wrangler.jsonc `triggers.crons`: the nightly Recharge close, run through the app's own route.
+    async scheduled(_event: unknown, env: Env, ctx: Ctx): Promise<void> {
+        const origin = env.BETTER_AUTH_URL || "https://sajilo.internal"
+        const req = new Request(`${origin}/api/cron/recharge`, { method: "POST", headers: { "x-cron-key": env.BETTER_AUTH_SECRET ?? "" } })
+        const res = await next.fetch(req, env, ctx)
+        console.log("[cron] recharge close", res.status, await res.text())
     },
 }

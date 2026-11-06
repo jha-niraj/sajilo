@@ -9,6 +9,7 @@ import { opKind, type QueuedOp, type SyncResult } from "@/lib/offline/ops"
 import { closeDay, reopenDay } from "./collection.action"
 import { createCustomers, reorderCustomers, setCustomerActive, updateCustomer } from "./customer.action"
 import { addRepayment, createLoan } from "./loan.action"
+import { rechargeBuy, rechargeCount, rechargePayback, rechargeRemove, rechargeSale } from "./recharge.action"
 
 /**
  * Applies what the phone saved while offline, strictly in the order it happened: a customer added
@@ -85,5 +86,15 @@ async function applyOne(op: QueuedOp) {
             return setCustomerActive(op.id, op.isActive)
         case "reorder":
             return reorderCustomers(op.orderedIds)
+        case "rechargeSale":
+            return rechargeSale(op)
+        case "rechargeBuy":
+            return rechargeBuy(op)
+        case "rechargeCount":
+            return rechargeCount(op)
+        case "rechargePayback":
+            return rechargePayback(op)
+        case "rechargeRemove":
+            return rechargeRemove(op)
     }
 }

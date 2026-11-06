@@ -21,7 +21,7 @@ const LEFT: Item[] = [
 ]
 const RIGHT: Item[] = [
     { href: "/loans", label: "navLoans", icon: HandCoins, match: ["/loans", "/cash"] },
-    { href: "/more", label: "navMore", icon: LayoutGrid, match: ["/more", "/manage", "/settings", "/scan", "/loans/calculator"] },
+    { href: "/more", label: "navMore", icon: LayoutGrid, match: ["/more", "/manage", "/settings", "/scan", "/loans/calculator", "/recharge"] },
 ]
 
 /**

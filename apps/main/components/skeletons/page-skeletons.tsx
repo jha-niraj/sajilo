@@ -242,6 +242,33 @@ export function SettingsSkeleton() {
     )
 }
 
+export function RechargeSkeleton() {
+    const { t } = useI18n()
+    return (
+        <>
+            <PageTop title={t("rcTitle")} subtitle={<Line className="mt-1.5 w-36" />} backHref="/more" />
+            <div className="space-y-4 px-4 pt-3">
+                <div className="grid grid-cols-2 gap-2">
+                    <Block className="h-12 rounded-2xl" />
+                    <Block className="h-12 rounded-2xl" delay={0.05} />
+                </div>
+                <Block className="h-12 rounded-2xl" delay={0.1} />
+                <InkCard tiles />
+                <div className="grid grid-cols-4 gap-2">
+                    {Array.from({ length: 9 }, (_, i) => (
+                        <Block key={i} className={cn("h-14 rounded-2xl", i === 8 && "col-span-4")} delay={0.05 * (i % 4)} />
+                    ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                    {[0, 1, 2].map((i) => (
+                        <Block key={i} className="h-16 rounded-2xl" delay={i * 0.05} />
+                    ))}
+                </div>
+            </div>
+        </>
+    )
+}
+
 /** Munshi has its own header (title, tagline, history and Talk/Type) and the orb, not a PageTop. */
 export function MunshiSkeleton() {
     const { t } = useI18n()
@@ -285,5 +312,6 @@ export function skeletonFor(path: string): React.ComponentType {
     if (p.startsWith("/more")) return MoreSkeleton
     if (p.startsWith("/scan")) return ScanSkeleton
     if (p.startsWith("/settings")) return SettingsSkeleton
+    if (p.startsWith("/recharge")) return RechargeSkeleton
     return MunshiSkeleton
 }

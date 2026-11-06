@@ -3,6 +3,8 @@ import { getCustomerDef, getMonthTotalDef, getTodayStatusDef } from "./collectio
 import { addCustomerDef, markPaymentDef } from "./collection/collection-writes"
 import { getCashInHandDef, getLoanDef, getLoansDef } from "./lending/lending-reads"
 import { addLoanDef, addRepaymentDef } from "./lending/lending-writes"
+import { getRechargeDef } from "./recharge/recharge-reads"
+import { rechargeBuyDef, rechargeCountDef, rechargePaidBackDef, rechargeSellDef } from "./recharge/recharge-writes"
 import type { BuiltTool, MunshiToolContext, MunshiToolDef, MunshiWriteDef } from "./types"
 
 /** Every Munshi tool. Add new ones here; the prompt's capability list is derived from this. */
@@ -17,6 +19,11 @@ export const MUNSHI_TOOLS: MunshiToolDef[] = [
     addCustomerDef,
     addLoanDef,
     addRepaymentDef,
+    getRechargeDef,
+    rechargeSellDef,
+    rechargeBuyDef,
+    rechargeCountDef,
+    rechargePaidBackDef,
 ]
 
 export const WRITE_DEFS = MUNSHI_TOOLS.filter((d): d is MunshiWriteDef => d.isWrite)

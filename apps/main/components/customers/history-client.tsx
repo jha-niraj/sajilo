@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import Link from "@/components/app-link"
 import { Pencil, Phone } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { adDayOfWeek, adToBs, bsMonthRange, toNepaliDigits, WEEKDAYS_EN, WEEKDAYS_NE } from "@repo/calendar"
@@ -41,8 +42,11 @@ export function HistoryClient({
     today,
     max,
     backHref,
+    rechargeOwed = 0,
 }: {
     initial: CustomerHistory
+    /** Recharge udharo on the same profile (plan/phase-4-recharge.md), kept apart from collection */
+    rechargeOwed?: number
     today: string
     max: { year: number; month: number }
     backHref: string
@@ -161,6 +165,15 @@ export function HistoryClient({
                             {pickedDay.status === "no_money" && <p className="text-miss">{t("noMoney")}</p>}
                         </div>
                     </section>
+                )}
+
+                {rechargeOwed > 0 && (
+                    <Link href="/recharge" className="flex items-center justify-between gap-3 rounded-[22px] bg-flag-soft px-4 py-3 text-[15px] text-[#8a5a08]">
+                        <span className="min-w-0">
+                            {t("rcTitle")} · {t("rcUdharo")}
+                        </span>
+                        <span className="shrink-0 font-semibold tabular">{money(rechargeOwed)}</span>
+                    </Link>
                 )}
 
                 {(h.customer.phone || h.customer.bankAccountNo) && (

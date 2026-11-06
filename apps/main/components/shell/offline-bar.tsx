@@ -119,7 +119,7 @@ export function OfflineBar() {
     )
 }
 
-const WARM_PAGES = ["/today", "/today/finish", "/month", "/loans", "/loans/new", "/loans/calculator", "/cash", "/manage", "/more", "/settings", "/munshi"]
+const WARM_PAGES = ["/today", "/today/finish", "/month", "/loans", "/loans/new", "/loans/calculator", "/cash", "/manage", "/more", "/settings", "/munshi", "/recharge"]
 const WARM_EVERY_MS = 10 * 60_000
 
 /**

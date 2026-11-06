@@ -1,12 +1,21 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, CircleAlert, HandCoins, UserPlus, Wallet, X } from "lucide-react"
+import { Check, CircleAlert, HandCoins, UserPlus, Wallet, X, Smartphone } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { useI18n } from "@/lib/i18n"
 import type { Proposal } from "@/lib/munshi/types"
 
-const ICON = { mark_payment: Wallet, add_customer: UserPlus, add_loan: HandCoins, add_repayment: HandCoins }
+const ICON = {
+    mark_payment: Wallet,
+    add_customer: UserPlus,
+    add_loan: HandCoins,
+    add_repayment: HandCoins,
+    recharge_sale: Smartphone,
+    recharge_buy: Smartphone,
+    recharge_count: Smartphone,
+    recharge_payback: Smartphone,
+}
 
 export function ProposalCard({
     p,

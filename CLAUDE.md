@@ -204,7 +204,7 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - Keep the file name `middleware.ts` (edge). OpenNext on Workers does not run Node "proxy" yet. Next is pinned to 16.3.x until OpenNext supports 16.4.
 
 ### Routes
-`/` (the login screen itself, no redirect; `/login` just forwards to `/`), `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month` (landscape A4 register: customers x BS days), `/customers/[id]`, `/manage`, `/scan`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/more`, `/settings`, `/offline`.
+`/` (the login screen itself, no redirect; `/login` just forwards to `/`), `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month` (landscape A4 register: customers x BS days), `/customers/[id]`, `/manage`, `/scan`, `/recharge`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/more`, `/settings`, `/offline`.
 
 ### Offline
 `lib/offline/store.ts` (Dexie: day snapshots + outbox) and `lib/offline/sync.ts` (flush on online/visibility/30s). `public/sw.js` caches the app shell and pages (network-first). Server actions in `actions/` are the only API.
@@ -217,6 +217,14 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - Turns go through `POST /api/munshi` (JSON = chat, multipart = voice). Confirm button -> `confirmProposal` server action.
 - New tool: add a def in the right area file and list it in `agenttools/index.ts`.
 - Reply language is decided in code (`lib/munshi/reply-language.ts`, tested): Devanagari in -> Devanagari out, Roman Nepali in -> Roman Nepali out (voice always Devanagari, the TTS reads only that), English in -> English. Confirm cards follow the app language (`cardWords` in `agenttools/resolve.ts`).
+
+### Recharge (`/recharge`, plan/phase-4-recharge.md)
+- NTC/Ncell e-load and scratch cards: a separate business, never mixed into collection, Cash in hand or the deposit. Four stocks (provider x e-load/card).
+- One tap per sale (amount chips, Other = keypad); Udharo to a collection customer (profile id `cust:<customerId>`) or a new person (phone required); Bought prefills what he paid from his last rate; Count is optional and shows the gap.
+- Tables `recharge_person`, `recharge_entry` (every event), `recharge_day` (nightly checkpoint). Sold/profit/stock/cash come from `lib/recharge/ledger.ts` (pure, average cost, tested), never stored per entry.
+- Writes are queued ops (`rechargeSale|Buy|Count|Payback|Remove`), so taps work offline; the page runs the ledger over server entries plus unsent ops.
+- Nightly close: `wrangler.jsonc` cron 18:20 UTC (00:05 Nepal) -> `worker.ts` `scheduled` -> `POST /api/cron/recharge` (key = `BETTER_AUTH_SECRET`). A changed past entry deletes checkpoints from its date (`reopenFrom`).
+- Munshi: `getRecharge`, `rechargeSell`, `rechargeBuy`, `rechargeCount`, `rechargePaidBack` (`agenttools/recharge/`).
 
 ### Images and icon
 - `pnpm images [names] [--force|--webp]` (in `apps/main`): OpenAI art for the auth steps, saved as PNG in `public/images/auth/` plus a transparent, trimmed 600px-tall WebP (`AuthArt` in `components/auth/auth-frame.tsx`). `--webp` rebuilds WebPs from the PNGs with no API call.

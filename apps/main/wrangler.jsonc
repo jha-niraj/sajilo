@@ -13,6 +13,9 @@
 	// pages make only a few queries. Re-measure with `pnpm bench:nav` before pinning again.
 	"placement": { "mode": "smart" },
 
+	// The nightly Recharge close at 00:05 Nepal time (18:20 UTC): worker.ts `scheduled` -> /api/cron/recharge.
+	"triggers": { "crons": ["20 18 * * *"] },
+
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"

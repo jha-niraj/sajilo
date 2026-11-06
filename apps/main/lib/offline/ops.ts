@@ -38,6 +38,29 @@ export type QueuedOp =
     | { kind: "editCustomer"; opId: string; id: string; fields: CustomerFields }
     | { kind: "customerActive"; opId: string; id: string; isActive: boolean }
     | { kind: "reorder"; opId: string; orderedIds: string[] }
+    | RechargeOp
+
+/** Recharge (plan/phase-4-recharge.md). `id` is the entry's id, made on the phone; `at` is when he tapped. */
+export type RechargeNewPerson = { id: string; name: string | null; phone: string | null; customerId: string | null }
+export type RechargeOp =
+    | {
+          kind: "rechargeSale"
+          opId: string
+          id: string
+          provider: "ntc" | "ncell"
+          stock: "eload" | "card"
+          date: string
+          at: number
+          amount: number
+          personId: string | null
+          newPerson: RechargeNewPerson | null
+      }
+    | { kind: "rechargeBuy"; opId: string; id: string; provider: "ntc" | "ncell"; stock: "eload" | "card"; date: string; at: number; face: number; paid: number }
+    | { kind: "rechargeCount"; opId: string; id: string; provider: "ntc" | "ncell"; stock: "eload" | "card"; date: string; at: number; counted: number }
+    | { kind: "rechargePayback"; opId: string; id: string; personId: string; date: string; at: number; amount: number; newPerson: RechargeNewPerson | null }
+    | { kind: "rechargeRemove"; opId: string; id: string; date: string }
+
+export const RECHARGE_KINDS = ["rechargeSale", "rechargeBuy", "rechargeCount", "rechargePayback", "rechargeRemove"] as const
 
 export type OpKind = NonNullable<QueuedOp["kind"]>
 
