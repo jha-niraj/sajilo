@@ -3,7 +3,7 @@ import { z } from "zod"
 import { makeTool } from "@repo/ai/agent"
 import { syncMarks } from "@/actions/collection.action"
 import { createCustomers } from "@/actions/customer.action"
-import { activeCustomers, bsLabel, matchName, notFound } from "../resolve"
+import { activeCustomers, cardWords, matchName, notFound } from "../resolve"
 import type { MunshiWriteDef } from "../types"
 
 const STATUS = ["paid", "shop_closed", "no_money"] as const
@@ -46,7 +46,9 @@ export const markPaymentDef: MunshiWriteDef = {
                 const label = status === "paid" ? `Rs ${amt}` : status === "shop_closed" ? "Shop closed" : "No money today"
                 const payload = { customerId: m.hit.id, status, amount: amt }
                 if (!confirm) {
-                    ctx.propose({ kind: "mark_payment", title: `${m.hit.name}: ${label}`, lines: [bsLabel(ctx.today)], payload, call: { tool: "markPayment", args: { name: m.hit.name, status, amount: amt } } })
+                    const w = cardWords(ctx.lang)
+                    const cardLabel = status === "paid" ? w.paid(amt) : status === "shop_closed" ? w.shopClosed : w.noMoney
+                    ctx.propose({ kind: "mark_payment", title: `${m.hit.name}: ${cardLabel}`, lines: [w.date(ctx.today)], payload, call: { tool: "markPayment", args: { name: m.hit.name, status, amount: amt } } })
                     return { preview: `${m.hit.name}: ${label} for today`, saved: false, next: "ask him to confirm" }
                 }
                 const slot = ctx.claimWriteSlot("markPayment")
@@ -84,7 +86,8 @@ export const addCustomerDef: MunshiWriteDef = {
                 if (!nm || !(amt > 0)) return { error: "need a name and a daily amount above zero" }
                 const payload = { name: nm, dailyAmount: amt, phone: phone ?? null }
                 if (!confirm) {
-                    ctx.propose({ kind: "add_customer", title: `New customer: ${nm}`, lines: [`Rs ${amt} daily`, ...(phone ? [phone] : [])], payload, call: { tool: "addCustomer", args: { name: nm, dailyAmount: amt, phone } } })
+                    const w = cardWords(ctx.lang)
+                    ctx.propose({ kind: "add_customer", title: w.newCustomer(nm), lines: [w.daily(amt), ...(phone ? [phone] : [])], payload, call: { tool: "addCustomer", args: { name: nm, dailyAmount: amt, phone } } })
                     return { preview: `Add ${nm}, Rs ${amt} daily`, saved: false, next: "ask him to confirm" }
                 }
                 const slot = ctx.claimWriteSlot("addCustomer")

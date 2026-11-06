@@ -20,7 +20,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <I18nProvider>
             {children}
-            <Toaster position="bottom-center" offset={{ bottom: "calc(7rem + env(safe-area-inset-bottom))" }} mobileOffset={{ bottom: "calc(7rem + env(safe-area-inset-bottom))" }} />
+            <Toaster position="top-center" offset={{ top: "calc(0.75rem + env(safe-area-inset-top))" }} mobileOffset={{ top: "calc(0.75rem + env(safe-area-inset-top))" }} />
         </I18nProvider>
     )
 }

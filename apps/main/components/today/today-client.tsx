@@ -72,6 +72,8 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
         [setStatus],
     )
 
+    const onMiss = useCallback((row: DayRow, status: "shop_closed" | "no_money") => setStatus(row, status, 0), [setStatus])
+
     const onOpen = useCallback((row: DayRow) => {
         setSheet({ row, seq: Date.now() })
         setSheetOpen(true)
@@ -195,7 +197,7 @@ export function TodayClient({ deadlineSlot }: { deadlineSlot?: React.ReactNode }
                 <ul className="space-y-2.5 px-4 pt-1.5">
                     {visible.map((row) => (
                         <li key={row.customer.id} id={`row-${row.customer.id}`} className="scroll-mt-48">
-                            <CustomerRow row={row} locked={locked} onTick={onTick} onOpen={onOpen} />
+                            <CustomerRow row={row} locked={locked} onTick={onTick} onOpen={onOpen} onMiss={onMiss} />
                         </li>
                     ))}
                     {allDone && (

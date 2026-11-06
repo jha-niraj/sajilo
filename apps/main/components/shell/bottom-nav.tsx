@@ -1,6 +1,6 @@
 "use client"
 
-import { useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Link from "@/components/app-link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
@@ -16,7 +16,7 @@ import { PrefetchKind } from "@/lib/prefetch-kind"
 type Item = { href: string; label: DictKey; icon: typeof CalendarCheck2; match: string[] }
 
 const LEFT: Item[] = [
-    { href: "/today", label: "navToday", icon: CalendarCheck2, match: ["/today", "/customers"] },
+    { href: "/today", label: "navToday", icon: CalendarCheck2, match: ["/today"] },
     { href: "/month", label: "navMonth", icon: ChartColumnBig, match: ["/month"] },
 ]
 const RIGHT: Item[] = [
@@ -90,7 +90,11 @@ export function BottomNav({ activePath }: { activePath?: string } = {}) {
         return () => ro.disconnect()
     }, [])
 
-    const isActive = (match: string[]) => match.some((m) => pathname === m || pathname.startsWith(m + "/"))
+    // A customer's page belongs to the tab it was opened from, like its back link (customers/[id]/page.tsx).
+    const [from, setFrom] = useState<string | null>(null)
+    useEffect(() => setFrom(new URLSearchParams(window.location.search).get("from")), [pathname])
+    const navPath = !pathname.startsWith("/customers/") ? pathname : from === "today" ? "/today" : from === "month" ? "/month" : "/manage"
+    const isActive = (match: string[]) => match.some((m) => navPath === m || navPath.startsWith(m + "/"))
     const munshiActive = pathname.startsWith("/munshi")
     const items = [...LEFT, null, ...RIGHT]
     const activeIndex = munshiActive ? MUNSHI : items.findIndex((it) => it && isActive(it.match))

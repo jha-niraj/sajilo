@@ -1,7 +1,7 @@
 import "server-only"
 import { db, and, eq, asc } from "@repo/db"
 import { customer, borrower } from "@repo/db/schema"
-import { adToBs, bsToAd, formatBs } from "@repo/calendar"
+import { adToBs, bsToAd, formatBs, toNepaliDigits } from "@repo/calendar"
 import { listLoans } from "@/lib/lending/server"
 import type { MunshiToolContext } from "./types"
 
@@ -46,6 +46,27 @@ export async function knownNames(ctx: Pick<MunshiToolContext, "collectorId">) {
 }
 
 export const bsLabel = (ad: string) => formatBs(adToBs(ad), "en")
+
+/** Confirm cards are read by him in the app's language; the tool results stay English for the model. */
+export function cardWords(lang: "ne" | "en") {
+    const ne = lang === "ne"
+    const rs = (n: number) => (ne ? `रु ${toNepaliDigits(n.toLocaleString("en-IN"))}` : `Rs ${n.toLocaleString("en-IN")}`)
+    return {
+        rs,
+        date: (ad: string) => formatBs(adToBs(ad), lang),
+        paid: (n: number) => rs(n),
+        shopClosed: ne ? "पसल बन्द" : "Shop closed",
+        noMoney: ne ? "आज पैसा छैन" : "No money today",
+        newCustomer: (name: string) => (ne ? `नयाँ ग्राहक: ${name}` : `New customer: ${name}`),
+        daily: (n: number) => (ne ? `दिनको ${rs(n)}` : `${rs(n)} daily`),
+        loanTo: (name: string, n: number) => (ne ? `${name} लाई सापटी: ${rs(n)}` : `Loan to ${name}: ${rs(n)}`),
+        rate: (r: number) => (ne ? `सयकडा मासिक रु ${toNepaliDigits(r)}` : `Rs ${r} per 100 per month`),
+        given: (ad: string) => (ne ? `दिएको: ${formatBs(adToBs(ad), "ne")}` : `Given ${formatBs(adToBs(ad), "en")}`),
+        newBorrower: ne ? "नयाँ ऋणी" : "New borrower",
+        returned: (name: string, n: number) => (ne ? `${name} ले ${rs(n)} फिर्ता गर्यो` : `${name} returned ${rs(n)}`),
+        owesToday: (n: number) => (ne ? `आज जम्मा ${rs(n)} बाँकी` : `Owes ${rs(n)} today`),
+    }
+}
 
 export function bsArgToAd(d: { year?: number; month?: number; day?: number } | null | undefined): string | null {
     if (!d?.year || !d.month || !d.day) return null

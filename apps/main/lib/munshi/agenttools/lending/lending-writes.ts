@@ -3,7 +3,7 @@ import { z } from "zod"
 import { makeTool } from "@repo/ai/agent"
 import { addRepayment, createLoan } from "@/actions/loan.action"
 import { getSettings } from "@/lib/collection/server"
-import { activeLoansNamed, borrowers, bsArgToAd, bsLabel, matchName, notFound } from "../resolve"
+import { activeLoansNamed, borrowers, bsArgToAd, bsLabel, cardWords, matchName, notFound } from "../resolve"
 import type { MunshiWriteDef } from "../types"
 
 export const addLoanDef: MunshiWriteDef = {
@@ -41,10 +41,11 @@ export const addLoanDef: MunshiWriteDef = {
                 const existing = matchName(await borrowers(ctx), nm).hit
                 const payload = { borrowerId: existing?.id ?? null, name: existing?.name ?? nm, amount, rate, startDate: on }
                 if (!confirm) {
+                    const w = cardWords(ctx.lang)
                     ctx.propose({
                         kind: "add_loan",
-                        title: `Loan to ${payload.name}: Rs ${amount}`,
-                        lines: [`Rs ${rate} per 100 per month`, `Given ${bsLabel(on)}`, ...(existing ? [] : ["New borrower"])],
+                        title: w.loanTo(payload.name, amount),
+                        lines: [w.rate(rate), w.given(on), ...(existing ? [] : [w.newBorrower])],
                         payload,
                         call: { tool: "addLoan", args: { name: payload.name, amount, ratePer100: rate, givenOn } },
                     })
@@ -82,10 +83,11 @@ export const addRepaymentDef: MunshiWriteDef = {
                 if (!(amount > 0)) return { error: "need an amount above zero" }
                 const payload = { loanId: m.hit.id, amount }
                 if (!confirm) {
+                    const w = cardWords(ctx.lang)
                     ctx.propose({
                         kind: "add_repayment",
-                        title: `${m.hit.borrowerName} returned Rs ${amount}`,
-                        lines: [`Owes Rs ${m.hit.statement.total} today`],
+                        title: w.returned(m.hit.borrowerName, amount),
+                        lines: [w.owesToday(m.hit.statement.total)],
                         payload,
                         call: { tool: "addRepayment", args: { name: m.hit.borrowerName, amount } },
                     })

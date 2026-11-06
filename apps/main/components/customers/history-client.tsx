@@ -47,7 +47,7 @@ export function HistoryClient({
     max: { year: number; month: number }
     backHref: string
 }) {
-    const { t, money, num, lang, date } = useI18n()
+    const { t, money, lang, date } = useI18n()
     const [h, setH] = useState(initial)
     const [pending, startTransition] = useTransition()
     const [picked, setPicked] = useState<string | null>(null)
@@ -176,7 +176,8 @@ export function HistoryClient({
                             </p>
                         )}
                         <p className="text-ink-3">
-                            {t("startDate")}: {date(h.customer.startDate, true)} · {num(h.arrearsDays)} {t("days")} {t("pending")}
+                            {t("startDate")}: {date(h.customer.startDate, true)}
+                            {h.arrears > 0 && ` · ${t("dueOld", { amount: money(h.arrears), days: h.arrearsDays })}`}
                         </p>
                     </section>
                 )}

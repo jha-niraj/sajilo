@@ -253,7 +253,7 @@ export function MunshiSkeleton() {
                     <p className="truncate whitespace-nowrap text-[13px] text-ink-3">{t("munshiTagline")}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5 pt-4">
-                    <Skeleton className="h-9 w-9 rounded-full bg-paper-2" />
+                    <Skeleton className="h-10 w-10 rounded-full bg-paper-2" />
                     <Skeleton className="h-10 w-[82px] rounded-full bg-paper-2" />
                 </div>
             </header>

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "@/components/app-link"
 import { AnimatePresence, motion } from "framer-motion"
 import { toast } from "sonner"
-import { ArrowUp, Camera, Keyboard, Mic, Square, UserPlus, AudioLines, UserRoundX, ChartColumnBig, TrendingUp, HandCoins, History, SquarePen, Trash2, WifiOff } from "lucide-react"
+import { ArrowUp, Camera, Mic, Square, UserPlus, UserRoundX, ChartColumnBig, TrendingUp, HandCoins, Trash2, WifiOff } from "lucide-react"
+import { NewChatIcon, PastChatsIcon, TalkIcon, TypeIcon } from "./munshi-icons"
 import { useRouter } from "next/navigation"
 import { toNepalDateStr } from "@repo/calendar"
 import { useConfirm } from "@repo/ui/components/ui/use-confirm"
@@ -271,15 +272,34 @@ export function MunshiClient({
                     <p className="truncate whitespace-nowrap text-[13px] text-ink-3">{t("munshiTagline")}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5 pt-4">
-                    <button type="button" onClick={() => setHistoryOpen(true)} aria-label={t("pastChats")} className="flex h-9 w-9 items-center justify-center rounded-full bg-paper-2 text-ink-2">
-                        <History className="h-[18px] w-[18px]" />
+                    <button
+                        type="button"
+                        onClick={() => setHistoryOpen(true)}
+                        aria-label={t("pastChats")}
+                        title={t("pastChats")}
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-card text-ink-2 ring-1 ring-line transition-colors active:bg-paper-2"
+                    >
+                        <PastChatsIcon className="h-5 w-5" />
                     </button>
                     {!empty && (
-                        <button type="button" onClick={() => void reset()} aria-label={t("newConversation")} className="flex h-9 w-9 items-center justify-center rounded-full bg-paper-2 text-ink-2">
-                            <SquarePen className="h-[18px] w-[18px]" />
+                        <button
+                            type="button"
+                            onClick={() => void reset()}
+                            aria-label={t("newConversation")}
+                            title={t("newConversation")}
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-card text-ink-2 ring-1 ring-line transition-colors active:bg-paper-2"
+                        >
+                            <NewChatIcon className="h-5 w-5" />
                         </button>
                     )}
-                    <div className="grid grid-cols-2 rounded-full bg-paper-2 p-1" role="tablist">
+                    <div className="relative grid grid-cols-2 rounded-full bg-card p-1 ring-1 ring-line" role="tablist">
+                        <span
+                            aria-hidden
+                            className={cn(
+                                "absolute inset-y-1 left-1 w-9 rounded-full bg-saffron shadow-sm transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                                mode === "chat" && "translate-x-9",
+                            )}
+                        />
                         {(["voice", "chat"] as const).map((m) => (
                             <button
                                 key={m}
@@ -289,9 +309,9 @@ export function MunshiClient({
                                 aria-label={m === "voice" ? t("modeVoice") : t("modeChat")}
                                 title={m === "voice" ? t("modeVoice") : t("modeChat")}
                                 onClick={() => switchMode(m)}
-                                className={cn("flex h-8 w-9 items-center justify-center rounded-full transition-colors", mode === m ? "bg-card text-saffron shadow-sm" : "text-ink-3")}
+                                className={cn("relative flex h-8 w-9 items-center justify-center rounded-full transition-colors duration-200", mode === m ? "text-white" : "text-ink-3")}
                             >
-                                {m === "voice" ? <AudioLines className="h-[18px] w-[18px]" /> : <Keyboard className="h-[18px] w-[18px]" />}
+                                {m === "voice" ? <TalkIcon className="h-5 w-5" /> : <TypeIcon className="h-5 w-5" />}
                             </button>
                         ))}
                     </div>

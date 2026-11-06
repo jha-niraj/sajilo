@@ -8,6 +8,7 @@ import { buildTools, capabilityList, WRITE_DEFS } from "./agenttools"
 import { knownNames } from "./agenttools/resolve"
 import type { MunshiToolContext } from "./agenttools/types"
 import type { MunshiMessage, MunshiStreamFrame, Proposal, ProposalKind } from "./types"
+import { replyLanguage, replyLanguageRule } from "./reply-language"
 
 const MAX_STEPS = 5
 const HISTORY_LIMIT = 16
@@ -30,7 +31,7 @@ function systemPrompt(o: {
 He collects daily savings from shops on a fixed route, and sometimes lends money at "Rs X per 100 per month" (सयकडा मासिक).
 Today is ${WEEKDAYS_EN[adDayOfWeek(o.today)]}, ${formatBs(b, "en")} BS (${b.year}-${b.month}-${b.day}).
 
-LANGUAGE: Match HIS LAST MESSAGE. If it is English words, reply in simple English. If it is Nepali (Devanagari, or Nepali words typed in English letters like "kati baki cha"), reply in simple, warm Nepali (Devanagari). App language: ${o.lang === "ne" ? "Nepali" : "English"}.
+LANGUAGE: Match HIS LAST MESSAGE. If it is English words, reply in simple English. If it is Nepali in Devanagari, reply in simple, warm Nepali (Devanagari). If it is Nepali typed in English letters (like "kati baki cha"), reply the same way, in Roman Nepali. App language: ${o.lang === "ne" ? "Nepali" : "English"}.
 STYLE: ${o.voice ? "VOICE reply: 1-3 short spoken sentences. No lists, no symbols, no markdown. Say amounts in words (e.g. 'दुई हजार एक सय रुपैयाँ' / 'two thousand one hundred rupees')." : "Chat reply: at most 4 short lines, no markdown headings. Write amounts like Rs 2,100 / रु २,१००."}
 
 YOU CAN:
@@ -61,14 +62,6 @@ export interface MunshiRunResult {
     reply: string
     proposals: Proposal[]
     resolved: { id: string; status: Proposal["status"] }[]
-}
-
-const NEPALI_ROMAN = /\b(cha|chha|kati|baki|bhayo|garnu|garnus|diyo|dinu|tiryo|paisa|rupaiya|aaja|aja|hijo|kasle|kun|ho|haina|hajur|dai|bhai|ma|lai|le|ko)\b/i
-
-/** Which language to answer in, decided in code: models drift toward one language otherwise. */
-function replyLanguage(text: string): "ne" | "en" {
-    if (/[\u0900-\u097F]/.test(text)) return "ne"
-    return (text.match(new RegExp(NEPALI_ROMAN, "gi")) ?? []).length >= 2 ? "ne" : "en"
 }
 
 const samePayload = (a: Record<string, unknown>, b: Record<string, unknown>) =>
@@ -141,9 +134,7 @@ async function prepareTurn(run: MunshiRun) {
         model: m.model,
         system:
             systemPrompt({ today: run.today, lang: run.lang, userName: run.userName, voice: run.voice, names, waiting }) +
-            (replyLanguage(run.text) === "ne"
-                ? "\n\nREPLY LANGUAGE FOR THIS MESSAGE: Nepali (Devanagari)."
-                : "\n\nREPLY LANGUAGE FOR THIS MESSAGE: English. Do not reply in Nepali."),
+            replyLanguageRule(replyLanguage(run.text), run.voice),
         messages,
         tools: buildTools(ctx),
         maxSteps: MAX_STEPS,

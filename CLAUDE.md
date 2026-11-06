@@ -216,6 +216,7 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - Write tools follow preview/confirm: `confirm=false` saves nothing and shows a Confirm card; `confirm=true` only after he says yes; one write per turn (`claimWriteSlot`). Writes wrap existing server actions and go through `ctx.commit`, which claims the card's id in `munshi_commit` first, so a card is saved at most once (voice "yes" and the Confirm button can both reach it) and same-turn re-proposals are folded in.
 - Turns go through `POST /api/munshi` (JSON = chat, multipart = voice). Confirm button -> `confirmProposal` server action.
 - New tool: add a def in the right area file and list it in `agenttools/index.ts`.
+- Reply language is decided in code (`lib/munshi/reply-language.ts`, tested): Devanagari in -> Devanagari out, Roman Nepali in -> Roman Nepali out (voice always Devanagari, the TTS reads only that), English in -> English. Confirm cards follow the app language (`cardWords` in `agenttools/resolve.ts`).
 
 ### Images and icon
 - `pnpm images [names] [--force|--webp]` (in `apps/main`): OpenAI art for the auth steps, saved as PNG in `public/images/auth/` plus a transparent, trimmed 600px-tall WebP (`AuthArt` in `components/auth/auth-frame.tsx`). `--webp` rebuilds WebPs from the PNGs with no API call.

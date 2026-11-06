@@ -41,6 +41,9 @@ export function MonthClient({
 
     const title = monthLabel(report.year, report.month)
     const maxDay = Math.max(1, ...report.days.map((d) => d.total))
+    // Days before the first collection (a new account, a new route) are empty rows, not information.
+    const firstActive = report.days.findIndex((d) => d.total > 0 || d.people > 0)
+    const shownDays = firstActive < 0 ? [] : report.days.slice(firstActive).reverse()
 
     const summaryText = () => {
         const lines = [
@@ -154,7 +157,7 @@ export function MonthClient({
                     />
                 ) : (
                     <ProgressiveList
-                        items={[...report.days].reverse()}
+                        items={shownDays}
                         getKey={(d) => d.date}
                         resetKey={`${report.year}-${report.month}-d`}
                         className={cn(pending && "opacity-60")}

@@ -24,7 +24,7 @@ interface Props {
 }
 
 export function NewLoanClient({ borrowers, today, defaultRate, defaultCompounding, basis, suggestedDue }: Props) {
-    const { t } = useI18n()
+    const { t, date } = useI18n()
     const router = useRouter()
     const [borrowerId, setBorrowerId] = useState<string>(borrowers.length ? "" : "new")
     const [name, setName] = useState("")
@@ -141,7 +141,9 @@ export function NewLoanClient({ borrowers, today, defaultRate, defaultCompoundin
 
                 {preview && (
                     <section className="rounded-[24px] bg-saffron-soft p-4">
-                        <p className="mb-2 text-[15px] font-medium text-[#7a3d10]">{t("calcOn")}</p>
+                        <p className="mb-2 text-[15px] font-medium text-[#7a3d10]">
+                            {t("calcOn")} {date(dueDate, true)}
+                        </p>
                         <StatementTotals statement={preview} />
                     </section>
                 )}
