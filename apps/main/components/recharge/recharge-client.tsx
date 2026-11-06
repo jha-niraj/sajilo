@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import Link from "@/components/app-link"
 import { toast } from "sonner"
-import { AlertTriangle, CalendarDays, ChevronDown, ChevronRight, ClipboardCheck, FileText, HandCoins, PackagePlus, X } from "lucide-react"
+import { AlertTriangle, CalendarDays, Check, ChevronDown, ChevronRight, ClipboardCheck, FileText, HandCoins, PackagePlus, X } from "lucide-react"
 import { useConfirm } from "@repo/ui/components/ui/use-confirm"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { cn } from "@repo/ui/lib/utils"
@@ -340,13 +340,20 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
                         <ScrollArea orientation="vertical" viewportClassName="max-h-[280px]">
                             <ul className="divide-y divide-line">
                                 {owing.map((p) => (
-                                    <li key={p.id}>
-                                        <button type="button" onClick={() => setPersonId(p.id)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-paper-2">
+                                    <li key={p.id} className="flex items-center gap-2 pr-3">
+                                        <button type="button" onClick={() => setPersonId(p.id)} className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 pl-4 text-left active:bg-paper-2">
                                             <span className="min-w-0">
                                                 <span className="block truncate text-[16px] font-medium text-ink">{personLabel(p, data.customers)}</span>
                                                 {p.phone && <span className="block text-[13px] text-ink-3 tabular">{p.phone.replace("+977", "")}</span>}
                                             </span>
                                             <span className="shrink-0 text-[16px] font-semibold text-[#8a5a08] tabular">{money(p.owed)}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPersonId(p.id)}
+                                            className="flex h-10 shrink-0 items-center gap-1 rounded-full bg-paid-soft px-3 text-[14px] font-semibold text-paid active:bg-paid/20"
+                                        >
+                                            <Check className="h-4 w-4" /> {t("rcGotPaid")}
                                         </button>
                                     </li>
                                 ))}

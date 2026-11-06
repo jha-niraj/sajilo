@@ -1,15 +1,16 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { createPortal } from "react-dom"
-import Link from "@/components/app-link"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { ChevronLeft, ChevronRight, Download, Printer, Share2 } from "lucide-react"
+import { Download, Printer, Share2 } from "lucide-react"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { DotmSquare11 } from "@repo/ui/components/ui/dotm-square-11"
 import { cn } from "@repo/ui/lib/utils"
 import { bsMonthName, bsMonthRange, formatBs, adToBs, type BsDate } from "@repo/calendar"
 import { PageTop } from "@/components/shell/page-top"
+import { MonthPicker } from "@/components/month/month-picker"
 import { useI18n } from "@/lib/i18n"
 import { POOLS, runLedger, splitPool, type Pool } from "@/lib/recharge/ledger"
 import type { RechargeData } from "@/lib/recharge/server"
@@ -30,6 +31,9 @@ export function RechargeReport({ data, year, month, now, name }: { data: Recharg
     const docRef = useRef<HTMLDivElement>(null)
     const [mounted, setMounted] = useState(false)
     const [busy, setBusy] = useState<null | "pdf" | "share">(null)
+    const router = useRouter()
+    const [moving, startMoving] = useTransition()
+    const go = (y: number, m: number) => startMoving(() => router.replace(monthParam(y, m), { scroll: false }))
     useEffect(() => setMounted(true), [])
 
     const r = useMemo(() => {
@@ -76,9 +80,6 @@ export function RechargeReport({ data, year, month, now, name }: { data: Recharg
     const range = bsMonthRange(year, month)
     const title = `${t("rcReportTitle")} - ${monthLabel(year, month)}`
     const fileName = `recharge-${bsMonthName(month, "en").toLowerCase()}-${year}-made-${now.year}-${pad(now.month)}-${pad(now.day)}.pdf`
-    const prev = month === 1 ? { y: year - 1, m: 12 } : { y: year, m: month - 1 }
-    const next = month === 12 ? { y: year + 1, m: 1 } : { y: year, m: month + 1 }
-    const hasNext = next.y * 12 + next.m <= now.year * 12 + now.month
     const tiles: [string, number, string?][] = [
         [t("rcSold"), r.totals.sold],
         [t("rcProfit"), r.totals.profit, "text-paid"],
@@ -110,24 +111,12 @@ export function RechargeReport({ data, year, month, now, name }: { data: Recharg
     return (
         <>
             <PageTop title={t("rcReportTitle")} backHref="/reports" />
-            <div className="space-y-4 px-4 pb-8 pt-3">
-                <div className="flex items-center justify-between gap-2 rounded-2xl bg-card p-1.5 ring-1 ring-line">
-                    <Link href={monthParam(prev.y, prev.m)} aria-label={t("rcPrevMonth")} className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-2 active:bg-paper-2">
-                        <ChevronLeft className="h-5 w-5" />
-                    </Link>
-                    <div className="min-w-0 text-center">
-                        <p className="text-[17px] font-semibold text-ink">{monthLabel(year, month)}</p>
-                        <p className="text-[12px] text-ink-3">
-                            {date(range.start)} - {date(data.to)}
-                        </p>
-                    </div>
-                    {hasNext ? (
-                        <Link href={monthParam(next.y, next.m)} aria-label={t("rcNextMonth")} className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-2 active:bg-paper-2">
-                            <ChevronRight className="h-5 w-5" />
-                        </Link>
-                    ) : (
-                        <span className="h-11 w-11" />
-                    )}
+            <div className={cn("space-y-4 px-4 pb-8 pt-3 transition-opacity", moving && "opacity-60")}>
+                <div className="space-y-1.5">
+                    <MonthPicker year={year} month={month} max={{ year: now.year, month: now.month }} disabled={moving} onChange={(v) => go(v.year, v.month)} />
+                    <p className="text-center text-[13px] text-ink-3">
+                        {date(range.start)} - {date(data.to)}
+                    </p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
