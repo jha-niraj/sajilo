@@ -114,12 +114,12 @@ export function compareBs(a: BsDate, b: BsDate): number {
 	return a.year - b.year || a.month - b.month || a.day - b.day;
 }
 
-export function bsMonthName(month: number, lang: 'ne' | 'en' = 'ne'): string {
+export function bsMonthName(month: number, lang: 'ne' | 'en' | 'mai' = 'ne'): string {
 	return (lang === 'ne' ? BS_MONTHS_NE : BS_MONTHS_EN)[month - 1] ?? '';
 }
 
 /** "२०८३ असोज २८" / "28 Asoj 2083" */
-export function formatBs(bs: BsDate, lang: 'ne' | 'en' = 'ne', withYear = true): string {
+export function formatBs(bs: BsDate, lang: 'ne' | 'en' | 'mai' = 'ne', withYear = true): string {
 	if (lang === 'ne') {
 		const s = `${bsMonthName(bs.month, 'ne')} ${toNepaliDigits(bs.day)}`;
 		return withYear ? `${toNepaliDigits(bs.year)} ${s}` : s;
@@ -128,6 +128,6 @@ export function formatBs(bs: BsDate, lang: 'ne' | 'en' = 'ne', withYear = true):
 	return withYear ? `${s} ${bs.year}` : s;
 }
 
-export function formatBsMonth(year: number, month: number, lang: 'ne' | 'en' = 'ne'): string {
+export function formatBsMonth(year: number, month: number, lang: 'ne' | 'en' | 'mai' = 'ne'): string {
 	return lang === 'ne' ? `${bsMonthName(month, 'ne')} ${toNepaliDigits(year)}` : `${bsMonthName(month, 'en')} ${year}`;
 }

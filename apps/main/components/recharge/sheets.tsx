@@ -187,26 +187,34 @@ export function BuySheet({
     open,
     onOpenChange,
     what,
+    left,
     suggest,
+    onCheck,
     onSave,
 }: {
     open: boolean
     onOpenChange: (open: boolean) => void
     what: string
+    /** stock of the older purchases still in hand: when there is some, he checks it before adding more */
+    left: number
     suggest: (face: number) => number | null
+    onCheck: (r: CheckResult) => void
     onSave: (face: number, paid: number) => void
 }) {
     const { t, money } = useI18n()
     const [face, setFace] = useState<number | null>(null)
+    const [checked, setChecked] = useState(false)
     const [step, setStep] = useState<"face" | "otherFace" | "paid">("face")
 
     const close = (o: boolean) => {
         onOpenChange(o)
         if (!o) {
             setFace(null)
+            setChecked(false)
             setStep("face")
         }
     }
+    const mustCheck = open && !checked && left > 0
     const pickFace = (f: number) => {
         setFace(f)
         setStep("paid")
@@ -219,40 +227,50 @@ export function BuySheet({
     const suggested = face ? suggest(face) : null
 
     return (
-        <BottomSheet open={open} onOpenChange={close} title={t("rcBoughtTitle")} description={what}>
-            <div className="flex flex-col gap-3 pb-2">
-                {step === "face" && (
-                    <>
-                        <p className="text-[15px] text-ink-2">{t("rcReceived")}</p>
-                        <div className="grid grid-cols-2 gap-2">
-                            {BUY_CHIPS.map((f) => (
-                                <button key={f} type="button" onClick={() => pickFace(f)} className="flex h-14 items-center justify-center rounded-2xl bg-card text-[19px] font-semibold text-ink ring-1 ring-line tabular active:bg-saffron-soft">
-                                    {money(f)}
+        <BottomSheet open={open} onOpenChange={close} title={mustCheck ? t("rcCheckFirst") : t("rcBoughtTitle")} description={what}>
+            {mustCheck ? (
+                <CheckFlow
+                    expected={left}
+                    onDone={(r) => {
+                        onCheck(r)
+                        setChecked(true)
+                    }}
+                />
+            ) : (
+                <div className="flex flex-col gap-3 pb-2">
+                    {step === "face" && (
+                        <>
+                            <p className="text-[15px] text-ink-2">{t("rcReceived")}</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                {BUY_CHIPS.map((f) => (
+                                    <button key={f} type="button" onClick={() => pickFace(f)} className="flex h-14 items-center justify-center rounded-2xl bg-card text-[19px] font-semibold text-ink ring-1 ring-line tabular active:bg-saffron-soft">
+                                        {money(f)}
+                                    </button>
+                                ))}
+                                <button type="button" onClick={() => setStep("otherFace")} className="flex h-14 items-center justify-center rounded-2xl bg-card text-[16px] font-semibold text-ink ring-1 ring-line active:bg-saffron-soft">
+                                    {t("rcOther")}
                                 </button>
-                            ))}
-                            <button type="button" onClick={() => setStep("otherFace")} className="flex h-14 items-center justify-center rounded-2xl bg-card text-[16px] font-semibold text-ink ring-1 ring-line active:bg-saffron-soft">
-                                {t("rcOther")}
+                            </div>
+                        </>
+                    )}
+                    {step === "otherFace" && <AmountPad label={t("rcReceived")} submitLabel={t("rcContinue")} onSubmit={pickFace} />}
+                    {step === "paid" && face && (
+                        <>
+                            <button type="button" onClick={() => setStep("face")} className="-ml-1 inline-flex items-center gap-1 self-start rounded-full px-2 py-1.5 text-[15px] text-ink-2 active:bg-paper-2">
+                                <ChevronLeft className="h-5 w-5" /> {t("rcReceived")}: <b className="text-ink">{money(face)}</b>
                             </button>
-                        </div>
-                    </>
-                )}
-                {step === "otherFace" && <AmountPad label={t("rcReceived")} submitLabel={t("rcContinue")} onSubmit={pickFace} />}
-                {step === "paid" && face && (
-                    <>
-                        <button type="button" onClick={() => setStep("face")} className="-ml-1 inline-flex items-center gap-1 self-start rounded-full px-2 py-1.5 text-[15px] text-ink-2 active:bg-paper-2">
-                            <ChevronLeft className="h-5 w-5" /> {t("rcReceived")}: <b className="text-ink">{money(face)}</b>
-                        </button>
-                        <AmountPad
-                            key={face}
-                            initial={suggested}
-                            label={t("rcYouPaid")}
-                            hint={(paid) => <PaidHint face={face} paid={paid} />}
-                            submitLabel={t("save")}
-                            onSubmit={save}
-                        />
-                    </>
-                )}
-            </div>
+                            <AmountPad
+                                key={face}
+                                initial={suggested}
+                                label={t("rcYouPaid")}
+                                hint={(paid) => <PaidHint face={face} paid={paid} />}
+                                submitLabel={t("save")}
+                                onSubmit={save}
+                            />
+                        </>
+                    )}
+                </div>
+            )}
         </BottomSheet>
     )
 }
@@ -266,8 +284,66 @@ function PaidHint({ face, paid }: { face: number; paid: number }) {
     return <span className={odd ? "font-medium text-miss" : "text-paid"}>{t("rcMargin", { pct: lang === "ne" ? toNepaliDigits(String(pct)) : String(pct) })}</span>
 }
 
-/** Optional count: what is really left. Shows the difference from what Sajilo expects. */
-export function CountSheet({
+/** What he decided at a check: the stock matches, or what he really has and why it differs. */
+export type CheckResult = { found: number; why: "same" | "sold" | "lost" | "other" }
+
+/**
+ * The check, in plain steps: Sajilo says what should be there, he taps "Yes, same" or types what he
+ * really has, and a shortfall asks why (a sale he forgot is saved as a sale, not as lost stock).
+ */
+function CheckFlow({ expected, onDone }: { expected: number; onDone: (r: CheckResult) => void }) {
+    const { t, money } = useI18n()
+    const [found, setFound] = useState<number | null>(null)
+    const [typing, setTyping] = useState(false)
+
+    if (found !== null) {
+        const gap = Math.round((expected - found) * 100) / 100
+        if (gap > 0)
+            return (
+                <div className="flex flex-col gap-2 pb-2">
+                    <p className="pb-1 text-[17px] font-semibold text-miss">{t("rcMissingWhy", { amount: money(gap) })}</p>
+                    <button type="button" onClick={() => onDone({ found, why: "sold" })} className="h-14 rounded-2xl bg-ink text-[16px] font-semibold text-paper active:opacity-90">
+                        {t("rcWhySold")}
+                    </button>
+                    <button type="button" onClick={() => onDone({ found, why: "lost" })} className="h-14 rounded-2xl bg-card text-[16px] font-semibold text-ink ring-1 ring-line active:bg-paper-2">
+                        {t("rcWhyLost")}
+                    </button>
+                    <button type="button" onClick={() => onDone({ found, why: "other" })} className="h-12 rounded-2xl text-[15px] font-semibold text-ink-2 active:bg-paper-2">
+                        {t("rcWhyDontKnow")}
+                    </button>
+                </div>
+            )
+        return (
+            <div className="flex flex-col gap-3 pb-2">
+                <p className="text-[17px] font-semibold text-paid">{gap === 0 ? t("rcCheckOk") : t("rcExtraFound", { amount: money(-gap) })}</p>
+                <button type="button" onClick={() => onDone({ found, why: gap === 0 ? "same" : "other" })} className="h-14 rounded-2xl bg-ink text-[17px] font-semibold text-paper active:opacity-90">
+                    {t("save")}
+                </button>
+            </div>
+        )
+    }
+    if (typing) return <AmountPad allowZero label={t("rcHowMuchReal")} submitLabel={t("rcContinue")} onSubmit={setFound} />
+    return (
+        <div className="flex flex-col gap-3 pb-2">
+            <div className="rounded-[22px] bg-paper-2 px-4 py-3">
+                <p className="text-[14px] text-ink-2">{t("rcShouldHave")}</p>
+                <p className="text-[30px] font-semibold leading-tight text-ink tabular">{money(expected)}</p>
+                <p className="mt-1 text-[15px] text-ink-2">{t("rcIsItRight")}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => setTyping(true)} className="h-14 rounded-2xl bg-card text-[16px] font-semibold text-ink ring-1 ring-line active:bg-paper-2">
+                    {t("rcNoDifferent")}
+                </button>
+                <button type="button" autoFocus onClick={() => onDone({ found: expected, why: "same" })} className="h-14 rounded-2xl bg-paid text-[16px] font-semibold text-white active:opacity-90">
+                    {t("rcYesSame")}
+                </button>
+            </div>
+        </div>
+    )
+}
+
+/** Check one stock against what Sajilo expects (any time, from the Check button). */
+export function CheckSheet({
     open,
     onOpenChange,
     what,
@@ -278,24 +354,20 @@ export function CountSheet({
     onOpenChange: (open: boolean) => void
     what: string
     expected: number
-    onSave: (counted: number) => void
+    onSave: (r: CheckResult) => void
 }) {
-    const { t, money } = useI18n()
+    const { t } = useI18n()
     return (
-        <BottomSheet open={open} onOpenChange={onOpenChange} title={t("rcCountTitle", { what })} description={t("rcCountHint")}>
-            <div className="pb-2">
-                {open && (
-                    <AmountPad
-                        allowZero
-                        label={t("rcExpected", { amount: money(expected) })}
-                        submitLabel={t("save")}
-                        onSubmit={(n) => {
-                            onSave(n)
-                            onOpenChange(false)
-                        }}
-                    />
-                )}
-            </div>
+        <BottomSheet open={open} onOpenChange={onOpenChange} title={t("rcCheckTitle", { what })}>
+            {open && (
+                <CheckFlow
+                    expected={expected}
+                    onDone={(r) => {
+                        onSave(r)
+                        onOpenChange(false)
+                    }}
+                />
+            )}
         </BottomSheet>
     )
 }

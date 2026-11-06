@@ -1,9 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
+import Link from "@/components/app-link"
 import { toast } from "sonner"
-import { AlertTriangle, CalendarDays, ChevronDown, ClipboardCheck, FileText, HandCoins, PackagePlus, X } from "lucide-react"
+import { AlertTriangle, CalendarDays, ChevronDown, ChevronRight, ClipboardCheck, FileText, HandCoins, PackagePlus, X } from "lucide-react"
 import { useConfirm } from "@repo/ui/components/ui/use-confirm"
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { cn } from "@repo/ui/lib/utils"
 import { adToBs, toNepaliDigits } from "@repo/calendar"
 import { PageTop } from "@/components/shell/page-top"
@@ -14,15 +16,15 @@ import { fetchRecharge } from "@/actions/recharge.action"
 import { newOpId, queueOp } from "@/lib/offline/sync"
 import { idb } from "@/lib/offline/store"
 import { RECHARGE_KINDS } from "@/lib/offline/ops"
-import { PROVIDERS, STOCKS, poolOf, runLedger, splitPool, suggestPaid, sumDays, type Pool, type Provider, type RechargeEvent } from "@/lib/recharge/ledger"
+import { PROVIDERS, STOCKS, marginPct, poolOf, runLedger, splitPool, suggestPaid, sumDays, type Batch, type Pool, type Provider, type RechargeEvent } from "@/lib/recharge/ledger"
 import type { RechargeData, RechargePerson } from "@/lib/recharge/server"
 import { AmountChips, SELL_CHIPS } from "./chips"
 import { AmountPad } from "./amount-pad"
-import { BuySheet, CountSheet, PersonSheet, UdharoSheet, type PersonPick } from "./sheets"
+import { BuySheet, CheckSheet, PersonSheet, UdharoSheet, type CheckResult, type PersonPick } from "./sheets"
 import { personLabel, useMerged, useShownOps } from "./use-recharge"
 
-const PROVIDER_NAME: Record<Provider, string> = { ntc: "NTC", ncell: "Ncell" }
-const PROVIDER_DOT: Record<Provider, string> = { ntc: "bg-[#1d5fb8]", ncell: "bg-[#8e5bb5]" }
+export const PROVIDER_NAME: Record<Provider, string> = { ntc: "NTC", ncell: "Ncell" }
+export const PROVIDER_DOT: Record<Provider, string> = { ntc: "bg-[#1d5fb8]", ncell: "bg-[#8e5bb5]" }
 const POOL_KEY = "sajilo.rechargePool"
 
 function savedPool(): Pool {
@@ -41,9 +43,9 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
     const [data, setData] = useState(initial)
     const [day, setDay] = useState(initial.today)
     const [pool, setPoolState] = useState<Pool>("ncell:eload")
-    const [sheet, setSheet] = useState<null | "other" | "udharo" | "buy" | "count">(null)
+    const [sheet, setSheet] = useState<null | "other" | "udharo" | "buy" | "check">(null)
     const [personId, setPersonId] = useState<string | null>(null)
-    const [asking, setAsking] = useState<{ amount: number; who?: PersonPick } | null>(null)
+    const [asking, setAsking] = useState<{ amount: number; who?: PersonPick; online: boolean } | null>(null)
     const [hidden, setHidden] = useState<Set<string>>(() => new Set())
     const [loading, startTransition] = useTransition()
 
@@ -83,23 +85,24 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
 
     const ops = useShownOps(data)
     const merged = useMerged(data, ops, hidden)
-    const { state: now, days } = useMemo(() => runLedger(data.start, merged.events), [data.start, merged.events])
+    const { state: now, days, batches, gaps } = useMemo(() => runLedger(data.start, merged.events), [data.start, merged.events])
     const dayState = useMemo(() => (day >= data.to ? now : runLedger(data.start, merged.events.filter((e) => e.date <= day)).state), [day, data.to, data.start, merged.events, now])
     const summary = days.get(day)
     const month = sumDays(days, data.from, data.to)
     const { provider, stock } = splitPool(pool)
-    const what = t("rcStockOf", { provider: PROVIDER_NAME[provider], stock: stock === "eload" ? t("rcEload") : t("rcCard") })
     const whatOf = (p: Pool) => {
         const s = splitPool(p)
         return t("rcStockOf", { provider: PROVIDER_NAME[s.provider], stock: s.stock === "eload" ? t("rcEload") : t("rcCard") })
     }
+    const what = whatOf(pool)
     const isToday = day === data.today
     const nameOf = (id: string | null) => {
         const p = id ? merged.people.find((x) => x.id === id) : null
         return p ? personLabel(p, data.customers) : "-"
     }
+    const inHand = dayState[pool].stock
 
-    const sell = async (amount: number, who?: PersonPick) => {
+    const sell = async (amount: number, who?: PersonPick, online = false, quiet = false) => {
         const id = newOpId()
         await queueOp({
             kind: "rechargeSale",
@@ -111,7 +114,9 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
             amount,
             personId: who?.id ?? null,
             newPerson: who?.newPerson ?? null,
+            online: !who && online,
         })
+        if (quiet) return
         toast(who ? t("rcUdharoMsg", { amount: money(amount), name: who.label }) : t("rcSoldMsg", { amount: money(amount), what }), {
             duration: 3000,
             action: { label: t("undo"), onClick: () => void remove(id, day) },
@@ -120,7 +125,6 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
 
     /** Every sale is asked first (a stray tap must not sell), and never more than is in hand. */
     const trySell = (amount: number, who?: PersonPick) => {
-        const inHand = dayState[pool].stock
         if (amount > inHand) {
             toast.error(t("rcNoStock", { amount: money(Math.max(0, inHand)), what }), {
                 duration: 5000,
@@ -128,7 +132,7 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
             })
             return
         }
-        setAsking({ amount, who })
+        setAsking({ amount, who, online: false })
     }
 
     const remove = async (id: string, date: string) => {
@@ -143,7 +147,7 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
     }
 
     const askRemove = async (e: RechargeEvent) => {
-        const label = e.type === "sell" ? t("rcSale") : e.type === "buy" ? t("rcBought") : e.type === "count" ? t("rcCount") : t("rcPaidBack")
+        const label = e.type === "sell" ? t("rcSale") : e.type === "buy" ? t("rcBought") : e.type === "count" ? t("rcCheck") : t("rcPaidBack")
         const amount = e.type === "buy" ? e.face : e.type === "count" ? e.stock : e.amount
         if (!(await confirm({ title: t("rcRemoveTitle", { what: `${label} ${money(amount)}` }), destructive: true, confirmText: t("yes"), cancelText: t("no") }))) return
         await remove(e.id, e.date)
@@ -153,9 +157,22 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
         await queueOp({ kind: "rechargeBuy", id: newOpId(), provider, stock, date: day, at: Date.now(), face, paid })
         toast(t("rcBoughtMsg", { amount: money(face), what }))
     }
-    const count = async (counted: number) => {
-        await queueOp({ kind: "rechargeCount", id: newOpId(), provider, stock, date: day, at: Date.now(), counted })
-        toast(t("rcCountMsg", { what, amount: money(counted) }))
+    /** A forgotten sale is saved as a sale (cash); anything else is a check that sets the stock. */
+    const check = async (r: CheckResult) => {
+        const gap = Math.round((inHand - r.found) * 100) / 100
+        if (r.why === "sold" && gap > 0) await sell(gap, undefined, false, true)
+        else
+            await queueOp({
+                kind: "rechargeCount",
+                id: newOpId(),
+                provider,
+                stock,
+                date: day,
+                at: Date.now(),
+                counted: r.found,
+                note: r.why === "lost" || r.why === "other" ? r.why : null,
+            })
+        toast(t("rcCheckSaved", { what }))
     }
     const payback = async (p: RechargePerson, amount: number) => {
         await queueOp({ kind: "rechargePayback", id: newOpId(), personId: p.id, date: day, at: Date.now(), amount, newPerson: null })
@@ -164,6 +181,7 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
 
     const dayEvents = merged.events.filter((e) => e.date === day).sort((a, b) => b.at - a.at)
     const owing = merged.people.filter((p) => p.owed > 0).sort((a, b) => b.owed - a.owed)
+    const poolBatches = batches.filter((b) => b.pool === pool && b.date <= day).reverse()
     const person = personId ? (merged.people.find((p) => p.id === personId) ?? null) : null
     const personHistory = person
         ? merged.events
@@ -236,12 +254,12 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
                 <section className="rounded-[22px] bg-ink p-4 text-paper">
                     <p className="text-[14px] text-paper/70">{what}</p>
                     <p className="text-[30px] font-semibold leading-tight tabular">
-                        {money(dayState[pool].stock)} <span className="text-[15px] font-normal text-paper/70">{t("rcInHand")}</span>
+                        {money(inHand)} <span className="text-[15px] font-normal text-paper/70">{t("rcInHand")}</span>
                     </p>
                     <div className="mt-3 grid grid-cols-3 gap-2">
                         <Tile label={t("rcSold")} value={money(summary?.sold ?? 0)} />
                         <Tile label={t("rcProfit")} value={money(summary?.profit ?? 0)} accent />
-                        <Tile label={t("rcCash")} value={money(summary?.cash ?? 0)} />
+                        <Tile label={t("rcCashToHave")} value={money(summary?.cash ?? 0)} />
                     </div>
                     <div className="mt-3 flex flex-wrap gap-1.5">
                         {(Object.keys(dayState) as Pool[])
@@ -254,7 +272,7 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
                     </div>
                 </section>
 
-                {dayState[pool].stock < 0 && (
+                {inHand < 0 && (
                     <button type="button" onClick={() => setSheet("buy")} className="flex w-full items-center gap-2 rounded-2xl bg-miss-soft px-4 py-3 text-left text-[14px] font-medium text-miss">
                         <AlertTriangle className="h-5 w-5 shrink-0" /> {t("rcBelowZero")}
                     </button>
@@ -262,74 +280,95 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
 
                 <section className="space-y-2">
                     <p className="text-[14px] text-ink-2">{t("rcTapToSell")}</p>
-                    <AmountChips amounts={SELL_CHIPS[stock]} short={(a) => a > dayState[pool].stock} onPick={(a) => trySell(a)} onOther={() => setSheet("other")} />
+                    <AmountChips amounts={SELL_CHIPS[stock]} short={(a) => a > inHand} onPick={(a) => trySell(a)} onOther={() => setSheet("other")} />
                 </section>
 
                 <div className="grid grid-cols-3 gap-2">
                     <Action icon={HandCoins} label={t("rcUdharo")} onClick={() => setSheet("udharo")} tone="late" />
                     <Action icon={PackagePlus} label={t("rcBought")} onClick={() => setSheet("buy")} />
-                    <Action icon={ClipboardCheck} label={t("rcCount")} onClick={() => setSheet("count")} />
+                    <Action icon={ClipboardCheck} label={t("rcCheck")} onClick={() => setSheet("check")} />
                 </div>
+
+                <section className="rounded-[22px] bg-card ring-1 ring-line">
+                    <h2 className="px-4 pb-2 pt-3.5 text-[15px] font-semibold text-ink">
+                        {t("rcBatches")} · {what}
+                    </h2>
+                    {poolBatches.length === 0 ? (
+                        <p className="px-4 pb-4 text-[14px] text-ink-3">{t("rcBatchNone")}</p>
+                    ) : (
+                        <ScrollArea orientation="vertical" viewportClassName="max-h-[300px]">
+                            <ul className="space-y-2 px-3 pb-3">
+                                {poolBatches.map((b) => (
+                                    <BatchCard key={b.id} b={b} />
+                                ))}
+                            </ul>
+                        </ScrollArea>
+                    )}
+                </section>
 
                 <section className="rounded-[22px] bg-card ring-1 ring-line">
                     <h2 className="px-4 pb-1 pt-3.5 text-[15px] font-semibold text-ink">{t("rcDayList")}</h2>
                     {dayEvents.length === 0 ? (
                         <p className="px-4 pb-4 pt-1 text-[14px] text-ink-3">{t("rcNoEntries")}</p>
                     ) : (
-                        <ul className="divide-y divide-line">
-                            {dayEvents.map((e) => (
-                                <EntryRow
-                                    key={e.id}
-                                    e={e}
-                                    time={time(e.at)}
-                                    nameOf={nameOf}
-                                    gap={e.type === "count" ? (summary?.pools[e.pool].gap ?? null) : null}
-                                    unsent={merged.unsent.has(e.id)}
-                                    onRemove={() => void askRemove(e)}
-                                />
-                            ))}
-                        </ul>
+                        <ScrollArea orientation="vertical" viewportClassName="max-h-[340px]">
+                            <ul className="divide-y divide-line">
+                                {dayEvents.map((e) => (
+                                    <EntryRow
+                                        key={e.id}
+                                        e={e}
+                                        time={time(e.at)}
+                                        nameOf={nameOf}
+                                        gap={e.type === "count" ? (gaps.get(e.id) ?? null) : null}
+                                        unsent={merged.unsent.has(e.id)}
+                                        onRemove={() => void askRemove(e)}
+                                    />
+                                ))}
+                            </ul>
+                        </ScrollArea>
                     )}
                 </section>
 
                 <section className="rounded-[22px] bg-card ring-1 ring-line">
-                    <h2 className="px-4 pb-1 pt-3.5 text-[15px] font-semibold text-ink">{t("rcWhoOwes")}</h2>
+                    <h2 className="flex items-center justify-between gap-2 px-4 pb-1 pt-3.5 text-[15px] font-semibold text-ink">
+                        {t("rcWhoOwes")}
+                        {owing.length > 0 && <span className="text-[14px] text-[#8a5a08] tabular">{money(owing.reduce((s, p) => s + p.owed, 0))}</span>}
+                    </h2>
                     {owing.length === 0 ? (
                         <p className="px-4 pb-4 pt-1 text-[14px] text-ink-3">{t("rcNobodyOwes")}</p>
                     ) : (
-                        <ul className="divide-y divide-line">
-                            {owing.map((p) => (
-                                <li key={p.id}>
-                                    <button type="button" onClick={() => setPersonId(p.id)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-paper-2">
-                                        <span className="min-w-0">
-                                            <span className="block truncate text-[16px] font-medium text-ink">{personLabel(p, data.customers)}</span>
-                                            {p.phone && <span className="block text-[13px] text-ink-3 tabular">{p.phone.replace("+977", "")}</span>}
-                                        </span>
-                                        <span className="shrink-0 text-[16px] font-semibold text-[#8a5a08] tabular">{money(p.owed)}</span>
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                        <ScrollArea orientation="vertical" viewportClassName="max-h-[280px]">
+                            <ul className="divide-y divide-line">
+                                {owing.map((p) => (
+                                    <li key={p.id}>
+                                        <button type="button" onClick={() => setPersonId(p.id)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-paper-2">
+                                            <span className="min-w-0">
+                                                <span className="block truncate text-[16px] font-medium text-ink">{personLabel(p, data.customers)}</span>
+                                                {p.phone && <span className="block text-[13px] text-ink-3 tabular">{p.phone.replace("+977", "")}</span>}
+                                            </span>
+                                            <span className="shrink-0 text-[16px] font-semibold text-[#8a5a08] tabular">{money(p.owed)}</span>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </ScrollArea>
                     )}
                 </section>
 
-                <section className="rounded-[22px] bg-saffron-soft p-4">
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                            <p className="text-[14px] text-[#7a3d10]">{t("rcMonthProfit", { month: monthLabel(bs.year, bs.month) })}</p>
-                            <p className="text-[13px] text-[#7a3d10]/80">
-                                {t("rcSold")} {money(month.sold)}
-                            </p>
-                        </div>
-                        <p className="shrink-0 text-[22px] font-semibold text-[#7a3d10] tabular">{money(month.profit)}</p>
-                    </div>
-                    <a
-                        href={`/print/recharge?y=${bs.year}&m=${bs.month}`}
-                        className="mt-3 flex h-12 items-center justify-center gap-2 rounded-2xl bg-card text-[15px] font-semibold text-[#7a3d10] ring-1 ring-saffron/20 active:bg-paper-2"
-                    >
-                        <FileText className="h-5 w-5" /> {t("rcMonthReport")}
-                    </a>
-                </section>
+                <Link
+                    href={`/reports/recharge?m=${bs.year}-${String(bs.month).padStart(2, "0")}`}
+                    className="flex items-center gap-3 rounded-[22px] bg-saffron-soft p-4 text-[#7a3d10] active:bg-saffron/20"
+                >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-card">
+                        <FileText className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block text-[14px]">{t("rcMonthProfit", { month: monthLabel(bs.year, bs.month) })}</span>
+                        <span className="block text-[13px] opacity-80">{t("rcMonthReport")}</span>
+                    </span>
+                    <span className="shrink-0 text-[20px] font-semibold tabular">{money(month.profit)}</span>
+                    <ChevronRight className="h-5 w-5 shrink-0 opacity-70" />
+                </Link>
             </div>
 
             <BottomSheet open={sheet === "other"} onOpenChange={(o) => setSheet(o ? "other" : null)} title={t("rcOtherTitle")} description={what}>
@@ -351,13 +390,21 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
                 onOpenChange={(o) => setSheet(o ? "udharo" : null)}
                 what={what}
                 amounts={SELL_CHIPS[stock]}
-                short={(a) => a > dayState[pool].stock}
+                short={(a) => a > inHand}
                 people={merged.people}
                 customers={data.customers}
                 onSell={(who, amount) => trySell(amount, who)}
             />
-            <BuySheet open={sheet === "buy"} onOpenChange={(o) => setSheet(o ? "buy" : null)} what={what} suggest={(face) => suggestPaid(now, pool, face)} onSave={(f, p) => void buy(f, p)} />
-            <CountSheet open={sheet === "count"} onOpenChange={(o) => setSheet(o ? "count" : null)} what={what} expected={dayState[pool].stock} onSave={(n) => void count(n)} />
+            <BuySheet
+                open={sheet === "buy"}
+                onOpenChange={(o) => setSheet(o ? "buy" : null)}
+                what={what}
+                left={inHand}
+                suggest={(face) => suggestPaid(now, pool, face)}
+                onCheck={(r) => void check(r)}
+                onSave={(f, p) => void buy(f, p)}
+            />
+            <CheckSheet open={sheet === "check"} onOpenChange={(o) => setSheet(o ? "check" : null)} what={what} expected={inHand} onSave={(r) => void check(r)} />
             <PersonSheet
                 person={person}
                 label={person ? personLabel(person, data.customers) : ""}
@@ -376,13 +423,31 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
                         <div className="grid grid-cols-2 gap-2">
                             <div className="rounded-2xl bg-card px-4 py-3 ring-1 ring-line">
                                 <p className="text-[13px] text-ink-3">{t("rcInHandNow")}</p>
-                                <p className="text-[18px] font-semibold text-ink tabular">{money(dayState[pool].stock)}</p>
+                                <p className="text-[18px] font-semibold text-ink tabular">{money(inHand)}</p>
                             </div>
                             <div className="rounded-2xl bg-card px-4 py-3 ring-1 ring-line">
                                 <p className="text-[13px] text-ink-3">{t("rcAfterThis")}</p>
-                                <p className="text-[18px] font-semibold text-ink tabular">{money(dayState[pool].stock - asking.amount)}</p>
+                                <p className="text-[18px] font-semibold text-ink tabular">{money(inHand - asking.amount)}</p>
                             </div>
                         </div>
+                        {!asking.who && (
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-[14px] text-ink-2">{t("rcPaidHow")}</span>
+                                <div className="grid grid-cols-2 rounded-full bg-paper-2 p-1">
+                                    {[false, true].map((on) => (
+                                        <button
+                                            key={String(on)}
+                                            type="button"
+                                            onClick={() => setAsking({ ...asking, online: on })}
+                                            aria-pressed={asking.online === on}
+                                            className={cn("h-9 rounded-full px-3.5 text-[14px] font-semibold transition-colors", asking.online === on ? "bg-card text-ink shadow-sm" : "text-ink-3")}
+                                        >
+                                            {on ? t("rcOnline") : t("rcCash")}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <div className="grid grid-cols-[1fr_2fr] gap-2">
                             <button type="button" onClick={() => setAsking(null)} className="h-14 rounded-2xl bg-card text-[16px] font-semibold text-ink-2 ring-1 ring-line active:bg-paper-2">
                                 {t("cancel")}
@@ -393,7 +458,7 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
                                 onClick={() => {
                                     const a = asking
                                     setAsking(null)
-                                    void sell(a.amount, a.who)
+                                    void sell(a.amount, a.who, a.online)
                                 }}
                                 className={cn("h-14 rounded-2xl text-[17px] font-semibold active:opacity-90", asking.who ? "bg-flag text-white" : "bg-ink text-paper")}
                             >
@@ -411,7 +476,7 @@ export function RechargeClient({ initial }: { initial: RechargeData }) {
 function Tile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
     return (
         <div className="min-w-0 rounded-xl bg-paper/10 px-2.5 py-2">
-            <p className="text-[12px] text-paper/70">{label}</p>
+            <p className="truncate text-[12px] text-paper/70">{label}</p>
             <p className={cn("truncate text-[16px] font-semibold tabular", accent && "text-[#7fd3a1]")}>{value}</p>
         </div>
     )
@@ -430,6 +495,50 @@ function Action({ icon: Icon, label, onClick, tone }: { icon: typeof HandCoins; 
             <Icon className="h-5 w-5" />
             {label}
         </button>
+    )
+}
+
+/** One purchase the way he keeps it on paper: what he got and paid, how much is sold, left, and the profit. */
+export function BatchCard({ b, what }: { b: Batch; what?: string }) {
+    const { t, money, date, lang } = useI18n()
+    const pct = marginPct(b.face, b.paid)
+    const soldShare = b.face > 0 ? Math.min(100, Math.max(0, (b.sold / b.face) * 100)) : 0
+    const done = b.left <= 0
+    return (
+        <li className={cn("list-none rounded-2xl px-3.5 py-3 ring-1 ring-line", done ? "bg-paper-2/60" : "bg-paper")}>
+            <div className="flex items-baseline justify-between gap-3">
+                <p className="min-w-0 truncate text-[15px] font-semibold text-ink">
+                    {b.date ? date(b.date) : t("rcOpening")} · {money(b.face)}
+                    {what && <span className="font-normal text-ink-3"> · {what}</span>}
+                </p>
+                {done && <span className="shrink-0 rounded-full bg-paid-soft px-2 py-0.5 text-[12px] font-semibold text-paid">{t("rcSoldOut")}</span>}
+            </div>
+            <p className="text-[13px] text-ink-3 tabular">
+                {t("rcYouPaid")} {money(b.paid)} · {t("rcMargin", { pct: lang === "ne" ? toNepaliDigits(String(pct)) : String(pct) })}
+            </p>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-line">
+                <div className="h-full rounded-full bg-saffron" style={{ width: `${soldShare}%` }} />
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-[13px]">
+                <span>
+                    <span className="block text-ink-3">{t("rcSold")}</span>
+                    <b className="text-ink tabular">{money(b.sold)}</b>
+                </span>
+                <span>
+                    <span className="block text-ink-3">{t("rcLeft")}</span>
+                    <b className="text-ink tabular">{money(Math.max(0, b.left))}</b>
+                </span>
+                <span>
+                    <span className="block text-ink-3">{t("rcProfit")}</span>
+                    <b className="text-paid tabular">{money(b.profit)}</b>
+                </span>
+            </div>
+            {b.missing !== 0 && (
+                <p className={cn("mt-1.5 text-[13px] font-medium", b.missing > 0 ? "text-miss" : "text-paid")}>
+                    {b.missing > 0 ? t("rcMissing", { amount: money(b.missing) }) : t("rcExtra", { amount: money(-b.missing) })}
+                </p>
+            )}
+        </li>
     )
 }
 
@@ -477,19 +586,20 @@ function EntryRow({
     if (e.type === "sell") {
         title = e.personId ? nameOf(e.personId) : t("rcSold")
         if (e.personId) sub += ` · ${t("rcUdharo")}`
+        else if (e.online) sub += ` · ${t("rcOnlineTag")}`
         amount = money(e.amount)
         tone = e.personId ? "text-[#8a5a08]" : "text-ink"
     } else if (e.type === "buy") {
         title = t("rcBought")
-        const pct = e.face > 0 ? Math.round(((e.face - e.paid) / e.face) * 1000) / 10 : 0
+        const pct = marginPct(e.face, e.paid)
         sub += ` · ${t("rcYouPaid")} ${money(e.paid)} · ${t("rcMargin", { pct: lang === "ne" ? toNepaliDigits(String(pct)) : String(pct) })}`
         amount = `+ ${money(e.face)}`
         tone = "text-paid"
     } else if (e.type === "count") {
-        title = t("rcCount")
-        if (gap !== null) sub += ` · ${gap === 0 ? t("rcGapNone") : gap > 0 ? t("rcGapLess", { amount: money(gap) }) : t("rcGapMore", { amount: money(-gap) })}`
-        amount = money(e.stock)
-        tone = "text-ink-2"
+        title = !gap ? t("rcCheckOk") : gap > 0 ? t("rcCheckLess", { amount: money(gap) }) : t("rcCheckMore", { amount: money(-gap) })
+        sub += ` · ${t("rcLeft")} ${money(e.stock)}`
+        if (e.note === "lost") sub += ` · ${t("rcNoteLost")}`
+        tone = gap && gap > 0 ? "text-miss" : "text-ink"
     } else {
         title = nameOf(e.personId)
         sub += ` · ${t("rcPaidBack")}`
@@ -500,13 +610,13 @@ function EntryRow({
         <li className="flex items-center gap-3 py-2.5 pl-3 pr-1.5">
             <SourceBadge pool={e.type === "payback" ? null : e.pool} />
             <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-medium text-ink">{title}</span>
+                <span className={cn("block truncate text-[15px] font-medium", e.type === "count" ? tone : "text-ink")}>{title}</span>
                 <span className="block truncate text-[13px] text-ink-3 tabular">
                     {sub}
                     {unsent && <span className="text-saffron"> · {t("rcUnsynced")}</span>}
                 </span>
             </span>
-            <span className={cn("shrink-0 text-[15px] font-semibold tabular", tone)}>{amount}</span>
+            {amount && <span className={cn("shrink-0 text-[15px] font-semibold tabular", tone)}>{amount}</span>}
             <button type="button" onClick={onRemove} aria-label={t("delete")} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-3 active:bg-paper-2">
                 <X className="h-4 w-4" />
             </button>

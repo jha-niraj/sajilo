@@ -11,7 +11,7 @@ const signupInput = z.object({
     name: z.string().trim().min(1).max(80),
     phone: z.string(),
     pin: z.string().regex(/^\d{4}$/),
-    language: z.enum(["ne", "en"]).default("en"),
+    language: z.enum(["ne", "en", "mai"]).default("en"),
 })
 
 export type SignupResult = { ok: true; phone: string } | { ok: false; error: "invalid_phone" | "phone_taken" | "invalid" }

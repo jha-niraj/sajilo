@@ -39,3 +39,11 @@ Sold, profit, stock and cash are never stored per entry; they come from `lib/rec
 ## Offline
 
 Every recharge write is a queued op (`rechargeSale`, `rechargeBuy`, `rechargeCount`, `rechargePayback`, `rechargeRemove`, ids made on the phone). The page runs the same ledger over server entries plus unsent ops, so a tap shows at once, with or without signal.
+
+## Round 2 (2026-11-06)
+
+- Average cost replaced by purchase batches (FIFO): each purchase shows sold, left, profit and anything found missing at a check. Old checkpoints without batches load as one opening batch.
+- Count became Check: Yes, same / No, different -> amount -> why (a forgotten sale is saved as a sale). Bought checks the older stock first.
+- `recharge_entry.online` (QR sales and paybacks, not cash in hand) and `recharge_entry.note` (why a check differed).
+- Reports screen (`/reports`), recharge month report with month switcher, Print, Download PDF, Share.
+- Lists on /recharge are bounded scroll areas. Third language: Maithili in English letters.

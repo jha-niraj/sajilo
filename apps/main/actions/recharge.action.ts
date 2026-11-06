@@ -69,6 +69,7 @@ const saleInput = z.object({
     amount: money,
     personId: z.string().max(80).nullable(),
     newPerson,
+    online: z.boolean().optional(),
 })
 
 export async function rechargeSale(input: z.input<typeof saleInput>) {
@@ -77,7 +78,7 @@ export async function rechargeSale(input: z.input<typeof saleInput>) {
     const personId = v.personId ? await resolvePerson(collectorId, v.personId, v.newPerson) : null
     await db
         .insert(rechargeEntry)
-        .values({ id: v.id, collectorId, kind: "sell", provider: v.provider, stock: v.stock, date: v.date, at: new Date(v.at), amount: v.amount, personId })
+        .values({ id: v.id, collectorId, kind: "sell", provider: v.provider, stock: v.stock, date: v.date, at: new Date(v.at), amount: v.amount, personId, online: !personId && !!v.online })
         .onConflictDoNothing({ target: rechargeEntry.id })
     await reopenFrom(collectorId, v.date)
 }
@@ -94,19 +95,19 @@ export async function rechargeBuy(input: z.input<typeof buyInput>) {
     await reopenFrom(collectorId, v.date)
 }
 
-const countInput = z.object({ id: entryId, provider, stock, date: isoDate, at, counted: z.number().finite().min(0).max(10_000_000) })
+const countInput = z.object({ id: entryId, provider, stock, date: isoDate, at, counted: z.number().finite().min(0).max(10_000_000), note: z.enum(["lost", "other"]).nullable().optional() })
 
 export async function rechargeCount(input: z.input<typeof countInput>) {
     const collectorId = await actionCollectorId()
     const v = countInput.parse(input)
     await db
         .insert(rechargeEntry)
-        .values({ id: v.id, collectorId, kind: "count", provider: v.provider, stock: v.stock, date: v.date, at: new Date(v.at), amount: v.counted })
+        .values({ id: v.id, collectorId, kind: "count", provider: v.provider, stock: v.stock, date: v.date, at: new Date(v.at), amount: v.counted, note: v.note ?? null })
         .onConflictDoNothing({ target: rechargeEntry.id })
     await reopenFrom(collectorId, v.date)
 }
 
-const paybackInput = z.object({ id: entryId, personId: z.string().max(80), date: isoDate, at, amount: money, newPerson })
+const paybackInput = z.object({ id: entryId, personId: z.string().max(80), date: isoDate, at, amount: money, newPerson, online: z.boolean().optional() })
 
 export async function rechargePayback(input: z.input<typeof paybackInput>) {
     const collectorId = await actionCollectorId()
@@ -114,7 +115,7 @@ export async function rechargePayback(input: z.input<typeof paybackInput>) {
     const personId = await resolvePerson(collectorId, v.personId, v.newPerson)
     await db
         .insert(rechargeEntry)
-        .values({ id: v.id, collectorId, kind: "payback", date: v.date, at: new Date(v.at), amount: v.amount, personId })
+        .values({ id: v.id, collectorId, kind: "payback", date: v.date, at: new Date(v.at), amount: v.amount, personId, online: !!v.online })
         .onConflictDoNothing({ target: rechargeEntry.id })
 }
 

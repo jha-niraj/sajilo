@@ -269,6 +269,32 @@ export function RechargeSkeleton() {
     )
 }
 
+export function ReportsSkeleton() {
+    const { t } = useI18n()
+    return (
+        <>
+            <PageTop title={t("reportsTitle")} backHref="/more" />
+            <Body>
+                <Rows count={2} />
+            </Body>
+        </>
+    )
+}
+
+export function RechargeReportSkeleton() {
+    const { t } = useI18n()
+    return (
+        <>
+            <PageTop title={t("rcReportTitle")} backHref="/reports" subtitle={<Line className="mt-1.5 w-32" />} />
+            <Body>
+                <Block className="h-12 rounded-2xl" />
+                <InkCard tiles />
+                <Rows count={3} />
+            </Body>
+        </>
+    )
+}
+
 /** Munshi has its own header (title, tagline, history and Talk/Type) and the orb, not a PageTop. */
 export function MunshiSkeleton() {
     const { t } = useI18n()
@@ -313,5 +339,7 @@ export function skeletonFor(path: string): React.ComponentType {
     if (p.startsWith("/scan")) return ScanSkeleton
     if (p.startsWith("/settings")) return SettingsSkeleton
     if (p.startsWith("/recharge")) return RechargeSkeleton
+    if (p.startsWith("/reports/recharge")) return RechargeReportSkeleton
+    if (p.startsWith("/reports")) return ReportsSkeleton
     return MunshiSkeleton
 }

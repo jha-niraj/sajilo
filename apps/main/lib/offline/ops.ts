@@ -54,10 +54,11 @@ export type RechargeOp =
           amount: number
           personId: string | null
           newPerson: RechargeNewPerson | null
+          online?: boolean
       }
     | { kind: "rechargeBuy"; opId: string; id: string; provider: "ntc" | "ncell"; stock: "eload" | "card"; date: string; at: number; face: number; paid: number }
-    | { kind: "rechargeCount"; opId: string; id: string; provider: "ntc" | "ncell"; stock: "eload" | "card"; date: string; at: number; counted: number }
-    | { kind: "rechargePayback"; opId: string; id: string; personId: string; date: string; at: number; amount: number; newPerson: RechargeNewPerson | null }
+    | { kind: "rechargeCount"; opId: string; id: string; provider: "ntc" | "ncell"; stock: "eload" | "card"; date: string; at: number; counted: number; note?: "lost" | "other" | null }
+    | { kind: "rechargePayback"; opId: string; id: string; personId: string; date: string; at: number; amount: number; newPerson: RechargeNewPerson | null; online?: boolean }
     | { kind: "rechargeRemove"; opId: string; id: string; date: string }
 
 export const RECHARGE_KINDS = ["rechargeSale", "rechargeBuy", "rechargeCount", "rechargePayback", "rechargeRemove"] as const

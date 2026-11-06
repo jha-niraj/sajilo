@@ -2,7 +2,9 @@
 
 import { cn } from "@repo/ui/lib/utils"
 import { useI18n } from "@/lib/i18n"
-import type { Lang } from "@/lib/dict"
+import { LANGS, type Lang } from "@/lib/dict"
+
+const LABEL: Record<Lang, string> = { en: "English", ne: "नेपाली", mai: "Maithili" }
 
 export function LangToggle({ onChange, className }: { onChange?: (lang: Lang) => void; className?: string }) {
     const { lang, setLang } = useI18n()
@@ -12,7 +14,7 @@ export function LangToggle({ onChange, className }: { onChange?: (lang: Lang) =>
     }
     return (
         <div className={cn("inline-flex rounded-full bg-paper-2 p-1 text-sm font-medium", className)} role="group" aria-label="Language">
-            {(["en", "ne"] as const).map((l) => (
+            {LANGS.map((l) => (
                 <button
                     key={l}
                     type="button"
@@ -23,7 +25,7 @@ export function LangToggle({ onChange, className }: { onChange?: (lang: Lang) =>
                         lang === l ? "bg-card text-ink shadow-sm" : "text-ink-3",
                     )}
                 >
-                    {l === "ne" ? "नेपाली" : "English"}
+                    {LABEL[l]}
                 </button>
             ))}
         </div>

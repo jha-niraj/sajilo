@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { formatBs, formatBsMonth, adToBs, toNepaliDigits, WEEKDAYS_NE, WEEKDAYS_EN, adDayOfWeek } from "@repo/calendar"
-import type { DictKey, Lang } from "./dict"
+import { calLang, isLang, type DictKey, type Lang } from "./dict"
 import { formatMoney, groupIndian, translate, type Vars } from "./format"
 
 interface I18n {
@@ -35,16 +35,16 @@ export function I18nProvider({ initialLang, children }: { initialLang?: Lang; ch
         if (initialLang !== undefined) return
         let saved: string | null = null
         try {
-            saved = localStorage.getItem(LANG_STORAGE_KEY) ?? document.cookie.match(/(?:^|; )sajilo\.lang=(ne|en)/)?.[1] ?? null
+            saved = localStorage.getItem(LANG_STORAGE_KEY) ?? document.cookie.match(/(?:^|; )sajilo\.lang=(ne|en|mai)/)?.[1] ?? null
         } catch {
             // storage blocked
         }
-        if (saved === "ne" || saved === "en") setLangState(saved)
+        if (isLang(saved)) setLangState(saved)
         setReady(true)
     }, [initialLang])
 
     useEffect(() => {
-        document.documentElement.lang = lang
+        document.documentElement.lang = lang === "mai" ? "mai" : lang
     }, [lang])
 
     const setLang = useCallback((next: Lang) => {
@@ -65,9 +65,9 @@ export function I18nProvider({ initialLang, children }: { initialLang?: Lang; ch
             t: (key, vars) => translate(lang, key, vars),
             num: (n) => (lang === "ne" ? toNepaliDigits(groupIndian(n)) : groupIndian(n)),
             money: (n) => formatMoney(n, lang),
-            date: (ad, withYear = false) => formatBs(adToBs(ad), lang, withYear),
+            date: (ad, withYear = false) => formatBs(adToBs(ad), calLang(lang), withYear),
             weekday: (ad) => (lang === "ne" ? WEEKDAYS_NE : WEEKDAYS_EN)[adDayOfWeek(ad)]!,
-            month: (year, month) => formatBsMonth(year, month, lang),
+            month: (year, month) => formatBsMonth(year, month, calLang(lang)),
         }),
         [lang, ready, setLang],
     )

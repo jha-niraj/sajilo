@@ -9,7 +9,7 @@ import { actionCollectorId } from "@/lib/session"
 import { getSettings } from "@/lib/collection/server"
 
 export interface SettingsView {
-    language: "ne" | "en"
+    language: "ne" | "en" | "mai"
     workingDays: number[]
     bankDeadlineDay: number | null
     reminderDaysBefore: number
@@ -43,7 +43,7 @@ export async function fetchSettings(): Promise<SettingsView> {
 
 const settingsPatch = z
     .object({
-        language: z.enum(["ne", "en"]),
+        language: z.enum(["ne", "en", "mai"]),
         workingDays: z.array(z.number().int().min(0).max(6)).max(7),
         bankDeadlineDay: z.number().int().min(1).max(32).nullable(),
         reminderDaysBefore: z.number().int().min(0).max(15),

@@ -29,9 +29,29 @@ describe("runLedger", () => {
         expect(d.pools["ncell:eload"].closing).toBe(17500)
     })
 
-    it("prices sales at the average cost when rates differ", () => {
-        const { days } = runLedger(emptyState(), [buy(D1, 10000, 9700), buy(D1, 10000, 9600), sell(D1, 1000)])
-        expect(days.get(D1)!.profit).toBe(35)
+    it("sells the oldest purchase first, at that purchase's rate", () => {
+        const { days, batches } = runLedger(emptyState(), [buy(D1, 1000, 970), buy(D1, 10000, 9600), sell(D1, 1500)])
+        expect(days.get(D1)!.profit).toBe(30 + 20)
+        expect(batches.map((b) => [b.sold, b.left])).toEqual([
+            [1000, 0],
+            [500, 9500],
+        ])
+    })
+
+    it("each batch keeps its own sold, left and profit across days and checkpoints", () => {
+        const first = runLedger(emptyState(), [buy(D1, 20000, 19300), sell(D1, 5000)])
+        const { batches, state } = runLedger(first.state, [sell(D2, 3000), buy(D2, 10000, 9650), sell(D2, 13000)])
+        expect(batches.map((b) => [b.face, b.sold, b.left, b.profit])).toEqual([
+            [20000, 20000, 0, 700],
+            [10000, 1000, 9000, 35],
+        ])
+        expect(state["ncell:eload"].batches).toHaveLength(1)
+    })
+
+    it("online money is sold but not cash in hand", () => {
+        const { days } = runLedger(emptyState(), [buy(D1, 1000, 970), { ...sell(D1, 200), online: true } as RechargeEvent, sell(D1, 100)])
+        expect(days.get(D1)!.sold).toBe(300)
+        expect(days.get(D1)!.cash).toBe(100)
     })
 
     it("keeps the four stocks apart", () => {
@@ -47,13 +67,30 @@ describe("runLedger", () => {
         expect(days.get(D1)!.profit).toBe(45)
     })
 
-    it("a count sets the stock and shows the gap without touching profit", () => {
-        const { state, days } = runLedger(emptyState(), [buy(D1, 5000, 4850), sell(D1, 1000), { type: "count", id: "c", pool: "ncell:eload", date: D1, at: at(), stock: 3900 }])
+    it("a check sets the stock, shows the gap and marks it missing on the oldest batch, without touching profit", () => {
+        const { state, days, batches } = runLedger(emptyState(), [
+            buy(D1, 5000, 4850),
+            sell(D1, 1000),
+            { type: "count", id: "c", pool: "ncell:eload", date: D1, at: at(), stock: 3900, note: "lost" },
+        ])
         const d = days.get(D1)!
         expect(d.pools["ncell:eload"].gap).toBe(100)
         expect(d.profit).toBe(30)
         expect(state["ncell:eload"].stock).toBe(3900)
-        expect(state["ncell:eload"].cost).toBe(3783)
+        expect(batches[0]).toMatchObject({ left: 3900, missing: 100 })
+    })
+
+    it("a check that finds more adds it to the newest batch", () => {
+        const { state, batches } = runLedger(emptyState(), [buy(D1, 1000, 970), { type: "count", id: "c", pool: "ncell:eload", date: D1, at: at(), stock: 1050 }])
+        expect(state["ncell:eload"].stock).toBe(1050)
+        expect(batches[0]).toMatchObject({ left: 1050, missing: -50 })
+    })
+
+    it("reads an old checkpoint without batches as one opening batch", () => {
+        const old = { ...emptyState(), "ncell:eload": { stock: 2000, cost: 1930, rate: 0.965 } } as unknown as Parameters<typeof runLedger>[0]
+        const { batches, days } = runLedger(old, [sell(D1, 500)])
+        expect(batches[0]).toMatchObject({ left: 1500, sold: 500 })
+        expect(days.get(D1)!.profit).toBe(17.5)
     })
 
     it("orders events by day then time, whatever order they arrive in", () => {
@@ -76,7 +113,7 @@ describe("helpers", () => {
 
     it("sumDays adds a range", () => {
         const { days } = runLedger(emptyState(), [buy(D1, 10000, 9650), sell(D1, 1000), sell(D2, 2000)])
-        expect(sumDays(days, D1, D2)).toEqual({ sold: 3000, profit: 105, credit: 0, paidBack: 0 })
+        expect(sumDays(days, D1, D2)).toEqual({ sold: 3000, profit: 105, credit: 0, paidBack: 0, cash: 3000 })
         expect(sumDays(days, D2, D2).sold).toBe(2000)
     })
 

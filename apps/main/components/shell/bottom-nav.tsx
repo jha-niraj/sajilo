@@ -21,8 +21,8 @@ const LEFT: Item[] = [
 ]
 const RIGHT: Item[] = [
     // Recharge took Loans' place (2026-11-06): he sells recharge many times a day and lends rarely.
-    { href: "/recharge", label: "rcTitle", icon: Smartphone, match: ["/recharge", "/print/recharge"] },
-    { href: "/more", label: "navMore", icon: LayoutGrid, match: ["/more", "/manage", "/settings", "/scan", "/loans", "/cash"] },
+    { href: "/recharge", label: "rcTitle", icon: Smartphone, match: ["/recharge", "/reports/recharge"] },
+    { href: "/more", label: "navMore", icon: LayoutGrid, match: ["/more", "/manage", "/settings", "/scan", "/loans", "/cash", "/reports"] },
 ]
 
 /**

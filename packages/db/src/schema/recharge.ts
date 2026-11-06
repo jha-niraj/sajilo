@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, date, numeric, index, uniqueIndex, pgEnum, json, primaryKey } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, date, numeric, index, uniqueIndex, pgEnum, json, primaryKey, boolean } from 'drizzle-orm/pg-core'
 import { user } from './auth'
 import { customer } from './collection'
 
@@ -47,6 +47,10 @@ export const rechargeEntry = pgTable(
         amount: numeric('amount', { precision: 14, scale: 2, mode: 'number' }).notNull(),
         paid: numeric('paid', { precision: 14, scale: 2, mode: 'number' }),
         personId: text('person_id').references(() => rechargePerson.id, { onDelete: 'set null' }),
+        /** a sale or payback paid by QR / online: sold, but not cash in his hand */
+        online: boolean('online').notNull().default(false),
+        /** a check that found a different stock: why ('lost' | 'other') */
+        note: text('note'),
         createdAt: timestamp('created_at').notNull().defaultNow(),
     },
     (t) => [index('recharge_entry_collector_date_idx').on(t.collectorId, t.date), index('recharge_entry_person_idx').on(t.personId)],

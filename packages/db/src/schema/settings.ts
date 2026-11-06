@@ -5,7 +5,7 @@ export const collectorSettings = pgTable('collector_settings', {
     userId: text('user_id')
         .primaryKey()
         .references(() => user.id, { onDelete: 'cascade' }),
-    language: text('language').$type<'ne' | 'en'>().notNull().default('en'),
+    language: text('language').$type<'ne' | 'en' | 'mai'>().notNull().default('en'),
     // 0 = Sunday ... 6 = Saturday. Default: every day.
     workingDays: json('working_days').$type<number[]>().notNull().default([0, 1, 2, 3, 4, 5, 6]),
     // BS day of month the bank expects the money by. null = last day of the BS month.

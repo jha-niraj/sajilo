@@ -1,7 +1,7 @@
 import "server-only"
 import { db, and, eq, gt, gte, lte, lt, desc, asc, inArray, isNotNull, sql } from "@repo/db"
 import { customer, rechargeDay, rechargeEntry, rechargePerson } from "@repo/db/schema"
-import { emptyState, poolOf, runLedger, type DaySummary, type LedgerState, type Provider, type RechargeEvent, type StockKind } from "./ledger"
+import { emptyState, poolOf, runLedger, type CheckNote, type DaySummary, type LedgerState, type Provider, type RechargeEvent, type StockKind } from "./ledger"
 
 export interface RechargePerson {
     id: string
@@ -27,12 +27,12 @@ type EntryRow = typeof rechargeEntry.$inferSelect
 
 export function toEvent(r: EntryRow): RechargeEvent | null {
     const at = r.at.getTime()
-    if (r.kind === "payback") return r.personId ? { type: "payback", id: r.id, personId: r.personId, date: r.date, at, amount: r.amount } : null
+    if (r.kind === "payback") return r.personId ? { type: "payback", id: r.id, personId: r.personId, date: r.date, at, amount: r.amount, online: r.online } : null
     if (!r.provider || !r.stock) return null
     const pool = poolOf(r.provider as Provider, r.stock as StockKind)
     if (r.kind === "buy") return { type: "buy", id: r.id, pool, date: r.date, at, face: r.amount, paid: r.paid ?? r.amount }
-    if (r.kind === "sell") return { type: "sell", id: r.id, pool, date: r.date, at, amount: r.amount, personId: r.personId }
-    return { type: "count", id: r.id, pool, date: r.date, at, stock: r.amount }
+    if (r.kind === "sell") return { type: "sell", id: r.id, pool, date: r.date, at, amount: r.amount, personId: r.personId, online: r.online }
+    return { type: "count", id: r.id, pool, date: r.date, at, stock: r.amount, note: (r.note as CheckNote | null) ?? null }
 }
 
 const events = (rows: EntryRow[]) => rows.map(toEvent).filter((e): e is RechargeEvent => e !== null)

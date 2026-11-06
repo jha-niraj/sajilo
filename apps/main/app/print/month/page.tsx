@@ -7,7 +7,7 @@ import { fetchMonthRegister } from "@/actions/report.action"
 import { getSession } from "@/lib/session"
 import { nepalToday } from "@/lib/today"
 import { formatMoney, groupIndian, translate } from "@/lib/format"
-import type { Lang } from "@/lib/dict"
+import { langFrom, type Lang } from "@/lib/dict"
 import { PrintButton } from "./print-button"
 
 export const metadata: Metadata = { title: "Register" }
@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Register" }
 export default async function PrintMonthPage({ searchParams }: { searchParams: Promise<{ y?: string; m?: string }> }) {
     if (!(await getSession())) redirect("/api/session/clear")
     const sp = await searchParams
-    const lang: Lang = (await cookies()).get("sajilo.lang")?.value === "ne" ? "ne" : "en"
+    const lang: Lang = langFrom((await cookies()).get("sajilo.lang")?.value)
     const today = nepalToday()
     const bs = adToBs(today)
     const { report: r, days, cells } = await fetchMonthRegister(Number(sp.y) || bs.year, Number(sp.m) || bs.month)

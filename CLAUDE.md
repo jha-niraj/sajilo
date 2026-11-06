@@ -193,7 +193,7 @@ Emails silently skip when `RESEND_API_KEY` is not set.
 Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: daily collection) and his lending book (Phase 2). Plans and task lists: `plan/phase-1-daily-collection.md`, `plan/phase-2-lending.md`, `plan/phase-3-profiles-bank-loans.md` (planned, not built). DB choice rationale: `plan/database-hyperdrive-vs-neon.pdf`.
 
 ### Rules
-- English by default, Nepali toggle (`lib/dict.ts`, `useI18n()`); every user-facing string goes through the dictionary in both languages.
+- English by default, Nepali and Maithili toggles (`lib/dict.ts`, `useI18n()`); every user-facing string goes through the dictionary in all three: `en`, `ne` (Devanagari) and `mai` (`lib/dict-mai.ts`, Maithili in English letters, digits and dates as English). Calendar helpers get `calLang(lang)`; Munshi treats `mai` as English for cards and Nepali for voice.
 - Scrolling containers use the shadcn `ScrollArea` from `@repo/ui` (long lists: `components/progressive-list.tsx`, loads 10 more as you reach the bottom). Never hand-roll `overflow-auto`.
 - Fonts: Bricolage Grotesque for Latin, Mukta for Devanagari (`--font-sajilo`).
 - Landing page after login is `/munshi`.
@@ -204,7 +204,7 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - Keep the file name `middleware.ts` (edge). OpenNext on Workers does not run Node "proxy" yet. Next is pinned to 16.3.x until OpenNext supports 16.4.
 
 ### Routes
-`/` (the login screen itself, no redirect; `/login` just forwards to `/`), `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month` (landscape A4 register: customers x BS days), `/customers/[id]`, `/manage`, `/scan`, `/recharge`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/print/recharge`, `/more`, `/settings`, `/offline`.
+`/` (the login screen itself, no redirect; `/login` just forwards to `/`), `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month` (landscape A4 register: customers x BS days), `/customers/[id]`, `/manage`, `/scan`, `/recharge`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/reports`, `/reports/recharge?m=2083-07`, `/more`, `/settings`, `/offline`.
 
 ### Offline
 `lib/offline/store.ts` (Dexie: day snapshots + outbox) and `lib/offline/sync.ts` (flush on online/visibility/30s). `public/sw.js` caches the app shell and pages (network-first). Server actions in `actions/` are the only API.
@@ -220,8 +220,9 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 
 ### Recharge (`/recharge`, plan/phase-4-recharge.md)
 - NTC/Ncell e-load and scratch cards: a separate business, never mixed into collection, Cash in hand or the deposit. Four stocks (provider x e-load/card).
-- Bottom bar: Today | Month | Munshi | Recharge | More (Recharge replaced Loans, which is first in More). A chip tap opens a confirm sheet; a sale above the stock in hand is refused (also in Munshi's tool). Each list row shows its source (provider + e-load/card) on the left. `/print/recharge?y=&m=` is the month report (A4).
-- One tap per sale (amount chips, Other = keypad); Udharo to a collection customer (profile id `cust:<customerId>`) or a new person (phone required); Bought prefills what he paid from his last rate; Count is optional and shows the gap.
+- Bottom bar: Today | Month | Munshi | Recharge | More (Recharge replaced Loans, which is first in More). A chip tap opens a confirm sheet; a sale above the stock in hand is refused (also in Munshi's tool). Each list row shows its source (provider + e-load/card) on the left. The lists are bounded ScrollAreas. `/reports/recharge?m=YYYY-MM` is the month report: phone view with prev/next month, Print (A4 via print CSS), Download PDF and Share (`lib/reports/pdf.ts`: the A4 page drawn by the browser with html-to-image, pages cut between rows, assembled with pdf-lib, so Nepali names render; Web Share with the file, else download). `/print/recharge` redirects there.
+- One tap per sale (amount chips, Other = keypad), cash by default, Online/QR on the confirm sheet (sold, but not in Cash to have); Udharo to a collection customer (profile id `cust:<customerId>`) or a new person (phone required); Bought prefills what he paid from his last rate.
+- Every purchase is a batch: sales use the oldest batch first (FIFO), so each shows sold / left / profit / missing ("Stock you bought"). Check (was Count): "Sajilo says Rs X, is that what you have?" Yes -> a matching check; No -> he types it, and a shortfall asks why: "sold, forgot" saves a cash sale, "lost" / "don't know" save a check with `note`. Bought asks this check first whenever older stock is left.
 - Tables `recharge_person`, `recharge_entry` (every event), `recharge_day` (nightly checkpoint). Sold/profit/stock/cash come from `lib/recharge/ledger.ts` (pure, average cost, tested), never stored per entry.
 - Writes are queued ops (`rechargeSale|Buy|Count|Payback|Remove`), so taps work offline; the page runs the ledger over server entries plus unsent ops.
 - Nightly close: `wrangler.jsonc` cron 18:20 UTC (00:05 Nepal) -> `worker.ts` `scheduled` -> `POST /api/cron/recharge` (key = `BETTER_AUTH_SECRET`). A changed past entry deletes checkpoints from its date (`reopenFrom`).

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 })
     const collectorId = session.user.id
     const settings = await getSettings(collectorId)
-    const base = { collectorId, today: nepalToday(), lang: settings.language, userName: session.user.name ?? "" }
+    const base = { collectorId, today: nepalToday(), lang: settings.language === "ne" ? ("ne" as const) : ("en" as const), userName: session.user.name ?? "" }
 
     if (!munshiModel()) return fail("no_llm")
 
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
         }
         const wantVoice = form.get("speak") !== "0"
         const names = await knownNames(base)
-        const heard = await transcribe(audio, base.lang, [...names.customers, ...names.borrowers])
+        const heard = await transcribe(audio, settings.language === "en" ? "en" : "ne", [...names.customers, ...names.borrowers])
         if (!heard.text) return fail("no_speech")
         const out = await runMunshi({ ...base, history: cleanHistory(parse("history")), text: heard.text, pending: cleanPending(parse("pending")), voice: wantVoice })
         const voice = wantVoice && out.reply ? await speak(stripMarkdown(out.reply)).catch((e) => (console.error("[munshi] tts", e), null)) : null

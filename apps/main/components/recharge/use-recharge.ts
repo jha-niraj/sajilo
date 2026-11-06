@@ -51,7 +51,7 @@ export function mergeRecharge(data: RechargeData, ops: RechargeOp[], hidden: Set
         unsent.add(o.id)
         if (o.kind === "rechargeSale") {
             const personId = o.newPerson && people.some((p) => p.phone && p.phone === o.newPerson?.phone) ? people.find((p) => p.phone === o.newPerson?.phone)!.id : o.personId
-            extra.push({ type: "sell", id: o.id, pool: poolOf(o.provider, o.stock), date: o.date, at: o.at, amount: o.amount, personId })
+            extra.push({ type: "sell", id: o.id, pool: poolOf(o.provider, o.stock), date: o.date, at: o.at, amount: o.amount, personId, online: o.online })
             if (o.newPerson && personId === o.newPerson.id && !people.some((p) => p.id === o.newPerson!.id)) {
                 people.push({ id: o.newPerson.id, name: o.newPerson.name, phone: o.newPerson.phone, customerId: o.newPerson.customerId, owed: 0 })
             }
@@ -59,9 +59,9 @@ export function mergeRecharge(data: RechargeData, ops: RechargeOp[], hidden: Set
         } else if (o.kind === "rechargeBuy") {
             extra.push({ type: "buy", id: o.id, pool: poolOf(o.provider, o.stock), date: o.date, at: o.at, face: o.face, paid: o.paid })
         } else if (o.kind === "rechargeCount") {
-            extra.push({ type: "count", id: o.id, pool: poolOf(o.provider, o.stock), date: o.date, at: o.at, stock: o.counted })
+            extra.push({ type: "count", id: o.id, pool: poolOf(o.provider, o.stock), date: o.date, at: o.at, stock: o.counted, note: o.note ?? null })
         } else if (o.kind === "rechargePayback") {
-            extra.push({ type: "payback", id: o.id, personId: o.personId, date: o.date, at: o.at, amount: o.amount })
+            extra.push({ type: "payback", id: o.id, personId: o.personId, date: o.date, at: o.at, amount: o.amount, online: o.online })
             if (!removed.has(o.id)) add(o.personId, -o.amount)
         }
     }
