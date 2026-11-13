@@ -51,9 +51,9 @@ Saves from parser cards go through the existing offline queue on the phone, not 
 - [x] Tests: at least 60 utterances across the three languages, both scripts, look-alike names.
 
 ### M2 - Data: aliases and demo seed
-- [ ] `customer.aliases text[] default '{}'` (+ `recharge_person.aliases`), `db:push` (additive).
-- [ ] Learn an alias when he corrects a name (what was heard -> chosen customer); carried in the day snapshot so it works offline.
-- [ ] Seed script for the Super Admin demo: 12 customers (Ram Bahadur, Ram Babu, Ramesh, Sita Devi, Sita Kumari, Mohan, Mohan Lal...), 5 days of entries with a few misses, recharge stock and two udharo people. Re-runnable, only touches that account.
+- [x] `customer.aliases text[] default '{}'`, `db:push` (additive). Offline op `customerAlias` + `addCustomerAlias` action; snapshot carries aliases. (Recharge people: later, if needed.)
+- [ ] (M3) Learn an alias when he corrects a name (what was heard -> chosen customer); carried in the day snapshot so it works offline.
+- [x] `pnpm --filter @repo/db db:seed-demo` (packages/db/src/seed-demo.ts) for the Super Admin demo: 12 customers (Ram Bahadur, Ram Babu, Ramesh, Sita Devi, Sita Kumari, Mohan, Mohan Lal...), 5 days of entries with a few misses, recharge stock and two udharo people. Re-runnable, only touches that account.
 
 ### M3 - Talk mode: the card loop
 - [ ] `POST /api/munshi/hear` (audio -> transcript, keyterms incl. aliases) and `POST /api/munshi/say` (text -> Bulbul mp3).

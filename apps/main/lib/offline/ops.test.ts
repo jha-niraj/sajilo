@@ -61,3 +61,12 @@ describe("applyOpToSnapshot", () => {
         expect(next.customers[1]).toMatchObject({ name: "Sita Store", defaultAmount: 250 })
     })
 })
+
+describe("customerAlias", () => {
+    it("adds a spoken name once, newest last", async () => {
+        const { withAlias } = await import("./ops")
+        expect(withAlias([], " Rajesh Dukan ")).toEqual(["rajesh dukan"])
+        expect(withAlias(["a", "b"], "a")).toEqual(["b", "a"])
+        expect(withAlias(Array.from({ length: 10 }, (_, i) => `n${i}`), "x")).toHaveLength(10)
+    })
+})

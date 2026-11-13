@@ -9,6 +9,8 @@ export interface SnapshotCustomer {
     bankAccountNo: string | null
     defaultAmount: number
     routeOrder: number
+    /** other ways he says the name (voice); missing on snapshots saved before aliases */
+    aliases?: string[]
 }
 
 export interface SnapshotEntry {

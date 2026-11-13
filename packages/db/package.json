@@ -17,6 +17,7 @@
 		"db:migrate": "dotenv -e ../../apps/main/.env -- drizzle-kit migrate",
 		"db:studio": "dotenv -e ../../apps/main/.env -- drizzle-kit studio",
 		"db:seed": "dotenv -e ../../apps/main/.env -- tsx src/seed.ts",
+		"db:seed-demo": "dotenv -e ../../apps/main/.env -- tsx src/seed-demo.ts",
 		"check-types": "tsc --noEmit"
 	},
 	"dependencies": {

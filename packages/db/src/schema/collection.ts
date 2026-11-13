@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import { pgTable, text, timestamp, boolean, integer, date, index, uniqueIndex, pgEnum } from 'drizzle-orm/pg-core'
 import { user } from './auth'
 
@@ -21,6 +22,8 @@ export const customer = pgTable(
         startDate: date('start_date', { mode: 'string' }).notNull(),
         isActive: boolean('is_active').notNull().default(true),
         note: text('note'),
+        // Other ways he says this name, learned when he corrects Munshi ("Rajesh dukan" for Rajesh Kirana).
+        aliases: text('aliases').array().notNull().default(sql`'{}'::text[]`),
         createdAt: timestamp('created_at').notNull().defaultNow(),
         updatedAt: timestamp('updated_at')
             .notNull()

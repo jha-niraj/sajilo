@@ -38,6 +38,7 @@ export type QueuedOp =
     | { kind: "editCustomer"; opId: string; id: string; fields: CustomerFields }
     | { kind: "customerActive"; opId: string; id: string; isActive: boolean }
     | { kind: "reorder"; opId: string; orderedIds: string[] }
+    | { kind: "customerAlias"; opId: string; customerId: string; alias: string }
     | RechargeOp
 
 /** Recharge (plan/phase-4-recharge.md). `id` is the entry's id, made on the phone; `at` is when he tapped. */
@@ -146,7 +147,21 @@ export function applyOpToSnapshot(snap: DaySnapshot, op: QueuedOp): DaySnapshot 
             const customers = snap.customers.map((c) => ({ ...c, routeOrder: pos.get(c.id) ?? c.routeOrder })).sort((a, b) => a.routeOrder - b.routeOrder)
             return { ...snap, customers }
         }
+        case "customerAlias": {
+            const o = op as Extract<QueuedOp, { kind: "customerAlias" }>
+            return {
+                ...snap,
+                customers: snap.customers.map((c) => (c.id === o.customerId ? { ...c, aliases: withAlias(c.aliases ?? [], o.alias) } : c)),
+            }
+        }
         default:
             return snap
     }
+}
+
+/** Adds a spoken name to a customer's aliases: no duplicates, the newest ten kept. */
+export function withAlias(aliases: string[], alias: string): string[] {
+    const a = alias.trim().toLowerCase()
+    if (!a) return aliases
+    return [...aliases.filter((x) => x !== a), a].slice(-10)
 }

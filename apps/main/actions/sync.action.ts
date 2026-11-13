@@ -7,7 +7,7 @@ import { NotFoundError } from "@/lib/errors"
 import type { MarkOp } from "@/lib/collection/types"
 import { opKind, type QueuedOp, type SyncResult } from "@/lib/offline/ops"
 import { closeDay, reopenDay } from "./collection.action"
-import { createCustomers, reorderCustomers, setCustomerActive, updateCustomer } from "./customer.action"
+import { addCustomerAlias, createCustomers, reorderCustomers, setCustomerActive, updateCustomer } from "./customer.action"
 import { addRepayment, createLoan } from "./loan.action"
 import { rechargeBuy, rechargeCount, rechargePayback, rechargeRemove, rechargeSale } from "./recharge.action"
 
@@ -86,6 +86,8 @@ async function applyOne(op: QueuedOp) {
             return setCustomerActive(op.id, op.isActive)
         case "reorder":
             return reorderCustomers(op.orderedIds)
+        case "customerAlias":
+            return addCustomerAlias(op.customerId, op.alias)
         case "rechargeSale":
             return rechargeSale(op)
         case "rechargeBuy":

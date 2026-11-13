@@ -5,6 +5,8 @@ import { db, and, eq, asc, sql, inArray } from "@repo/db"
 import { customer, collectionEntry } from "@repo/db/schema"
 import { actionCollectorId } from "@/lib/session"
 import { nepalToday } from "@/lib/today"
+import { NotFoundError } from "@/lib/errors"
+import { withAlias } from "@/lib/offline/ops"
 
 const customerInput = z.object({
     id: z.string().uuid().optional(),
@@ -83,6 +85,22 @@ export async function createCustomers(inputs: CustomerInput[]): Promise<{ count:
         )
         .onConflictDoNothing()
     return { count: parsed.length }
+}
+
+/** Remembers another way he says this customer's name (from a voice correction). */
+export async function addCustomerAlias(id: string, alias: string): Promise<{ ok: true }> {
+    const collectorId = await actionCollectorId()
+    const a = z.string().trim().toLowerCase().min(1).max(60).parse(alias)
+    const [row] = await db
+        .select({ aliases: customer.aliases })
+        .from(customer)
+        .where(and(eq(customer.id, id), eq(customer.collectorId, collectorId)))
+    if (!row) throw new NotFoundError("customer")
+    await db
+        .update(customer)
+        .set({ aliases: withAlias(row.aliases, a) })
+        .where(and(eq(customer.id, id), eq(customer.collectorId, collectorId)))
+    return { ok: true }
 }
 
 export async function updateCustomer(id: string, input: CustomerInput): Promise<{ ok: true }> {

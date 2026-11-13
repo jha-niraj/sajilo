@@ -193,6 +193,7 @@ export async function getDaySnapshot(collectorId: string, date: string): Promise
             bankAccountNo: c.bankAccountNo,
             defaultAmount: c.defaultAmount,
             routeOrder: c.routeOrder,
+            aliases: c.aliases,
         })),
         entries: todayEntries,
         carry,
