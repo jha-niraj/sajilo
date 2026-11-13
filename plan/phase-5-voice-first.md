@@ -47,29 +47,29 @@ Saves from parser cards go through the existing offline queue on the phone, not 
 - [x] Kind rules: deposit vs payback ("diya" rule above), credit words (udhaar, udharo, baaki), shop closed (pasal band, dukan band), no money (paisa chhaina, paisa nahi). Recharge words + network (ntc, ncell, namaste) + stock (card, load).
 - [x] Dates: aaj, kal (yesterday when said with a past verb), weekday names -> most recent past day.
 - [x] `detectLang` (in `parse.ts`): which language he spoke (hi / ne / mai / en) from marker words, for the reply.
-- [ ] (moved to M3) `replies.ts`: every spoken and shown line in hi / ne / mai / en (Devanagari for TTS).
+- [x] (moved to M3) `replies.ts`: every spoken and shown line in hi / ne / mai / en (Devanagari for TTS).
 - [x] Tests: at least 60 utterances across the three languages, both scripts, look-alike names.
 
 ### M2 - Data: aliases and demo seed
 - [x] `customer.aliases text[] default '{}'`, `db:push` (additive). Offline op `customerAlias` + `addCustomerAlias` action; snapshot carries aliases. (Recharge people: later, if needed.)
-- [ ] (M3) Learn an alias when he corrects a name (what was heard -> chosen customer); carried in the day snapshot so it works offline.
+- [x] (M3) Learn an alias when he corrects a name (what was heard -> chosen customer); carried in the day snapshot so it works offline.
 - [x] `pnpm --filter @repo/db db:seed-demo` (packages/db/src/seed-demo.ts) for the Super Admin demo: 12 customers (Ram Bahadur, Ram Babu, Ramesh, Sita Devi, Sita Kumari, Mohan, Mohan Lal...), 5 days of entries with a few misses, recharge stock and two udharo people. Re-runnable, only touches that account.
 
 ### M3 - Talk mode: the card loop
-- [ ] `POST /api/munshi/hear` (audio -> transcript, keyterms incl. aliases) and `POST /api/munshi/say` (text -> Bulbul mp3).
-- [ ] Client engine (state machine) in Talk mode: listen -> transcript -> parse -> cards -> speak -> listen.
-- [ ] Several cards, one "haan" saves all; tap a card to edit name, amount, kind.
-- [ ] Name buttons for two candidates (say or tap); "naya banau?" for no match (add customer card).
-- [ ] Checks: duplicate (same customer + amount within 10 min, or already marked today), unusual amount (> 5x daily, or not a multiple of 10) needs an explicit "haan".
-- [ ] Undo for 10 s after each save; "galti" undoes the last save.
-- [ ] Two failed hearings -> customer list + number pad.
-- [ ] Unknown sentences -> existing agent (Haiku) with the transcript; its cards keep working.
+- [x] `POST /api/munshi/hear` (audio -> transcript, keyterms incl. aliases) and `POST /api/munshi/say` (text -> Bulbul mp3).
+- [x] Client engine (state machine) in Talk mode: listen -> transcript -> parse -> cards -> speak -> listen.
+- [x] Several cards, one "haan" saves all; tap a card to edit name, amount, kind.
+- [x] Name buttons for two candidates (say or tap); "naya banau?" for no match (add customer card).
+- [x] Checks: duplicate (same customer + amount within 10 min, or already marked today), unusual amount (> 5x daily, or not a multiple of 10) needs an explicit "haan".
+- [x] Undo for 10 s after each save; "galti" undoes the last save.
+- [x] Two failed hearings -> customer list + number pad.
+- [x] Unknown sentences -> existing agent (Haiku) with the transcript; its cards keep working.
 
 ### M4 - Answers and close day, from the phone's data
-- [ ] "Aaj kisne nahi diya?" -> first five names spoken, full list shown.
-- [ ] "Kitna paisa hona chahiye?" -> collection received today + recharge cash (from the recharge ledger), split read out.
-- [ ] "Ramesh ka kitna baaki?" -> udharo / dues for one person.
-- [ ] "Din band karo" -> expected, "kitna gine?", difference, "haan" -> closeDay.
+- [x] "Aaj kisne nahi diya?" -> first five names spoken, full list shown.
+- [x] "Kitna paisa hona chahiye?" -> collection received today + recharge cash (from the recharge ledger), split read out.
+- [x] "Ramesh ka kitna baaki?" -> udharo / dues for one person.
+- [x] "Din band karo" -> expected, "kitna gine?", difference, "haan" -> closeDay.
 
 ### M5 - Offline voice
 - [ ] `useLocalRecognizer`: feature-detect, `available({langs:["hi-IN"], processLocally:true})`, `install()` from a tap in Settings ("Download offline voice"), status shown there.

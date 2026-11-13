@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "@/components/app-link"
 import { AnimatePresence, motion } from "framer-motion"
 import { toast } from "sonner"
-import { ArrowUp, Camera, Mic, Square, UserPlus, UserRoundX, ChartColumnBig, TrendingUp, HandCoins, Trash2, WifiOff } from "lucide-react"
+import { ArrowUp, Camera, Mic, Square, UserPlus, UserRoundX, ChartColumnBig, TrendingUp, HandCoins, Trash2, WifiOff, X } from "lucide-react"
 import { NewChatIcon, PastChatsIcon, TalkIcon, TypeIcon } from "./munshi-icons"
 import { replyParts, stripMarkdown } from "@/lib/munshi/plain-text"
 import { useRouter } from "next/navigation"
@@ -26,6 +26,11 @@ import { ProposalCard } from "./proposal-card"
 import { useVoiceSession } from "./use-voice-session"
 import { useDictation } from "./use-dictation"
 import { TypingDots, Waveform } from "./waveform"
+import { useVoiceLedger } from "./use-voice-ledger"
+import { ByHandButton, ByHandSheet, UndoBar, VoiceCards } from "./voice-cards"
+import { nepalToday } from "@/lib/today"
+import type { VoiceBook, VoiceCard } from "@/lib/voice/engine"
+import type { Who } from "@/lib/voice/parse"
 
 const SUGGESTIONS: DictKey[] = ["suggest1", "suggest2", "suggest3", "suggest4"]
 
@@ -54,8 +59,12 @@ export function MunshiClient({
     conversationId?: string
     initialMessages?: MunshiMessage[]
 }) {
-    const { t } = useI18n()
+    const { t, lang } = useI18n()
     const router = useRouter()
+    const ledger = useVoiceLedger({ today: nepalToday(), lang: lang === "ne" ? "ne" : lang === "mai" ? "mai" : "en" })
+    const [byHand, setByHand] = useState(false)
+    const [misses, setMisses] = useState(0)
+    const [showUnpaid, setShowUnpaid] = useState(false)
     const online = useOnline()
     const [mode, setMode] = useState<"voice" | "chat">(initialMode)
     const [convId, setConvId] = useState<string | null>(conversationId ?? null)
@@ -170,12 +179,12 @@ export function MunshiClient({
     const pendingNow = () => messagesRef.current.flatMap((m) => m.proposals ?? []).filter((p) => p.status === "pending")
 
     const sendText = useCallback(
-        async (text: string, speakReply: boolean) => {
+        async (text: string, speakReply: boolean, opts: { addUser?: boolean; play?: boolean } = {}): Promise<MunshiTurnResult | null> => {
             const clean = text.trim()
-            if (!clean || busy) return
+            if (!clean || (busy && opts.addUser !== false)) return null
             const gen = chatGen.current
             setBusy(true)
-            setMessages((ms) => [...ms, { id: newId(), role: "user", content: clean, at: Date.now(), ...(speakReply ? { via: "voice" as const } : {}) }])
+            if (opts.addUser !== false) setMessages((ms) => [...ms, { id: newId(), role: "user", content: clean, at: Date.now(), ...(speakReply ? { via: "voice" as const } : {}) }])
             const replyId = newId()
             let started = false
             try {
@@ -194,14 +203,16 @@ export function MunshiClient({
                         setMessages((ms) => ms.map((m) => (m.id === replyId ? { ...m, content: m.content + delta } : m)))
                     }
                 })
-                if (gen !== chatGen.current) return
+                if (gen !== chatGen.current) return null
                 applyResult(res, undefined, undefined, started ? replyId : undefined)
-                if (speakReply && res.reply) {
+                if (speakReply && res.reply && opts.play !== false) {
                     const audio = await munshiSpeak(res.reply)
                     if (audio) await voice.sayOnce(audio)
                 }
+                return res
             } catch {
                 if (gen === chatGen.current) applyResult({ reply: "", proposals: [], resolved: [], error: "failed" }, undefined, undefined, started ? replyId : undefined)
+                return null
             } finally {
                 setStreamingId(null)
                 setBusy(false)
@@ -226,12 +237,56 @@ export function MunshiClient({
         [applyResult],
     )
 
+    const say = (role: "user" | "assistant", content: string) =>
+        setMessages((ms) => [...ms, { id: newId(), role, content, at: Date.now(), ...(role === "user" ? { via: "voice" as const } : {}) }])
+
+    /**
+     * Talk mode: Saaras writes down what he said, the phone reads it (lib/voice). Entries, yes/no,
+     * questions about today and closing the day are answered here; anything else goes to the agent.
+     */
     const voice = useVoiceSession({
         onUtterance: async (blob) => {
-            const res = await sendAudio(blob, true)
-            return { audio: res.audio ?? null }
+            const fd = new FormData()
+            fd.set("audio", blob, blob.type.includes("mp4") ? "speech.mp4" : "speech.webm")
+            const heard = (await fetch("/api/munshi/hear", { method: "POST", body: fd })
+                .then((r) => r.json())
+                .catch(() => ({ text: "" }))) as { text: string }
+            return onTranscript(heard.text?.trim() ?? "")
         },
     })
+
+    const onTranscript = async (text: string): Promise<{ audio: string | null }> => {
+            if (!text) {
+                const n = misses + 1
+                setMisses(n)
+                if (n >= 2) setByHand(true)
+                return { audio: await munshiSpeak(t("didntHear")).catch(() => null) }
+            }
+            say("user", text)
+            const step = await ledger.hear(text)
+            if (step.handled) {
+                setMisses(step.state.cards.some((c) => !c.who && !c.options.length) ? misses + 1 : 0)
+                if (step.show === "unpaid") setShowUnpaid(true)
+                if (step.say) say("assistant", step.say)
+                return { audio: step.say ? await munshiSpeak(step.say).catch(() => null) : null }
+            }
+            setMisses(0)
+            const res = await sendText(text, true, { addUser: false, play: false })
+            return { audio: res?.reply ? await munshiSpeak(stripMarkdown(res.reply)).catch(() => null) : null }
+    }
+
+    // Dev only: lets a browser test feed a sentence without a microphone.
+    useEffect(() => {
+        if (process.env.NODE_ENV === "production") return
+        ;(window as unknown as { __sajiloHear?: (t: string) => Promise<unknown> }).__sajiloHear = onTranscript
+    })
+
+    const speakLine = async (line: string) => {
+        if (!line) return
+        say("assistant", line)
+        const audio = await munshiSpeak(line).catch(() => null)
+        if (audio && voice.status === "off") await voice.sayOnce(audio)
+    }
 
     useEffect(() => {
         if (voice.error === "mic_denied") toast.error(t("micDenied"))
@@ -331,6 +386,16 @@ export function MunshiClient({
                 <MunshiOffline />
             ) : mode === "voice" ? (
                 <VoiceView
+                    ledgerCards={ledger.state.cards}
+                    book={ledger.book}
+                    last={ledger.last}
+                    showUnpaid={showUnpaid}
+                    onCloseUnpaid={() => setShowUnpaid(false)}
+                    onEditCard={(id, patch) => void ledger.edit(id, patch).then((line) => patch !== "remove" && void speakLine(line))}
+                    onConfirmCards={() => void ledger.confirm().then(speakLine)}
+                    onCancelCards={ledger.clear}
+                    onUndo={() => void ledger.undo()}
+                    onByHand={() => setByHand(true)}
                     orbState={orbState}
                     level={voice.level}
                     onOrb={voice.toggle}
@@ -367,6 +432,17 @@ export function MunshiClient({
                     transcribing={transcribing}
                     empty={empty}
                     hasCustomers={hasCustomers}
+                />
+            )}
+            {ledger.book && (
+                <ByHandSheet
+                    open={byHand}
+                    onOpenChange={(o) => {
+                        setByHand(o)
+                        if (!o) setMisses(0)
+                    }}
+                    people={ledger.book.people}
+                    onAdd={(who: Who, amount: number) => void ledger.add(who, amount).then(speakLine)}
                 />
             )}
             <HistorySheet open={historyOpen} onOpenChange={setHistoryOpen} beforeLoad={saveNow} currentId={convId} onOpen={(id) => void openConversation(id)} onDeleted={(id) => id === convIdRef.current && void reset()} />
@@ -468,6 +544,16 @@ function HistorySheet({
 }
 
 function VoiceView(props: {
+    ledgerCards: VoiceCard[]
+    book: VoiceBook | null
+    last: { label: string; at: number } | null
+    showUnpaid: boolean
+    onCloseUnpaid: () => void
+    onEditCard: (id: string, patch: Partial<VoiceCard> | "remove") => void
+    onConfirmCards: () => void
+    onCancelCards: () => void
+    onUndo: () => void
+    onByHand: () => void
     orbState: OrbState
     level: React.MutableRefObject<number>
     onOrb: () => void
@@ -540,13 +626,47 @@ function VoiceView(props: {
             </div>
 
             <div className="w-full max-w-md space-y-3 pb-5">
-                {latest && (
-                    <ProposalCard p={latest} busy={props.confirming === latest.id} onConfirm={() => props.onConfirm(latest)} onCancel={() => props.onCancel(latest)} />
+                {props.last && <UndoBar key={props.last.at} label={props.last.label} at={props.last.at} onUndo={props.onUndo} />}
+                {props.book && props.ledgerCards.length > 0 ? (
+                    <VoiceCards cards={props.ledgerCards} book={props.book} onEdit={props.onEditCard} onConfirm={props.onConfirmCards} onCancel={props.onCancelCards} />
+                ) : (
+                    latest && <ProposalCard p={latest} busy={props.confirming === latest.id} onConfirm={() => props.onConfirm(latest)} onCancel={() => props.onCancel(latest)} />
+                )}
+                {props.showUnpaid && props.book && props.book.unpaid.length > 0 && <UnpaidList names={props.book.unpaid} onClose={props.onCloseUnpaid} />}
+                {props.hasCustomers && !props.ledgerCards.length && (
+                    <div className="flex justify-center">
+                        <ByHandButton onClick={props.onByHand} />
+                    </div>
                 )}
                 {props.empty && !props.hasCustomers && <StartCards />}
             </div>
             </div>
         </ScrollArea>
+    )
+}
+
+function UnpaidList({ names, onClose }: { names: string[]; onClose: () => void }) {
+    const { t } = useI18n()
+    return (
+        <div className="rounded-[22px] bg-card p-4 ring-1 ring-line">
+            <div className="mb-2 flex items-center justify-between">
+                <p className="text-[15px] font-semibold text-ink">
+                    {t("vcUnpaidTitle")} · {names.length}
+                </p>
+                <button type="button" onClick={onClose} aria-label={t("cancel")} className="flex h-8 w-8 items-center justify-center rounded-full text-ink-3 active:bg-paper-2">
+                    <X className="h-4 w-4" />
+                </button>
+            </div>
+            <ScrollArea orientation="vertical" viewportClassName="max-h-44">
+                <ul className="space-y-1">
+                    {names.map((n) => (
+                        <li key={n} className="text-[15px] text-ink-2">
+                            {n}
+                        </li>
+                    ))}
+                </ul>
+            </ScrollArea>
+        </div>
     )
 }
 

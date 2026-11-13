@@ -140,7 +140,15 @@ function segments(tokens: string[], spans: NumberSpan[]) {
 
 const KEYWORDS = [CREDIT, PAYBACK, SHOP, RECHARGE, YESTERDAY, CLOSE, OWED]
 const isKeyword = (w: string) => KEYWORDS.some((k) => k.has(w)) || YES.has(w) || NO.has(w)
-const nameWords = (words: string[]) => words.filter((w) => !FILLER.has(w) && !isKeyword(w) && w !== "band" && w !== "बन्द")
+/** Nepali and Maithili join "le", "lai", "ko" to the name: "रमेशले", "Rameshlai". */
+const SUFFIX = /(ले|लाई|लै|को|का|की|के|कै|सँग|बाट)$/
+const LATIN_SUFFIX = /(lai|le|ko)$/
+function stripSuffix(w: string): string {
+    if (SUFFIX.test(w) && w.replace(SUFFIX, "").length >= 2) return w.replace(SUFFIX, "")
+    if (/^[a-z]+$/.test(w) && w.length >= 6 && LATIN_SUFFIX.test(w)) return w.replace(LATIN_SUFFIX, "")
+    return w
+}
+const nameWords = (words: string[]) => words.filter((w) => !FILLER.has(w) && !isKeyword(w) && w !== "band" && w !== "बन्द").map(stripSuffix)
 
 function kindFor(context: string[], match: NameMatch<Who>, amount: number | null): EntryKind | null {
     if (has(context, SHOP) && has(context, CLOSE)) return "shop_closed"
