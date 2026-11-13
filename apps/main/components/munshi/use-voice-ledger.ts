@@ -109,9 +109,11 @@ export function useVoiceLedger({ today, lang }: { today: string; lang: VoiceLang
 
     /** One sentence he said. `handled: false` means it was not about the ledger. */
     const hear = useCallback(
-        async (text: string): Promise<Step> => {
+        async (text: string, opts: { date?: string } = {}): Promise<Step> => {
             const b = book ?? (await reload())
-            const step = handle(stateRef.current, text, { ...b, lastSaved: lastRef.current?.label ?? null })
+            // A note said offline on an earlier day is read as of that day ("aaj" = then).
+            const asOf = opts.date && opts.date !== b.today ? { ...b, today: opts.date, marks: {} } : b
+            const step = handle(stateRef.current, text, { ...asOf, lastSaved: lastRef.current?.label ?? null })
             if (step.handled) await apply(step, b)
             return step
         },

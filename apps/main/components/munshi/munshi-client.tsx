@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation"
 import { toNepalDateStr } from "@repo/calendar"
 import { useConfirm } from "@repo/ui/components/ui/use-confirm"
 import { BottomSheet } from "@/components/bottom-sheet"
-import { useOnline } from "@/lib/offline/network"
+import { setReachable, useOnline } from "@/lib/offline/network"
 import { cn } from "@repo/ui/lib/utils"
 import { Loader } from "@repo/ui/components/ui/loader"
 import { Textarea } from "@repo/ui/components/ui/textarea"
@@ -27,6 +27,11 @@ import { useVoiceSession } from "./use-voice-session"
 import { useDictation } from "./use-dictation"
 import { TypingDots, Waveform } from "./waveform"
 import { useVoiceLedger } from "./use-voice-ledger"
+import { useOfflineVoice, usePendingClips } from "./use-offline-voice"
+import { useLiveQuery } from "dexie-react-hooks"
+import { idb } from "@/lib/offline/store"
+import { REPLIES } from "@/lib/voice/replies"
+import { speakLocally as speakLocallyNow } from "@/lib/voice/local"
 import { ByHandButton, ByHandSheet, UndoBar, VoiceCards } from "./voice-cards"
 import { nepalToday } from "@/lib/today"
 import type { VoiceBook, VoiceCard } from "@/lib/voice/engine"
@@ -275,15 +280,73 @@ export function MunshiClient({
             return { audio: res?.reply ? await munshiSpeak(stripMarkdown(res.reply)).catch(() => null) : null }
     }
 
+    const today = nepalToday()
+    const clips = usePendingClips()
+    const outboxCount = useLiveQuery(() => idb().outbox.count(), [], 0)
+    const [goingThrough, setGoingThrough] = useState(false)
+
+    const offlineVoice = useOfflineVoice({
+        active: !online,
+        today,
+        names: ledger.book?.people.map((p) => p.name) ?? [],
+        laterLine: () => ({ say: REPLIES[ledger.state.lang].later, lang: ledger.state.lang }),
+        onText: async (text) => {
+            say("user", text)
+            const step = await ledger.hear(text)
+            if (!step.handled) {
+                say("assistant", REPLIES[step.state.lang].later)
+                return null
+            }
+            if (step.show === "unpaid") setShowUnpaid(true)
+            if (step.say) say("assistant", step.say)
+            return { say: step.say, lang: step.state.lang }
+        },
+    })
+
+    /** Back online: go through one note he said offline (a recording or words), as if he said it now. */
+    const goThroughNext = async () => {
+        const clip = clips[0]
+        if (!clip || goingThrough) return
+        setGoingThrough(true)
+        try {
+            let text = clip.text ?? ""
+            if (!text && clip.audio) {
+                const fd = new FormData()
+                fd.set("audio", clip.audio, clip.audio.type.includes("mp4") ? "speech.mp4" : "speech.webm")
+                const heard = (await fetch("/api/munshi/hear", { method: "POST", body: fd }).then((r) => r.json())) as { text?: string; error?: string }
+                if (heard.error) return
+                text = heard.text?.trim() ?? ""
+            }
+            await idb().clips.delete(clip.id)
+            if (!text) return
+            say("user", text)
+            const step = await ledger.hear(text, { date: clip.date })
+            if (step.handled) {
+                if (step.say) await speakLine(step.say)
+            } else {
+                const res = await sendText(text, true, { addUser: false, play: false })
+                if (res?.reply) {
+                    const audio = await munshiSpeak(stripMarkdown(res.reply)).catch(() => null)
+                    if (audio) await voice.sayOnce(audio)
+                }
+            }
+        } finally {
+            setGoingThrough(false)
+        }
+    }
+
     // Dev only: lets a browser test feed a sentence without a microphone.
     useEffect(() => {
         if (process.env.NODE_ENV === "production") return
-        ;(window as unknown as { __sajiloHear?: (t: string) => Promise<unknown> }).__sajiloHear = onTranscript
+        const w = window as unknown as { __sajiloHear?: (t: string) => Promise<unknown>; __sajiloOffline?: (off: boolean) => void }
+        w.__sajiloHear = onTranscript
+        w.__sajiloOffline = (off) => setReachable(!off)
     })
 
-    const speakLine = async (line: string) => {
+    const speakLine = async (line: string, show = true) => {
         if (!line) return
-        say("assistant", line)
+        if (show) say("assistant", line)
+        if (!navigator.onLine) return void speakLocallyNow(line, ledger.state.lang)
         const audio = await munshiSpeak(line).catch(() => null)
         if (audio && voice.status === "off") await voice.sayOnce(audio)
     }
@@ -333,7 +396,13 @@ export function MunshiClient({
             <header className="flex items-center justify-between gap-3 px-4 pt-safe">
                 <div className="min-w-0 pt-4">
                     <h1 className="truncate text-[22px] font-semibold leading-tight text-ink">{t("munshi")}</h1>
-                    <p className="truncate whitespace-nowrap text-[13px] text-ink-3">{t("munshiTagline")}</p>
+                    {online ? (
+                        <p className="truncate whitespace-nowrap text-[13px] text-ink-3">{t("munshiTagline")}</p>
+                    ) : (
+                        <p className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-miss-soft px-2.5 py-0.5 text-[12px] font-semibold text-miss">
+                            <WifiOff className="h-3.5 w-3.5" /> {t("vcOffline", { count: outboxCount + clips.length })}
+                        </p>
+                    )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5 pt-4">
                     <button
@@ -382,10 +451,18 @@ export function MunshiClient({
                 </div>
             </header>
 
-            {!online ? (
+            {!online && mode !== "voice" ? (
                 <MunshiOffline />
             ) : mode === "voice" ? (
                 <VoiceView
+                    offline={!online}
+                    offlineLocal={offlineVoice.local}
+                    offlineSupport={offlineVoice.support}
+                    onInstallOffline={() => void offlineVoice.install()}
+                    partial={offlineVoice.partial}
+                    clipsCount={clips.length}
+                    goingThrough={goingThrough}
+                    onGoThrough={() => void goThroughNext()}
                     ledgerCards={ledger.state.cards}
                     book={ledger.book}
                     last={ledger.last}
@@ -396,10 +473,10 @@ export function MunshiClient({
                     onCancelCards={ledger.clear}
                     onUndo={() => void ledger.undo()}
                     onByHand={() => setByHand(true)}
-                    orbState={orbState}
-                    level={voice.level}
-                    onOrb={voice.toggle}
-                    status={voice.status}
+                    orbState={online ? orbState : offlineVoice.status === "off" ? "idle" : offlineVoice.status}
+                    level={online ? voice.level : offlineVoice.level}
+                    onOrb={online ? voice.toggle : () => void offlineVoice.toggle()}
+                    status={online ? voice.status : offlineVoice.status}
                     busy={busy}
                     lastUser={lastUser?.content}
                     lastAssistant={lastAssistant?.content}
@@ -544,6 +621,14 @@ function HistorySheet({
 }
 
 function VoiceView(props: {
+    offline: boolean
+    offlineLocal: boolean
+    offlineSupport: string | null
+    onInstallOffline: () => void
+    partial: string
+    clipsCount: number
+    goingThrough: boolean
+    onGoThrough: () => void
     ledgerCards: VoiceCard[]
     book: VoiceBook | null
     last: { label: string; at: number } | null
@@ -606,7 +691,11 @@ function VoiceView(props: {
                 </AnimatePresence>
 
                 <div className="mt-4 min-h-[72px] w-full max-w-md text-center">
-                    {props.lastUser && <p className="line-clamp-2 text-[13px] text-ink-3">“{props.lastUser}”</p>}
+                    {props.offline && props.partial && props.orbState === "listening" ? (
+                        <p className="line-clamp-2 text-[15px] text-ink-2">{props.partial}</p>
+                    ) : (
+                        props.lastUser && <p className="line-clamp-2 text-[13px] text-ink-3">“{props.lastUser}”</p>
+                    )}
                     <ScrollArea orientation="vertical" viewportClassName="max-h-[22dvh]">
                     <AnimatePresence mode="wait">
                         {props.lastAssistant && (
@@ -626,6 +715,7 @@ function VoiceView(props: {
             </div>
 
             <div className="w-full max-w-md space-y-3 pb-5">
+                <OfflineVoiceNote {...props} />
                 {props.last && <UndoBar key={props.last.at} label={props.last.label} at={props.last.at} onUndo={props.onUndo} />}
                 {props.book && props.ledgerCards.length > 0 ? (
                     <VoiceCards cards={props.ledgerCards} book={props.book} onEdit={props.onEditCard} onConfirm={props.onConfirmCards} onCancel={props.onCancelCards} />
@@ -642,6 +732,43 @@ function VoiceView(props: {
             </div>
             </div>
         </ScrollArea>
+    )
+}
+
+/** Offline: how he is being heard. Online: notes from offline to go through, and the one-time offline download. */
+function OfflineVoiceNote(props: { offline: boolean; offlineLocal: boolean; offlineSupport: string | null; onInstallOffline: () => void; clipsCount: number; goingThrough: boolean; onGoThrough: () => void }) {
+    const { t } = useI18n()
+    if (props.offline) {
+        return (
+            <p className="rounded-2xl bg-paper-2 px-4 py-3 text-center text-[14px] leading-snug text-ink-2">
+                {props.offlineLocal ? t("vcOfflineLocal") : t("vcOfflineClips")}
+            </p>
+        )
+    }
+    return (
+        <>
+            {props.clipsCount > 0 && (
+                <button
+                    type="button"
+                    disabled={props.goingThrough}
+                    onClick={props.onGoThrough}
+                    className="flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl bg-saffron-soft px-4 text-left disabled:opacity-60"
+                >
+                    <span className="text-[15px] font-semibold text-ink">{t("vcNotes", { count: props.clipsCount })}</span>
+                    <span className="shrink-0 rounded-full bg-saffron px-3 py-1.5 text-[13px] font-semibold text-white">{props.goingThrough ? t("thinking") : t("vcGoThrough")}</span>
+                </button>
+            )}
+            {(props.offlineSupport === "downloadable" || props.offlineSupport === "downloading") && (
+                <button
+                    type="button"
+                    disabled={props.offlineSupport === "downloading"}
+                    onClick={props.onInstallOffline}
+                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-card px-4 text-[14px] font-semibold text-ink-2 ring-1 ring-line disabled:opacity-60"
+                >
+                    <WifiOff className="h-4 w-4" /> {props.offlineSupport === "downloading" ? t("vcDownloading") : t("vcGetOffline")}
+                </button>
+            )}
+        </>
     )
 }
 

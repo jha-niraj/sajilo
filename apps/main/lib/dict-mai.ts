@@ -480,4 +480,11 @@ export const mai: Record<DictKey, string> = {
     vcAdd: "Jodu",
     vcSaying: "Naam aa rakam bajhu, jena \"Ram Bahadur 500\"",
     vcLater: "Online bhela par sunab",
+    vcOffline: "Offline · {count} baaki",
+    vcOfflineLocal: "Signal nai. Jena bajait chhi, bajhu: phone sun ke ehi save karat.",
+    vcOfflineClips: "Signal nai. Je bajab se rakhal jayat, online bhela par dekhal jayat.",
+    vcNotes: "Offline ke {count} baat",
+    vcGoThrough: "Dekhu",
+    vcGetOffline: "Offline aawaj lau (ek ber)",
+    vcDownloading: "Offline aawaj download bhay rahal...",
 }

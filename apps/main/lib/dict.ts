@@ -488,6 +488,13 @@ const en = {
     vcAdd: "Add",
     vcSaying: "Say a name and amount, like \"Ram Bahadur 500\"",
     vcLater: "Will listen when online",
+    vcOffline: "Offline · {count} waiting",
+    vcOfflineLocal: "No signal. Talk as usual: the phone hears you and saves it here.",
+    vcOfflineClips: "No signal. What you say is kept and gone through once you are online.",
+    vcNotes: "{count} notes from offline",
+    vcGoThrough: "Go through",
+    vcGetOffline: "Get offline voice (one-time download)",
+    vcDownloading: "Downloading offline voice...",
 } as const
 
 export type DictKey = keyof typeof en
@@ -959,6 +966,13 @@ const ne: Record<DictKey, string> = {
     vcAdd: "थप्नुहोस्",
     vcSaying: "नाम र रकम भन्नुहोस्, जस्तै \"राम बहादुर ५००\"",
     vcLater: "अनलाइन भएपछि सुनिन्छ",
+    vcOffline: "अफलाइन · {count} बाँकी",
+    vcOfflineLocal: "सिग्नल छैन। सधैँझैँ बोल्नुहोस्: फोनले सुनेर यहीँ सेभ गर्छ।",
+    vcOfflineClips: "सिग्नल छैन। भनेको कुरा राखिन्छ, अनलाइन भएपछि हेरिन्छ।",
+    vcNotes: "अफलाइनका {count} कुरा",
+    vcGoThrough: "हेर्नुहोस्",
+    vcGetOffline: "अफलाइन आवाज ल्याउनुहोस् (एक पटक)",
+    vcDownloading: "अफलाइन आवाज डाउनलोड हुँदैछ...",
 }
 
 export const dict: Record<Lang, Record<DictKey, string>> = { en, ne, mai }

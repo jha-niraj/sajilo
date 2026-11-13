@@ -9,6 +9,16 @@ export type OutboxOp = QueuedOp & {
     tries: number
 }
 
+/** Something he said offline that the phone could not understand: the recording or the words, kept to go through once online. */
+export interface ClipRow {
+    id: string
+    /** the day he said it */
+    date: string
+    createdAt: number
+    audio?: Blob
+    text?: string
+}
+
 export interface MetaRow {
     key: string
     value: unknown
@@ -18,6 +28,7 @@ class SajiloDB extends Dexie {
     snapshots!: Table<DaySnapshot, string>
     outbox!: Table<OutboxOp, string>
     meta!: Table<MetaRow, string>
+    clips!: Table<ClipRow, string>
 
     constructor() {
         super("sajilo")
@@ -30,6 +41,12 @@ class SajiloDB extends Dexie {
             snapshots: "date",
             outbox: "opId, createdAt, date, kind",
             meta: "key",
+        })
+        this.version(3).stores({
+            snapshots: "date",
+            outbox: "opId, createdAt, date, kind",
+            meta: "key",
+            clips: "id, createdAt",
         })
     }
 }

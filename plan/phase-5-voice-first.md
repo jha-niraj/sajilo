@@ -72,10 +72,10 @@ Saves from parser cards go through the existing offline queue on the phone, not 
 - [x] "Din band karo" -> expected, "kitna gine?", difference, "haan" -> closeDay.
 
 ### M5 - Offline voice
-- [ ] `useLocalRecognizer`: feature-detect, `available({langs:["hi-IN"], processLocally:true})`, `install()` from a tap in Settings ("Download offline voice"), status shown there.
-- [ ] Offline Talk uses it; `speechSynthesis` (hi-IN voice) for replies.
-- [ ] Clip fallback: recording saved in IndexedDB as a pending voice entry; on reconnect -> hear -> parse -> cards marked "from earlier" for him to confirm.
-- [ ] Pill: "Online" / "Offline - 3 pending".
+- [x] `lib/voice/local.ts` + `use-offline-voice.ts`: feature-detect, `available({langs:["hi-IN"], processLocally:true})`, `install()` from a tap on Munshi ("Get offline voice", shown online while the pack is downloadable). Chrome desktop reports it; check his Android.
+- [x] Offline Talk uses it; `speechSynthesis` (hi-IN voice) for replies.
+- [x] Clip fallback (Dexie `clips` table, v3; words kept too when the phone heard but did not understand): recording saved in IndexedDB as a pending voice entry; on reconnect -> hear -> parse -> cards marked "from earlier" for him to confirm.
+- [x] Pill under the Munshi title when offline: "Offline · N waiting" (outbox + notes); online shows "N notes from offline · Go through".
 
 ### M6 - Polish and docs
 - [ ] All UI strings in dict (en, ne) and dict-mai.
