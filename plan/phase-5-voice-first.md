@@ -78,8 +78,8 @@ Saves from parser cards go through the existing offline queue on the phone, not 
 - [x] Pill under the Munshi title when offline: "Offline · N waiting" (outbox + notes); online shows "N notes from offline · Go through".
 
 ### M6 - Polish and docs
-- [ ] All UI strings in dict (en, ne) and dict-mai.
-- [ ] CLAUDE.md section, this plan updated, short demo script for judges.
+- [x] All UI strings in dict (en, ne) and dict-mai.
+- [x] CLAUDE.md section, this plan updated, short demo script for judges (below).
 - [ ] Manual pass on a real Android phone (offline pack, airplane mode).
 
 ## Done when
@@ -91,3 +91,13 @@ Saves from parser cards go through the existing offline queue on the phone, not 
 ## Notes
 - Web Speech facts (MDN, Nov 2026): `SpeechRecognition.available({langs, processLocally})` -> "available" | "downloadable" | "downloading" | "unavailable"; `install()` needs a user gesture when it downloads; packs read "downloadable" until the page has called install() once. Without processLocally, Chrome recognition is server-based and does not work offline. Chrome Android support for on-device must be checked on his phone (M5 first task).
 - Bulbul has no Nepali voice; Devanagari is read with hi-IN (as today).
+
+## Demo script (about 2 minutes, demo account after `db:seed-demo`)
+1. Munshi, Talk. Say "Ram Bahadur paanch saya, Sita do sau". Two cards; Munshi asks "Sita Devi ya Sita Kumari?". Say "Sita Kumari", then "haan". Undo bar shows both.
+2. Say "Ram Bahadur 500" again: "already saved today, again?". Say "nahi": card goes.
+3. Say "Ramesh ne 100 diya": "jama ya udhaar wapas?" (he is a customer who owes udharo). Say "udhaar wapas", "haan".
+4. Say "Bikash ko 200 recharge udhaar": "NTC ya Ncell? load ya card?". Say "NTC load", "haan".
+5. Say "aaj kisne nahi diya" (list on screen) and "kitna paisa hona chahiye".
+6. Say "galti": the last save is undone.
+7. Turn on airplane mode, say "Mohan 100", "haan": saved on the phone, pill shows waiting. Turn it off: it syncs.
+8. "Din band karo" -> say the counted amount -> "haan".
