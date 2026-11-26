@@ -132,6 +132,8 @@ const retryingFetchInner: typeof fetch = async (input, init) => {
     throw lastErr;
 };
 neonConfig.fetchFunction = retryingFetch;
+// docker-compose.yml runs plain Postgres behind a local Neon proxy; the driver posts its queries there.
+if (process.env.NEON_FETCH_ENDPOINT) neonConfig.fetchEndpoint = process.env.NEON_FETCH_ENDPOINT;
 
 const sql = neon(connectionString ?? 'postgresql://placeholder/placeholder');
 

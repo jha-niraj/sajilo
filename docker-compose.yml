@@ -1,0 +1,69 @@
+# One command: docker compose up --build   ->  http://localhost:3100
+# No secret keys needed. Sign in at /login with 9503517330 and PIN 3110 (demo book with 12 customers).
+# Voice (Sarvam) and the AI chat say "key not set" until you add SARVAM_API_KEY / ANTHROPIC_API_KEY below.
+x-app-env: &app-env
+  # Queries go through the local Neon proxy, so the host is the proxy's name, not a real Neon endpoint.
+  DATABASE_URL: postgres://postgres:postgres@db.localtest.me:5432/sajilo
+  NEON_FETCH_ENDPOINT: http://neon-proxy:4444/sql
+  BETTER_AUTH_SECRET: local-docker-secret-not-for-production-0001
+  BETTER_AUTH_URL: http://localhost:3100
+  NEXT_PUBLIC_SITE_URL: http://localhost:3100
+  MAIN_APP_URL: http://localhost:3100
+  AUTH_COOKIE_PREFIX: sajilo
+  SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sajilo
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sajilo"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  neon-proxy:
+    image: ghcr.io/timowilhelm/local-neon-http-proxy:main
+    environment:
+      PG_CONNECTION_STRING: postgres://postgres:postgres@postgres:5432/sajilo
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Creates the tables and the demo account + book, then exits.
+  setup:
+    image: sajilo-local
+    build: .
+    working_dir: /repo/packages/db
+    environment:
+      <<: *app-env
+      DEMO_PHONE: "+9779503517330"
+      DEMO_PIN: "3110"
+      DEMO_NAME: Demo Collector
+    command: >
+      sh -c "DATABASE_URL=postgres://postgres:postgres@postgres:5432/sajilo pnpm exec drizzle-kit push --force
+      && pnpm exec tsx src/seed-demo.ts"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neon-proxy:
+        condition: service_started
+
+  app:
+    image: sajilo-local
+    build: .
+    environment: *app-env
+    ports:
+      - "3100:3100"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:

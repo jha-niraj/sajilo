@@ -74,6 +74,7 @@ export const mai: Record<DictKey, string> = {
     failedLabel: "Nai rakhal gel",
     micDenied: "Munshi sa bajai lel mic ke anumati diyau.",
     noLlm: "Munshi ekhan taiyar nai achhi (AI key nai achhi).",
+    noVoiceKey: "Awaaj ekhan taiyar nai achhi: key nai achhi (SARVAM_API_KEY). Tahi tak aajuk list mein tick lagau.",
     munshiError: "Munshi jabab nai de sakal. Fer sa karu.",
     didntHear: "Hum nai suni sakalau. Fer sa kahu.",
     welcomeMunshi: "Pranam {name}! Hum Munshi chhi. Aajuk jama, baki aa karja ke bare mein puchhu - boli ka ba likhi ka. Hum ahan lel paisa sehe chadha sakait chhi.",

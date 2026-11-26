@@ -2,10 +2,12 @@
  * Demo book for the voice prototype (plan/phase-5-voice-first.md), on the account with phone
  * DEMO_PHONE. Re-runnable: it first clears that account's customers, days and recharge, and
  * touches no other account. Run: pnpm --filter @repo/db db:seed-demo
+ * With DEMO_PIN set (docker-compose.yml) it first creates the account if the number has none.
  */
 import { db } from './client'
 import { eq } from 'drizzle-orm'
-import { user, customer, collectionEntry, collectionDay, rechargePerson, rechargeEntry, rechargeDay } from './schema'
+import { hashPassword } from 'better-auth/crypto'
+import { user, account, collectorSettings, customer, collectionEntry, collectionDay, rechargePerson, rechargeEntry, rechargeDay } from './schema'
 
 const DEMO_PHONE = process.env.DEMO_PHONE ?? '+9779503517330'
 
@@ -41,9 +43,24 @@ function addDays(ad: string, n: number): string {
 }
 const at = (ad: string, hour: number) => new Date(`${ad}T${String(hour).padStart(2, '0')}:00:00+05:45`)
 
+/** Same rows the sign-up action makes: phone stored on the user, the PIN as the credential password. */
+async function createDemoAccount(): Promise<{ id: string }[]> {
+    const pin = process.env.DEMO_PIN
+    const [existing] = await db.select({ id: user.id }).from(user).where(eq(user.phoneNumber, DEMO_PHONE))
+    if (existing || !pin) return []
+    const id = crypto.randomUUID()
+    const now = new Date()
+    await db.batch([
+        db.insert(user).values({ id, name: process.env.DEMO_NAME ?? 'Demo Collector', email: `${DEMO_PHONE.replace(/\D/g, '')}@phone.sajilo.app`, phoneNumber: DEMO_PHONE }),
+        db.insert(account).values({ id: crypto.randomUUID(), accountId: id, providerId: 'credential', userId: id, password: await hashPassword(pin), createdAt: now, updatedAt: now }),
+        db.insert(collectorSettings).values({ userId: id, language: 'en' }),
+    ])
+    return [{ id }]
+}
+
 async function main() {
-    const [u] = await db.select({ id: user.id, name: user.name }).from(user).where(eq(user.phoneNumber, DEMO_PHONE))
-    if (!u) throw new Error(`No account with phone ${DEMO_PHONE}`)
+    const [u] = (await db.select({ id: user.id }).from(user).where(eq(user.phoneNumber, DEMO_PHONE))).concat(await createDemoAccount())
+    if (!u) throw new Error(`No account with phone ${DEMO_PHONE} (set DEMO_PIN to create it)`)
     const me = u.id
     const today = nepalToday()
 
@@ -109,7 +126,7 @@ async function main() {
         rc({ kind: 'sell', provider: 'ncell', stock: 'eload', date: d1, at: at(d1, 16), amount: 100, personId: null }),
     ])
 
-    console.log(`Seeded ${u.name}: ${rows.length} customers, ${entries.length} entries, 2 udharo people, today ${today}`)
+    console.log(`Seeded ${DEMO_PHONE}: ${rows.length} customers, ${entries.length} entries, 2 udharo people, today ${today}`)
 }
 
 main()

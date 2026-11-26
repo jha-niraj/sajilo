@@ -13,6 +13,7 @@ export async function POST(req: Request) {
     const collectorId = session.user.id
     const form = await req.formData()
     const audio = form.get("audio")
+    if (!process.env.SARVAM_API_KEY) return NextResponse.json({ text: "", error: "no_key" })
     if (!(audio instanceof Blob) || audio.size < 800 || audio.size > MAX_AUDIO_BYTES) return NextResponse.json({ text: "" })
     try {
         const [settings, names, customers] = await Promise.all([getSettings(collectorId), knownNames({ collectorId }), activeCustomers({ collectorId })])

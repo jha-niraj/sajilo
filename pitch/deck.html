@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sajilo - pitch deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Mukta:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+    @page { size: 1280px 720px; margin: 0; }
+    :root {
+        --paper: #faf6ee; --paper-2: #f3ecdf; --card: #ffffff; --line: #ebe2d2;
+        --ink: #2a2118; --ink-2: #5c5145; --ink-3: #8a7f72;
+        --saffron: #c8611f; --saffron-soft: #fbeadb;
+        --sky: #3d8fd6; --sky-ink: #1d64a3; --sky-soft: #e4f0fb; --sky-wash: #cfe4f7;
+        --leaf: #2f7d4f; --leaf-soft: #e3f1e7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #ddd; }
+    body { font-family: "Bricolage Grotesque", "Mukta", system-ui, sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .deva { font-family: "Mukta", sans-serif; }
+    .slide {
+        position: relative; width: 1280px; height: 720px; overflow: hidden; background: var(--paper);
+        padding: 64px 72px 66px; display: flex; flex-direction: column; page-break-after: always; break-after: page;
+    }
+    @media screen { .slide { margin: 24px auto; box-shadow: 0 8px 30px rgba(0,0,0,.15); } }
+    .dhaka { position: absolute; left: 0; right: 0; bottom: 0; height: 18px; background-image: url("assets/dhaka.svg"); background-size: auto 18px; background-repeat: repeat-x; image-rendering: pixelated; }
+    .dhaka.top { top: 0; bottom: auto; }
+    .kicker { font-size: 15px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--saffron); margin-bottom: 14px; }
+    h1 { font-size: 64px; line-height: 1.04; letter-spacing: -0.04em; font-weight: 700; }
+    h2 { font-size: 44px; line-height: 1.08; letter-spacing: -0.035em; font-weight: 650; max-width: 980px; }
+    h2 .muted, h1 .muted { color: var(--ink-3); }
+    p, li { font-size: 21px; line-height: 1.45; color: var(--ink-2); }
+    .lead { font-size: 24px; line-height: 1.45; color: var(--ink-2); max-width: 900px; margin-top: 18px; }
+    strong { color: var(--ink); font-weight: 650; }
+    .num { position: absolute; right: 72px; bottom: 30px; font-size: 14px; color: var(--ink-3); }
+    .brand { position: absolute; left: 72px; bottom: 30px; font-size: 14px; font-weight: 700; color: var(--ink-3); letter-spacing: .02em; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 22px 24px; }
+    .card h3 { font-size: 22px; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .card p, .card li { font-size: 18px; line-height: 1.42; }
+    .chip { display: inline-block; font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--saffron-soft); color: var(--saffron); margin-bottom: 10px; }
+    .chip.sky { background: var(--sky-soft); color: var(--sky-ink); }
+    .chip.leaf { background: var(--leaf-soft); color: var(--leaf); }
+    ul.dots { list-style: none; display: grid; gap: 10px; }
+    ul.dots li { padding-left: 26px; position: relative; }
+    ul.dots li::before { content: ""; position: absolute; left: 4px; top: 11px; width: 10px; height: 10px; background: var(--saffron); }
+    .shot { border-radius: 22px; border: 1px solid var(--line); background: var(--paper-2); overflow: hidden; }
+    .shot img { display: block; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+    table { border-collapse: collapse; width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+    th, td { text-align: left; vertical-align: top; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 16.5px; line-height: 1.38; color: var(--ink-2); }
+    th { font-size: 13px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); background: var(--paper-2); }
+    td:first-child { color: var(--ink); font-weight: 650; width: 23%; }
+    tr:last-child td { border-bottom: 0; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 34px; }
+    .step { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 22px; position: relative; }
+    .step .n { width: 34px; height: 34px; border-radius: 10px; background: var(--saffron); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 14px; }
+    .step h3 { font-size: 22px; margin-bottom: 6px; letter-spacing: -0.02em; }
+    .step p { font-size: 17px; }
+    .say { display: inline-block; margin-top: 12px; padding: 8px 14px; border-radius: 16px 16px 16px 4px; background: var(--sky-soft); color: var(--sky-ink); font-weight: 600; font-size: 17px; }
+    .reply { background: var(--saffron-soft); color: var(--saffron); border-radius: 16px 16px 4px 16px; }
+    .stat { font-size: 38px; font-weight: 700; letter-spacing: -0.04em; color: var(--ink); line-height: 1; }
+    .stat small { display: block; margin-top: 8px; font-size: 16px; line-height: 1.35; color: var(--ink-2); font-weight: 500; letter-spacing: 0; }
+    .note { font-size: 14px; color: var(--ink-3); margin-top: auto; padding-top: 14px; }
+    .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 30px; position: relative; }
+    .timeline::before { content: ""; position: absolute; left: 0; right: 0; top: 17px; height: 3px; background: var(--line); }
+    .phase { padding-right: 22px; position: relative; }
+    .phase .dot { width: 36px; height: 36px; border-radius: 10px; background: var(--saffron); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; position: relative; }
+    .phase .when { margin-top: 16px; font-size: 14px; font-weight: 700; color: var(--saffron); text-transform: uppercase; letter-spacing: .1em; }
+    .phase h3 { font-size: 22px; margin: 4px 0 8px; letter-spacing: -0.02em; }
+    .phase p { font-size: 17px; }
+    .target { display: flex; gap: 18px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); }
+    .target:last-child { border-bottom: 0; }
+    .target .v { min-width: 150px; font-size: 32px; font-weight: 700; letter-spacing: -0.03em; color: var(--saffron); }
+    .target p { font-size: 19px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 17px; background: var(--paper-2); border: 1px solid var(--line); padding: 2px 8px; border-radius: 8px; color: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- 1 Cover -->
+<section class="slide" style="background: linear-gradient(180deg, var(--sky-wash) 0%, var(--sky-soft) 55%, var(--paper) 100%); padding-bottom: 0;">
+    <div style="display:grid; grid-template-columns: 1.15fr .85fr; gap: 24px; flex: 1; align-items: center;">
+        <div>
+            <div class="kicker">Build for Bharat · Livelihoods and small business</div>
+            <h1 style="font-size: 60px;">Sajilo<br /><span class="muted">He says it.<br />Sajilo writes it.</span></h1>
+            <p class="lead">A voice ledger for daily deposit collectors: the people who walk shop to shop every evening collecting small savings, and write every rupee by hand.</p>
+            <p style="margin-top: 26px; font-size: 18px;"><strong>Niraj Jha</strong> · Bengaluru, Karnataka · Solo build</p>
+        </div>
+        <img src="../apps/main/public/images/auth/welcome.webp" alt="" style="height: 470px; justify-self: center; align-self: end; margin-bottom: 18px;" />
+    </div>
+    <div class="dhaka"></div>
+</section>
+
+<!-- 2 Problem -->
+<section class="slide">
+    <div class="kicker">The problem</div>
+    <h2>My father collects daily savings. <span class="muted">His whole business lives in a red notebook.</span></h2>
+    <div class="grid2" style="margin-top: 30px; flex: 1;">
+        <ul class="dots">
+            <li>Every evening from about <strong>4 to 8 pm</strong> he walks shop to shop with a cloth bag, a ledger and a pen, taking Rs 50 to Rs 1,000 from each customer.</li>
+            <li>Each deposit is <strong>written twice by hand</strong>, standing at a counter, often in the dark.</li>
+            <li>At night the bag has to match the book. Finding a mismatch takes <strong>about an hour</strong>, and a mistake is paid from his own pocket.</li>
+            <li>"Who hasn't paid this week?" or "how much udharo does Ram Babu owe?" means turning pages.</li>
+            <li>Apps exist, but they want <strong>typing</strong>: small keys, Devanagari names, one hand holding cash, weak network.</li>
+        </ul>
+        <div class="shot" style="height: 420px;"><img src="assets/scene-walk.png" alt="Pixel scene: the collector on his evening round" /></div>
+    </div>
+    <div class="brand">Sajilo</div><div class="num">2</div>
+</section>
+
+<!-- 3 Same job in India -->
+<section class="slide">
+    <div class="kicker">Not just Nepal</div>
+    <h2>The same job is done on foot all over India. <span class="muted">Karnataka's pigmy agents have done it for almost a century.</span></h2>
+    <div class="grid3" style="margin-top: 32px;">
+        <div class="card"><span class="chip">Daily deposits</span><h3>Pigmy and daily deposit agents</h3><p>Co-operative banks, credit societies and regional banks send agents to collect small daily savings from shops and homes, written in a passbook and a register.</p></div>
+        <div class="card"><span class="chip sky">Banking at the door</span><h3>Bank mitras and MFI field staff</h3><p>More than a million business correspondents and microfinance officers collect repayments and deposits village by village.</p></div>
+        <div class="card"><span class="chip leaf">Small business</span><h3>Udhaar books everywhere</h3><p>Milk collection centres, kirana stores and recharge shops keep credit and daily totals in notebooks.</p></div>
+    </div>
+    <p class="lead" style="margin-top: 30px;">What they share: <strong>money changes hands standing up, the record is written by hand, and the person writing is busy, older or not comfortable typing.</strong></p>
+    <div class="brand">Sajilo</div><div class="num">3</div>
+</section>
+
+<!-- 4 Solution -->
+<section class="slide">
+    <div class="kicker">The solution</div>
+    <h2>Say the name and amount. <span class="muted">Hear it back. Say "haan". It is saved, even with no network.</span></h2>
+    <div class="flow">
+        <div class="step"><div class="n">1</div><h3>He speaks</h3><p>Hindi, Nepali, Maithili or English, mixed the way people really talk.</p><span class="say">"Ram Babu do sau, Gita Store paanch sau"</span></div>
+        <div class="step"><div class="n">2</div><h3>Sajilo shows cards</h3><p>One card per entry, matched to his customer list, amounts read as numbers.</p><span class="say reply">Ram Babu Rs 200 · Gita Store Rs 500</span></div>
+        <div class="step"><div class="n">3</div><h3>It reads them back</h3><p>Out loud and on screen. Nothing is saved yet.</p><span class="say reply">"2 entry, kul 700. Theek?"</span></div>
+        <div class="step"><div class="n">4</div><h3>One "haan" saves all</h3><p>Saved to the phone first and synced when the network returns. Undo for 10 seconds.</p><span class="say">"Haan"</span></div>
+    </div>
+    <p class="lead" style="margin-top: 30px;">The same voice answers questions: <strong>"aaj kisne nahi diya?", "aaj kitna hona chahiye?", "Ram Babu ka kitna baaki?"</strong> and closes the day: <strong>"aaj ka hisaab band karo"</strong>.</p>
+    <div class="brand">Sajilo</div><div class="num">4</div>
+</section>
+
+<!-- 5 Prototype -->
+<section class="slide">
+    <div class="kicker">What works today</div>
+    <h2>A working prototype, built around one real collector's day.</h2>
+    <div style="display:grid; grid-template-columns: 1.25fr .75fr; gap: 28px; margin-top: 26px; flex: 1;">
+        <div class="grid2" style="gap: 16px; align-content: start;">
+            <div class="card"><h3>Voice entry</h3><p>Several entries, one "haan". Names matched by sound across Devanagari and English letters. Amounts in Hindi, Nepali, Maithili or English words.</p></div>
+            <div class="card"><h3>Careful by default</h3><p>Two look-alike names: it asks. Paid twice today, or an odd amount: it warns. "Galti" undoes.</p></div>
+            <div class="card"><h3>Works offline</h3><p>On-device recognition in Chrome when there is no signal. Anything it could not understand is kept and gone through once online.</p></div>
+            <div class="card"><h3>The full book</h3><p>Today's tick list, month register (prints on A4), loans with interest, recharge stock, and a photo of an old notebook page turned into customers.</p></div>
+        </div>
+        <div class="shot" style="height: 440px;"><img src="assets/app-today.png" alt="Sajilo app screen" style="object-position: top; image-rendering: auto;" /></div>
+    </div>
+    <div class="brand">Sajilo</div><div class="num">5</div>
+</section>
+
+<!-- 6 Who it's for -->
+<section class="slide">
+    <div class="kicker">Who it is for</div>
+    <h2>First my father. <span class="muted">Then everyone who writes down money on foot.</span></h2>
+    <div class="grid2" style="margin-top: 30px; gap: 32px;">
+        <div>
+            <div class="card" style="margin-bottom: 16px;"><span class="chip">First users</span><h3>Daily collectors in co-operatives</h3><p>Each one carries the savings of <strong>50 to 300 families</strong>. In Nepal almost every co-operative and many bank branches run daily savings; in Karnataka the same work is called pigmy collection.</p></div>
+            <div class="card"><span class="chip sky">Next</span><h3>Field staff and small shops</h3><p>Bank mitras, MFI loan officers, milk collection centres and kirana owners keeping udhaar: the same "name + amount + yes" loop.</p></div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px; align-content: start;">
+            <div class="card"><div class="stat">1M+ <small>bank mitras / business correspondents in India</small></div></div>
+            <div class="card"><div class="stat">~2 lakh <small>village dairy co-operatives collecting milk daily</small></div></div>
+            <div class="card"><div class="stat">~1.2 crore <small>kirana stores, most keeping an udhaar book</small></div></div>
+            <div class="card"><div class="stat">Millions <small>people who record money on foot every day (my rough estimate)</small></div></div>
+            <p class="note" style="grid-column: 1 / -1; margin-top: 0; padding-top: 0;">Figures are rounded public estimates, used for scale only.</p>
+        </div>
+    </div>
+    <div class="brand">Sajilo</div><div class="num">6</div>
+</section>
+
+<!-- 7 Depends on -->
+<section class="slide">
+    <div class="kicker">What it depends on</div>
+    <h2>Voice and AI help him write. <span class="muted">They are never what keeps the money right.</span></h2>
+    <table style="margin-top: 24px;">
+        <tr><th>Service</th><th>What it does in Sajilo</th><th>If it gets costly or stops</th></tr>
+        <tr><td>Sarvam Saaras (speech to text)</td><td>Turns his words into text, with his customers' names as hints.</td><td>Names and amounts are understood by our own parser, so any recogniser fits. Chrome's on-device recognition already runs offline; open Indic models can be self-hosted.</td></tr>
+        <tr><td>Sarvam Bulbul (voice replies)</td><td>Reads each card back in a natural voice.</td><td>The phone's built-in voice already does this offline. Every reply is also on screen.</td></tr>
+        <tr><td>Claude Haiku (language model)</td><td>Only for questions the rules do not cover, and the typed chat.</td><td>Cards, saving, totals and money maths are plain code, not AI. GPT or Sarvam-105b are already wired in as fallbacks, or it can be switched off.</td></tr>
+        <tr><td>Postgres (Neon) + Cloudflare Workers</td><td>Sync, backup, the month register and reports.</td><td>The phone keeps working offline and syncs later. Runs on plain Postgres + Node too: the Docker setup proves it.</td></tr>
+    </table>
+    <p class="note">Cost stays small per collector: a few seconds of audio per entry, and the expensive model is never on the saving path.</p>
+    <div class="brand">Sajilo</div><div class="num">7</div>
+</section>
+
+<!-- 8 Trust / risk -->
+<section class="slide">
+    <div class="kicker">The main risk</div>
+    <h2>Hearing wrong costs money and trust. <span class="muted">So every save is his decision.</span></h2>
+    <div class="grid2" style="margin-top: 30px; flex: 1;">
+        <ul class="dots">
+            <li>Local names, mixed Maithili, Nepali and Hindi, and a noisy street can turn "Ram Babu" into "Ram Bahadur".</li>
+            <li><strong>Nothing saves without "haan"</strong> or a tap on Save.</li>
+            <li><strong>Look-alike names are always asked</strong>, and the answer is learned as an alias for next time.</li>
+            <li><strong>Odd amounts and repeat payments are flagged</strong> before saving.</li>
+            <li><strong>Every save can be undone</strong>: a 10-second Undo, or just say "galti".</li>
+            <li>If recognition is not good enough in the field, voice still fills the card faster and he confirms on screen.</li>
+        </ul>
+        <div class="shot" style="height: 400px;"><img src="assets/scene-counter.png" alt="Pixel scene: at the shop counter" /></div>
+    </div>
+    <div class="brand">Sajilo</div><div class="num">8</div>
+</section>
+
+<!-- 9 Launch plan -->
+<section class="slide">
+    <div class="kicker">Launch plan</div>
+    <h2>Grow the way collectors already meet: <span class="muted">at the branch, every day.</span></h2>
+    <div class="timeline">
+        <div class="phase"><div class="dot">1</div><div class="when">Month 1</div><h3>My father</h3><p>His full book on Sajilo, every day. I fix what breaks on his street.</p></div>
+        <div class="phase"><div class="dot">2</div><div class="when">Months 2-3</div><h3>5-10 collectors</h3><p>Collectors from his co-operative who deposit at the same branch. Free, installed on their own phones (it is a web app, no store needed).</p></div>
+        <div class="phase"><div class="dot">3</div><div class="when">Months 4-6</div><h3>Karnataka pilot</h3><p>One co-operative bank or credit society in Bengaluru with pigmy agents. Kannada added (Sarvam already supports it).</p></div>
+        <div class="phase"><div class="dot">4</div><div class="when">After</div><h3>Branch by branch</h3><p>The clean month register is the hook for managers. Free for collectors; the co-operative pays a small monthly fee per agent for registers and reports.</p></div>
+    </div>
+    <p class="lead" style="margin-top: 36px;">Every collector reaches <strong>a branch, a manager and other collectors</strong> daily. One agent who stops carrying the notebook is the best advert.</p>
+    <div class="brand">Sajilo</div><div class="num">9</div>
+</section>
+
+<!-- 10 Measure -->
+<section class="slide">
+    <div class="kicker">How we will know it worked</div>
+    <h2>The plainest sign: <span class="muted">he stops carrying the notebook.</span></h2>
+    <div style="margin-top: 22px; max-width: 1000px;">
+        <div class="target"><div class="v">80%</div><p>of his daily entries made by voice instead of paper by week four</p></div>
+        <div class="target"><div class="v">&lt; 10 min</div><p>for the evening check, down from about an hour</p></div>
+        <div class="target"><div class="v">Half</div><p>as many days when the cash does not match the book</p></div>
+        <div class="target"><div class="v">&lt; 1 in 10</div><p>heard entries needing a correction before he says "haan"</p></div>
+        <div class="target"><div class="v">7 of 10</div><p>collectors still using it after four weeks without being reminded</p></div>
+    </div>
+    <div class="brand">Sajilo</div><div class="num">10</div>
+</section>
+
+<!-- 11 Try it -->
+<section class="slide" style="background: linear-gradient(120deg, var(--sky-wash), var(--sky-soft) 55%, #fdf1e4);">
+    <div class="kicker">Try it</div>
+    <h2>Open the demo book and talk to it.</h2>
+    <div style="display:grid; grid-template-columns: 1.2fr .8fr; gap: 28px; margin-top: 28px; flex: 1;">
+        <div style="display:grid; gap: 16px; align-content: start;">
+            <div class="card"><h3>Code</h3><p><span class="mono">github.com/jha-niraj/sajilo</span></p><p style="margin-top: 8px;">Run it: <span class="mono">docker compose up --build</span> then open <span class="mono">localhost:3100</span>. No keys needed; voice says "key not set" until a Sarvam key is added.</p></div>
+            <div class="card"><h3>Demo sign-in</h3><p>Phone <span class="mono">9503517330</span> · PIN <span class="mono">3110</span> · 12 customers with five days of history.</p></div>
+            <div class="card"><h3>Live</h3><p><span class="mono">{{LIVE_URL}}</span></p></div>
+        </div>
+        <img src="../apps/main/public/images/auth/done.webp" alt="" style="height: 420px; justify-self: center; align-self: end;" />
+    </div>
+    <div class="dhaka"></div>
+</section>
+
+</body>
+</html>

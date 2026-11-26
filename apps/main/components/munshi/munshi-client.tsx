@@ -255,7 +255,11 @@ export function MunshiClient({
             fd.set("audio", blob, blob.type.includes("mp4") ? "speech.mp4" : "speech.webm")
             const heard = (await fetch("/api/munshi/hear", { method: "POST", body: fd })
                 .then((r) => r.json())
-                .catch(() => ({ text: "" }))) as { text: string }
+                .catch(() => ({ text: "" }))) as { text: string; error?: string }
+            if (heard.error === "no_key") {
+                say("assistant", t("noVoiceKey"))
+                return { audio: null }
+            }
             return onTranscript(heard.text?.trim() ?? "")
         },
     })

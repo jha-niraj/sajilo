@@ -8,6 +8,24 @@ An offline-first PWA for a bank **daily-savings collector** in Nepal, and for th
 
 English by default, Nepali at a tap.
 
+## Run it with one command (Docker)
+
+```bash
+git clone https://github.com/jha-niraj/sajilo.git && cd sajilo
+docker compose up --build        # first build takes a few minutes
+```
+
+Open http://localhost:3100. No secret keys are needed: Docker runs Postgres, a local Neon HTTP proxy (the app uses Neon's HTTP driver) and the app, creates the tables and loads a demo book.
+
+- **Sign in:** http://localhost:3100/login, phone `9503517330`, PIN `3110` (12 customers, five days of history, two udharo people).
+- **Works without keys:** landing page, sign-in, Today's tick list, finish day, month register and print, customers, loans and the interest calculator, recharge stock.
+- **Needs a key:** Munshi voice (Sarvam) shows "key not set" and the AI chat shows "AI key missing". To try them, start with your own keys:
+  ```bash
+  SARVAM_API_KEY=... ANTHROPIC_API_KEY=... docker compose up --build
+  ```
+  Voice needs Chrome and microphone access (localhost counts as secure).
+- **Reset the demo:** `docker compose down -v && docker compose up`.
+
 ## Monorepo
 
 ```
