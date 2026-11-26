@@ -6,7 +6,7 @@ import { type Bubble, bubble, COLLECTOR, COLLECTOR_LEFT, counter, DEVELOPER, ELD
  * Sajilo's pixel scenes, in Boli's P1 v3 kit (same palette, people and outlines). Pure data; `reveal.tsx` paints them
  * outline first, then fills, row by row. Words in the bubbles are Roman Nepali, the way he says them.
  *
- * Story (96 x 60): 01 the walk at six, 02 a hundred at every counter, 03 the night the bag does not match,
+ * Story (96 x 60): 01 the walk at four in the evening, 02 a hundred at every counter, 03 the night the bag does not match,
  * 04 he just says it, 05 the day closes itself.
  * Who it's for (64 x 48): a collector on his round, a recharge pasal, milk collection, a small lender.
  */
@@ -149,7 +149,7 @@ function milkCan(): Grid {
 const W = 96
 const H = 60
 
-/** 01 - Six in the morning: he sets out between the houses, bag across him, ledger in hand. */
+/** 01 - Four in the evening: he sets out between the houses, bag across him, ledger in hand. */
 function walk(): Scene {
     const g = new Grid(W, H)
     outdoors(g, 44, [
@@ -167,12 +167,12 @@ function walk(): Scene {
         h: H,
         grid: g,
         evening: true,
-        label: "Pixel illustration: early morning in a Nepali town, a man in a Dhaka topi with a cloth bag and a red ledger setting out between brick houses under prayer flags",
+        label: "Pixel illustration: late afternoon in a Nepali town, a man in a Dhaka topi with a cloth bag and a red ledger setting out between brick houses under prayer flags",
         overlays: [
             ...fl.map((f, i) => ({ kind: "frames" as const, pair: f.pair, x: f.x, y: f.y, dur: 1.1 + (i % 3) * 0.15, delay: i * 0.17 })),
             { kind: "frames", pair: COLLECTOR, x: 40, y: feetY(COLLECTOR, 54), dur: 3.8, motion: "blink" },
             { kind: "frames", pair: PIGEON, x: 66, y: 52, dur: 1.5 },
-            { kind: "bubble", b: bubble(["bihana", "6 baje"], { side: "bottom", at: 10 }), x: 44, y: 6 },
+            { kind: "bubble", b: bubble(["beluka", "4 baje"], { side: "bottom", at: 10 }), x: 44, y: 6 },
         ],
     }
 }

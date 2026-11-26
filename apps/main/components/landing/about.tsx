@@ -26,7 +26,7 @@ export function About() {
                 <div className="mx-auto grid max-w-[1200px] items-end gap-8 px-4 pt-14 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:pt-20">
                     <div className="pb-6 lg:pb-16">
                         <Kicker>{a.kicker}</Kicker>
-                        <BandTitle as="h1" title={a.title} muted={a.muted} className="sm:text-6xl" />
+                        <BandTitle as="h1" title={a.title} className="sm:text-6xl" />
                         <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-2">{a.lead}</p>
                     </div>
                     {/* eslint-disable-next-line @next/next/no-img-element -- static WebP; no image optimizer on Workers */}
