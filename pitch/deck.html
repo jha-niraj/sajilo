@@ -27,10 +27,10 @@
     .dhaka.top { top: 0; bottom: auto; }
     .kicker { font-size: 15px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--saffron); margin-bottom: 14px; }
     h1 { font-size: 64px; line-height: 1.04; letter-spacing: -0.04em; font-weight: 700; }
-    h2 { font-size: 44px; line-height: 1.08; letter-spacing: -0.035em; font-weight: 650; max-width: 980px; }
+    h2 { font-size: 44px; line-height: 1.08; letter-spacing: -0.035em; font-weight: 650; }
     h2 .muted, h1 .muted { color: var(--ink-3); }
     p, li { font-size: 21px; line-height: 1.45; color: var(--ink-2); }
-    .lead { font-size: 24px; line-height: 1.45; color: var(--ink-2); max-width: 900px; margin-top: 18px; }
+    .lead { font-size: 24px; line-height: 1.45; color: var(--ink-2); margin-top: 18px; }
     strong { color: var(--ink); font-weight: 650; }
     .num { position: absolute; right: 72px; bottom: 30px; font-size: 14px; color: var(--ink-3); }
     .brand { position: absolute; left: 72px; bottom: 30px; font-size: 14px; font-weight: 700; color: var(--ink-3); letter-spacing: .02em; }
@@ -50,7 +50,9 @@
     table { border-collapse: collapse; width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
     th, td { text-align: left; vertical-align: top; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 16.5px; line-height: 1.38; color: var(--ink-2); }
     th { font-size: 13px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); background: var(--paper-2); }
-    td:first-child { color: var(--ink); font-weight: 650; width: 23%; }
+    td:first-child { color: var(--ink); font-weight: 650; width: 22%; }
+    td.good { color: var(--leaf); font-weight: 650; }
+    td.now { color: var(--ink-3); }
     tr:last-child td { border-bottom: 0; }
     .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 34px; }
     .step { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 22px; position: relative; }
@@ -80,14 +82,14 @@
 
 <!-- 1 Cover -->
 <section class="slide" style="background: linear-gradient(180deg, var(--sky-wash) 0%, var(--sky-soft) 55%, var(--paper) 100%); padding-bottom: 0;">
-    <div style="display:grid; grid-template-columns: 1.15fr .85fr; gap: 24px; flex: 1; align-items: center;">
-        <div>
+    <div style="display:grid; grid-template-columns: 1.15fr .85fr; gap: 24px; flex: 1; align-items: start;">
+        <div style="margin-top: 40px;">
             <div class="kicker">Build for Bharat · Livelihoods and small business</div>
-            <h1 style="font-size: 60px;">Sajilo<br /><span class="muted">He says it.<br />Sajilo writes it.</span></h1>
+            <h1 style="font-size: 72px;">Sajilo<br /><span class="muted">He says it.<br />Sajilo writes it.</span></h1>
             <p class="lead">A voice ledger for daily deposit collectors: the people who walk shop to shop every evening collecting small savings, and write every rupee by hand.</p>
             <p style="margin-top: 26px; font-size: 18px;"><strong>Niraj Jha</strong> · Bengaluru, Karnataka · Solo build</p>
         </div>
-        <img src="../apps/main/public/images/auth/welcome.webp" alt="" style="height: 470px; justify-self: center; align-self: end; margin-bottom: 18px;" />
+        <img src="../apps/main/public/images/auth/welcome.webp" alt="" style="height: 560px; justify-self: center; align-self: end; margin-bottom: 18px;" />
     </div>
     <div class="dhaka"></div>
 </section>
@@ -177,14 +179,29 @@
     <div class="kicker">What it depends on</div>
     <h2>Voice and AI help him write. <span class="muted">They are never what keeps the money right.</span></h2>
     <table style="margin-top: 24px;">
-        <tr><th>Service</th><th>What it does in Sajilo</th><th>If it gets costly or stops</th></tr>
-        <tr><td>Sarvam Saaras (speech to text)</td><td>Turns his words into text, with his customers' names as hints.</td><td>Names and amounts are understood by our own parser, so any recogniser fits. Chrome's on-device recognition already runs offline; open Indic models can be self-hosted.</td></tr>
-        <tr><td>Sarvam Bulbul (voice replies)</td><td>Reads each card back in a natural voice.</td><td>The phone's built-in voice already does this offline. Every reply is also on screen.</td></tr>
-        <tr><td>Claude Haiku (language model)</td><td>Only for questions the rules do not cover, and the typed chat.</td><td>Cards, saving, totals and money maths are plain code, not AI. GPT or Sarvam-105b are already wired in as fallbacks, or it can be switched off.</td></tr>
-        <tr><td>Postgres (Neon) + Cloudflare Workers</td><td>Sync, backup, the month register and reports.</td><td>The phone keeps working offline and syncs later. Runs on plain Postgres + Node too: the Docker setup proves it.</td></tr>
+        <tr><th>Service</th><th>What it does in Sajilo</th><th>Is it on the path that saves money?</th></tr>
+        <tr><td>Sarvam Saaras (speech to text)</td><td>Turns his spoken words into text, using his customers' names as hints.</td><td>No. It only gives text; our own code reads names and amounts, and nothing saves until he says "haan".</td></tr>
+        <tr><td>Sarvam Bulbul (text to speech)</td><td>Reads each card back to him in a natural voice.</td><td>No. Every reply is also shown on screen.</td></tr>
+        <tr><td>Claude Haiku (language model)</td><td>Answers only the sentences our rules cannot read, and the typed chat.</td><td>No. Entries, yes/no, totals and closing the day are plain code.</td></tr>
+        <tr><td>Chrome on-device speech</td><td>Hears him with no network (free, runs on the phone).</td><td>No. Same "haan" rule applies.</td></tr>
+        <tr><td>Postgres (Neon) + Cloudflare Workers</td><td>Backup, sync across devices, month register and reports.</td><td>Saves go to the phone first, then sync, so a slow or missing server never loses an entry.</td></tr>
     </table>
-    <p class="note">Cost stays small per collector: a few seconds of audio per entry, and the expensive model is never on the saving path.</p>
+    <p class="note">The next slide covers what happens if any of these get costly or stop working.</p>
     <div class="brand">Sajilo</div><div class="num">7</div>
+</section>
+
+<!-- 7b Costly or stops -->
+<section class="slide">
+    <div class="kicker">If they get costly or stop working</div>
+    <h2>Every outside service has a cheaper swap and a fallback that already exists.</h2>
+    <table style="margin-top: 24px;">
+        <tr><th>Service</th><th>If it gets costly</th><th>If it stops working</th></tr>
+        <tr><td>Speech to text (Sarvam Saaras)</td><td>Only a few seconds of audio per entry are sent. Next step: an open Indic speech model (for example AI4Bharat IndicConformer) on our own server, or Chrome's free on-device recognition.</td><td>Talk switches to Chrome's on-device recognition, the same path it already uses offline. Anything not understood is kept as a note. The tap-to-tick list always works.</td></tr>
+        <tr><td>Voice replies (Sarvam Bulbul)</td><td>Replies are short ("2 entry, kul 700. Theek?"). Use the phone's built-in voice, which is free.</td><td>The phone's built-in voice reads the reply (already used offline). The text is always on screen.</td></tr>
+        <tr><td>Language model (Claude Haiku)</td><td>Most entries never reach it. Swap to a cheaper model: GPT mini and Sarvam-105b are already wired in.</td><td>Entries, questions and closing the day keep working. Only free-form chat shows "AI key missing".</td></tr>
+        <tr><td>Database and hosting (Neon, Cloudflare)</td><td>It is standard Postgres and Node, so it moves to any host. The Docker setup in the repo runs it on one machine.</td><td>The phone keeps saving to its own queue and syncs when the server is back. No entry is lost.</td></tr>
+    </table>
+    <div class="brand">Sajilo</div><div class="num">8</div>
 </section>
 
 <!-- 8 Trust / risk -->
@@ -202,7 +219,7 @@
         </ul>
         <div class="shot" style="height: 400px;"><img src="assets/scene-counter.png" alt="Pixel scene: at the shop counter" /></div>
     </div>
-    <div class="brand">Sajilo</div><div class="num">8</div>
+    <div class="brand">Sajilo</div><div class="num">9</div>
 </section>
 
 <!-- 9 Launch plan -->
@@ -216,21 +233,22 @@
         <div class="phase"><div class="dot">4</div><div class="when">After</div><h3>Branch by branch</h3><p>The clean month register is the hook for managers. Free for collectors; the co-operative pays a small monthly fee per agent for registers and reports.</p></div>
     </div>
     <p class="lead" style="margin-top: 36px;">Every collector reaches <strong>a branch, a manager and other collectors</strong> daily. One agent who stops carrying the notebook is the best advert.</p>
-    <div class="brand">Sajilo</div><div class="num">9</div>
+    <div class="brand">Sajilo</div><div class="num">10</div>
 </section>
 
 <!-- 10 Measure -->
 <section class="slide">
     <div class="kicker">How we will know it worked</div>
     <h2>The plainest sign: <span class="muted">he stops carrying the notebook.</span></h2>
-    <div style="margin-top: 22px; max-width: 1000px;">
-        <div class="target"><div class="v">80%</div><p>of his daily entries made by voice instead of paper by week four</p></div>
-        <div class="target"><div class="v">&lt; 10 min</div><p>for the evening check, down from about an hour</p></div>
-        <div class="target"><div class="v">Half</div><p>as many days when the cash does not match the book</p></div>
-        <div class="target"><div class="v">&lt; 1 in 10</div><p>heard entries needing a correction before he says "haan"</p></div>
-        <div class="target"><div class="v">7 of 10</div><p>collectors still using it after four weeks without being reminded</p></div>
-    </div>
-    <div class="brand">Sajilo</div><div class="num">10</div>
+    <table style="margin-top: 24px;">
+        <tr><th>What we measure</th><th>Today, on paper</th><th>Target after four weeks</th></tr>
+        <tr><td>Entries made by voice</td><td class="now">None: every entry is written by hand</td><td class="good">80% of his daily entries spoken, not written</td></tr>
+        <tr><td>Evening check (does the bag match the book?)</td><td class="now">About 1 hour every night</td><td class="good">Under 10 minutes</td></tr>
+        <tr><td>Days the cash does not match the book</td><td class="now">We count them in week one as the baseline</td><td class="good">50% fewer such days than the baseline</td></tr>
+        <tr><td>Heard entries he has to fix before saying "haan"</td><td class="now">New measure</td><td class="good">Fewer than 1 in every 10 entries</td></tr>
+        <tr><td>Collectors who keep using it</td><td class="now">New measure (5-10 collectors in the pilot)</td><td class="good">7 out of 10 still using it after four weeks, without reminders</td></tr>
+    </table>
+    <div class="brand">Sajilo</div><div class="num">11</div>
 </section>
 
 <!-- 11 Try it -->
