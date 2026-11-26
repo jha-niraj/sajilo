@@ -25,6 +25,12 @@
     --color-miss: #c2453a;
     --color-miss-soft: #fbe6e3;
 
+    /* The landing page's light Himalayan sky, beside the paper and saffron. */
+    --color-sky: #3d8fd6;
+    --color-sky-ink: #1d64a3;
+    --color-sky-soft: #e4f0fb;
+    --color-sky-wash: #cfe4f7;
+
     --font-sajilo: var(--font-bricolage), var(--font-mukta), ui-sans-serif, system-ui, sans-serif;
 }
 

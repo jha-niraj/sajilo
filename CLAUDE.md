@@ -204,7 +204,7 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - Keep the file name `middleware.ts` (edge). OpenNext on Workers does not run Node "proxy" yet. Next is pinned to 16.3.x until OpenNext supports 16.4.
 
 ### Routes
-`/` (the login screen itself, no redirect; `/login` just forwards to `/`), `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month` (landscape A4 register: customers x BS days), `/customers/[id]`, `/manage`, `/scan`, `/recharge`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/reports`, `/reports/recharge?m=2083-07`, `/more`, `/settings`, `/offline`.
+`/` (public landing page), `/about` (public, the founder story + contact), `/login` (sign in; signed-out visits to app pages land here with `?returnTo=`), `/signup` (phone + 4-digit PIN via Better Auth phoneNumber plugin), `/munshi`, `/today` (tick list, offline), `/today/finish`, `/month`, `/print/month` (landscape A4 register: customers x BS days), `/customers/[id]`, `/manage`, `/scan`, `/recharge`, `/loans`, `/loans/new`, `/loans/[id]`, `/loans/calculator`, `/cash`, `/reports`, `/reports/recharge?m=2083-07`, `/more`, `/settings`, `/offline`.
 
 ### Offline
 `lib/offline/store.ts` (Dexie: day snapshots + outbox) and `lib/offline/sync.ts` (flush on online/visibility/30s). `public/sw.js` caches the app shell and pages (network-first). Server actions in `actions/` are the only API.
@@ -217,6 +217,12 @@ Sajilo is an offline-first PWA for a bank daily-savings collector (Phase 1: dail
 - Turns go through `POST /api/munshi` (JSON = chat, multipart = voice). Confirm button -> `confirmProposal` server action.
 - New tool: add a def in the right area file and list it in `agenttools/index.ts`.
 - Reply language is decided in code (`lib/munshi/reply-language.ts`, tested): Devanagari in -> Devanagari out, Roman Nepali in -> Roman Nepali out (voice always Devanagari, the TTS reads only that), English in -> English. Confirm cards follow the app language (`cardWords` in `agenttools/resolve.ts`).
+
+### Landing page (`/`, `/about`, plan/phase-6-landing.md)
+- Public story of a daily collector (my father) and Sajilo. Sections: Hero (light sky, uncle `welcome.webp`, pixel valley), Story (sticky chapter list + pixel scenes, scroll-spy), What it does (hairline grid), A day with Sajilo (expanding panels), Who it's for (pixel portraits between Dhaka strips), closing card. About: chapters beside scenes, contact links (no form).
+- Code: `components/landing/` (`site-shell.tsx` = nav + footer + `art.css`). Copy in `lib/landing/copy.ts` (en/ne/mai, typed), not `lib/dict.ts`.
+- Pixel art ported from Boli (`components/landing/art/`: `Grid` -> SVG paths, `PixelReveal` draws row by row on view, Dhaka topi strips, valley, footer wordmark). Sajilo scenes and the `COLLECTOR` sprite: `art/scenes.ts`, `art/valley/kit.ts`. Sky tokens `--color-sky*` in `sajilo.css`.
+- Middleware: signed-in document loads of `/`, `/login`, `/signup` go to `/munshi`; `/about` is public for everyone. Sign-out and stale sessions go to `/login`. robots allows `/` and `/about` only.
 
 ### Voice ledger (Munshi Talk, plan/phase-5-voice-first.md)
 - Talk mode reads entries on the phone: `/api/munshi/hear` (Saaras, names + aliases as keyterms) -> `lib/voice/parse.ts` (names by sound key across Devanagari/Latin, amounts in Hindi/Nepali/Maithili/English words, udharo, payback, yes/no, galti, questions, close day) -> `lib/voice/engine.ts` (cards, questions, warnings, what to save) -> saves through the offline queue (`components/munshi/use-voice-ledger.ts`). Only sentences the engine does not handle go to the Haiku agent. Replies: `lib/voice/replies.ts` (hi/ne/mai/en, Devanagari), spoken by Bulbul online.

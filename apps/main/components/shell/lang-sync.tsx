@@ -8,8 +8,8 @@ import { useI18n } from "@/lib/i18n"
 export const LANG_SYNC_KEY = "sajilo.syncLang"
 
 /**
- * The login page can't save the language itself: its action would be POSTed to `/` with the new
- * session cookie, and the middleware sends a signed-in visitor on `/` to Munshi. So it leaves a
+ * The login page can't save the language itself: its action would be POSTed to `/login` with the new
+ * session cookie, and the middleware sends a signed-in visitor on `/login` to Munshi. So it leaves a
  * note, and the first signed-in page saves it (Munshi's replies and voice follow that setting).
  */
 export function LangSync() {

@@ -194,7 +194,7 @@ export function SignupClient() {
                                 <div className="rounded-2xl bg-card p-4 ring-1 ring-line">
                                     <p className="text-[15px] font-medium text-ink">{t("alreadyHasAccount")}</p>
                                     <Link
-                                        href="/"
+                                        href="/login"
                                         onClick={() => {
                                             const e164 = normalizePhone(phone)
                                             if (e164) saveDeviceAccount({ phone: e164 })
@@ -251,7 +251,7 @@ export function SignupClient() {
             {step === "name" && (
                 <p className="pb-8 text-center text-[15px] text-ink-2">
                     {t("haveAccount")}{" "}
-                    <Link href="/" className="font-semibold text-saffron">
+                    <Link href="/login" className="font-semibold text-saffron">
                         {t("signIn")}
                     </Link>
                 </p>

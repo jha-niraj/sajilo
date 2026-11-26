@@ -3,8 +3,10 @@ import { NextRequest, NextResponse } from "next/server"
 // Edge middleware (Cloudflare/OpenNext does not run Node "proxy" yet), so this only checks
 // that a session cookie exists. Pages and actions verify the session for real.
 
-const PUBLIC_ROUTES = ["/login", "/signup"]
-// "/" is the login screen itself, so it is public for exactly that path.
+const PUBLIC_ROUTES = ["/login", "/signup", "/about"]
+// "/" is the public landing page, so it is public for exactly that path.
+// Signed-in visitors skip these and go straight to the app (/about stays readable by everyone).
+const SIGNED_IN_SKIPS = ["/", "/login", "/signup"]
 const COOKIE_PREFIX = process.env.AUTH_COOKIE_PREFIX || "better-auth"
 
 // Which isolate answered: 1 = a fresh one (a cold start). Cloudflare adds nothing like this, and a
@@ -30,16 +32,18 @@ export function middleware(request: NextRequest) {
 
     if (!isLoggedIn && !isPublic) {
         // Back to this page after signing in (validated by lib/sign-in-destination.ts).
-        const to = new URL("/", request.nextUrl.origin)
+        const to = new URL("/login", request.nextUrl.origin)
         to.searchParams.set("returnTo", pathname + search)
         return stamp(NextResponse.redirect(to))
     }
-    // A signed-in person who OPENS the login page goes home. Only a document load: the router's
-    // background fetches (Sec-Fetch-Dest: empty) must get the page, because the sign-out button
-    // prefetches `/` while he is still signed in, and a cached redirect would send sign-out back to
-    // Munshi. Next strips its own router headers before this runs, so this header is how to tell.
+    // A signed-in person who OPENS the landing or login page goes home. Only a document load: the
+    // router's background fetches (Sec-Fetch-Dest: empty) must get the page, because the sign-out
+    // button prefetches `/login` while he is still signed in, and a cached redirect would send
+    // sign-out back to Munshi. Next strips its own router headers before this runs, so this header
+    // is how to tell.
     const dest = request.headers.get("sec-fetch-dest")
-    if (isLoggedIn && isPublic && (!dest || dest === "document")) {
+    const skips = SIGNED_IN_SKIPS.some((r) => pathname === r || (r !== "/" && pathname.startsWith(r + "/")))
+    if (isLoggedIn && skips && (!dest || dest === "document")) {
         return stamp(NextResponse.redirect(new URL("/munshi", request.nextUrl.origin)))
     }
     return stamp(NextResponse.next())

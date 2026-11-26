@@ -1,0 +1,123 @@
+/*
+ * Motion for the landing pixel art (ported from Boli). Imported by the landing layout. Every class is prefixed `art-`; the
+ * reduced-motion rules are scoped to `.art-root` (wrap art in `<ArtRoot>`).
+ * Only transform and opacity animate. Everything stops - and every scene shows its finished state - under
+ * prefers-reduced-motion.
+ */
+
+/* Pixel frames: A shows, then B. Two layers so the swap is a hard cut, like a sprite sheet. */
+.art-fa {
+    animation: art-fa var(--art-dur, 1.2s) steps(1, end) infinite;
+    animation-delay: var(--art-delay, 0s);
+}
+.art-fb {
+    opacity: 0;
+    animation: art-fb var(--art-dur, 1.2s) steps(1, end) infinite;
+    animation-delay: var(--art-delay, 0s);
+}
+@keyframes art-fa { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes art-fb { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
+
+/* A wave: B flashes twice late in the cycle (the shopkeeper's hand). */
+.art-wa {
+    animation: art-wa var(--art-dur, 4s) steps(1, end) infinite;
+    animation-delay: var(--art-delay, 0s);
+}
+.art-wb {
+    opacity: 0;
+    animation: art-wb var(--art-dur, 4s) steps(1, end) infinite;
+    animation-delay: var(--art-delay, 0s);
+}
+@keyframes art-wa { 0% { opacity: 1; } 55% { opacity: 0; } 62% { opacity: 1; } 69% { opacity: 0; } 76% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes art-wb { 0% { opacity: 0; } 55% { opacity: 1; } 62% { opacity: 0; } 69% { opacity: 1; } 76% { opacity: 0; } 100% { opacity: 0; } }
+
+/* A blink: A holds, B shows for a moment at the end of each cycle (eyes closing, a thumb moving). */
+.art-ka {
+    animation: art-ka var(--art-dur, 4s) steps(1, end) infinite;
+    animation-delay: var(--art-delay, 0s);
+}
+.art-kb {
+    opacity: 0;
+    animation: art-kb var(--art-dur, 4s) steps(1, end) infinite;
+    animation-delay: var(--art-delay, 0s);
+}
+@keyframes art-ka { 0% { opacity: 1; } 92% { opacity: 0; } 97% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes art-kb { 0% { opacity: 0; } 92% { opacity: 1; } 97% { opacity: 0; } 100% { opacity: 0; } }
+
+/* Typing dots inside a bubble. */
+.art-dot { animation: art-dot 0.9s steps(1, end) infinite; animation-delay: var(--art-delay, 0s); }
+@keyframes art-dot { 0% { opacity: 0.25; } 33% { opacity: 1; } 66% { opacity: 0.25; } 100% { opacity: 0.25; } }
+
+/* Drift sideways by --art-dx (clouds, birds, a walker). Timing set inline (steps(n) keeps pixels on the grid). */
+.art-drift {
+    animation: art-drift var(--art-dur, 90s) linear infinite;
+    animation-delay: var(--art-delay, 0s);
+}
+@keyframes art-drift { from { transform: translateX(0); } to { transform: translateX(var(--art-dx, 240px)); } }
+
+/* Smoke: a puff rises one pixel at a time and fades. */
+.art-smoke {
+    opacity: 0.75;
+    animation: art-smoke var(--art-dur, 3.6s) steps(6, end) infinite;
+    animation-delay: var(--art-delay, 0s);
+}
+@keyframes art-smoke {
+    0% { transform: translate(0, 0); opacity: 0.9; }
+    100% { transform: translate(2px, -9px); opacity: 0; }
+}
+
+.art-glow { animation: art-glow 7s ease-in-out infinite; }
+@keyframes art-glow { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+/* Speech: bubbles take turns (16s). Each: typing dots, then the words, then it closes.
+   `both` holds the first keyframe during the delay, so only the first speaker shows at the start. */
+.art-say2 { animation: art-say2 var(--art-dur, 16s) linear infinite both; animation-delay: var(--art-delay, 0s); }
+@keyframes art-say2 { 0% { opacity: 0; } 1.5% { opacity: 1; } 23% { opacity: 1; } 25% { opacity: 0; } 100% { opacity: 0; } }
+.art-say2-text { animation: art-say2-text var(--art-dur, 16s) steps(1, end) infinite both; animation-delay: var(--art-delay, 0s); }
+@keyframes art-say2-text { 0% { opacity: 0; } 7% { opacity: 1; } 100% { opacity: 1; } }
+.art-say2-dots { opacity: 0; animation: art-say2-dots var(--art-dur, 16s) steps(1, end) infinite both; animation-delay: var(--art-delay, 0s); }
+@keyframes art-say2-dots { 0% { opacity: 1; } 7% { opacity: 0; } 100% { opacity: 0; } }
+
+/* Story scenes reveal row by row: outlines first, then the flat fills, then what moves. */
+.art-reveal .art-row { opacity: 0; }
+.art-reveal[data-on="true"] .art-row {
+    opacity: 1;
+    transition: opacity 0.04s steps(1, end);
+    transition-delay: var(--d, 0s);
+}
+
+/* An LED or a screen that blinks hard. */
+.art-blink { animation: art-blink var(--art-dur, 1s) steps(1, end) infinite; animation-delay: var(--art-delay, 0s); }
+@keyframes art-blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+/* An envelope walking to the door. Its resting place (reduced motion) is where it is drawn; it travels from --art-from to --art-to. */
+.art-mail { animation: art-mail var(--art-dur, 4s) linear infinite; animation-delay: var(--art-delay, 0s); }
+@keyframes art-mail {
+    0% { transform: translateX(var(--art-from, 0px)); opacity: 0; }
+    8% { opacity: 1; }
+    86% { opacity: 1; }
+    100% { transform: translateX(var(--art-to, 0px)); opacity: 0; }
+}
+
+/* A pulse running along a wire toward the Boli house. */
+.art-chase { opacity: 0.9; animation: art-chase 1.6s steps(1, end) infinite; animation-delay: var(--art-delay, 0s); }
+@keyframes art-chase { 0% { opacity: 1; } 18% { opacity: 0.15; } 100% { opacity: 0.15; } }
+
+/*
+ * Reduced motion: every art class stops wherever it is used (no wrapper needed), and inside an `.art-root` anything
+ * else that animates stops too. Each scene then shows its finished state.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .art-root *,
+    .art-root *::before,
+    .art-root *::after,
+    [class^="art-"],
+    [class*=" art-"] {
+        animation: none !important;
+        transition: none !important;
+    }
+    .art-reveal .art-row { opacity: 1 !important; }
+    .art-say2-text { opacity: 1 !important; }
+    .art-say2-rest { opacity: 0 !important; }
+    .art-chase { opacity: 0.9 !important; }
+}
