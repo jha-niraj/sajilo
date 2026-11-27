@@ -21,162 +21,194 @@ async function sendEmail(to: string, subject: string, html: string) {
     })
 }
 
-export const auth = betterAuth({
-    database: drizzleAdapter(db, {
-        provider: 'pg',
-        schema: { user, session, account, verification, rateLimit },
-    }),
+function createAuth() {
+    return betterAuth({
+        database: drizzleAdapter(db, {
+            provider: 'pg',
+            schema: { user, session, account, verification, rateLimit },
+        }),
 
-    emailAndPassword: {
-        enabled: true,
-        requireEmailVerification: false,
-        // Collectors use a 4-digit PIN as their password. Admin forms enforce stronger passwords.
-        minPasswordLength: 4,
+        emailAndPassword: {
+            enabled: true,
+            requireEmailVerification: false,
+            // Collectors use a 4-digit PIN as their password. Admin forms enforce stronger passwords.
+            minPasswordLength: 4,
 
-        sendResetPassword: async ({ user: u, url }) => {
-            await sendEmail(
-                u.email,
-                'Reset your password',
-                resetPasswordEmail({ name: u.name ?? u.email, resetUrl: url }),
-            ).catch(console.error)
+            sendResetPassword: async ({ user: u, url }) => {
+                await sendEmail(
+                    u.email,
+                    'Reset your password',
+                    resetPasswordEmail({ name: u.name ?? u.email, resetUrl: url }),
+                ).catch(console.error)
+            },
         },
-    },
 
-    emailVerification: {
-        sendVerificationEmail: async ({ user: u, url }) => {
-            await sendEmail(
-                u.email,
-                'Verify your email',
-                verifyEmailTemplate({ name: u.name ?? u.email, verifyUrl: url }),
-            ).catch(console.error)
+        emailVerification: {
+            sendVerificationEmail: async ({ user: u, url }) => {
+                await sendEmail(
+                    u.email,
+                    'Verify your email',
+                    verifyEmailTemplate({ name: u.name ?? u.email, verifyUrl: url }),
+                ).catch(console.error)
+            },
         },
-    },
 
-    databaseHooks: {
-        user: {
-            create: {
-                // Only send welcome immediately for social sign-ups (Google OAuth),
-                // where the email is already verified at account creation.
-                // Email/password users get the welcome email after OTP verification.
-                after: async (u) => {
-                    if (!u.emailVerified) return
-                    await sendEmail(
-                        u.email,
-                        'Welcome!',
-                        welcomeEmail({ name: u.name ?? u.email }),
-                    ).catch(console.error)
+        databaseHooks: {
+            user: {
+                create: {
+                    // Only send welcome immediately for social sign-ups (Google OAuth),
+                    // where the email is already verified at account creation.
+                    // Email/password users get the welcome email after OTP verification.
+                    after: async (u) => {
+                        if (!u.emailVerified) return
+                        await sendEmail(
+                            u.email,
+                            'Welcome!',
+                            welcomeEmail({ name: u.name ?? u.email }),
+                        ).catch(console.error)
+                    },
                 },
             },
         },
-    },
 
-    socialProviders:
-        process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-            ? {
-                  google: {
-                      clientId: process.env.GOOGLE_CLIENT_ID,
-                      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-                  },
-              }
-            : {},
+        socialProviders:
+            process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+                ? {
+                      google: {
+                          clientId: process.env.GOOGLE_CLIENT_ID,
+                          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                      },
+                  }
+                : {},
 
-    trustedOrigins: [
-        process.env.MAIN_APP_URL || 'http://localhost:3100',
-        process.env.ADMIN_APP_URL || 'http://localhost:3001',
-    ],
+        trustedOrigins: [
+            process.env.MAIN_APP_URL || 'http://localhost:3100',
+            process.env.ADMIN_APP_URL || 'http://localhost:3001',
+        ],
 
-    user: {
-        additionalFields: {
-            role: {
-                type: 'string',
-                defaultValue: 'USER',
-            },
-            address: {
-                type: 'string',
-                required: false,
-                input: false,
-            },
-            isActive: {
-                type: 'boolean',
-                defaultValue: true,
-                required: false,
-            },
-            bio: {
-                type: 'string',
-                required: false,
+        user: {
+            additionalFields: {
+                role: {
+                    type: 'string',
+                    defaultValue: 'USER',
+                },
+                address: {
+                    type: 'string',
+                    required: false,
+                    input: false,
+                },
+                isActive: {
+                    type: 'boolean',
+                    defaultValue: true,
+                    required: false,
+                },
+                bio: {
+                    type: 'string',
+                    required: false,
+                },
             },
         },
-    },
 
-    session: {
-        expiresIn: 60 * 60 * 24 * 30,
-        updateAge: 60 * 60 * 24,
-        cookieCache: COOKIE_CACHE,
-    },
-
-    baseURL: process.env.BETTER_AUTH_URL,
-
-    // localhost:3100 and :3001 share cookies (cookies ignore ports), so each app gets its own prefix.
-    advanced: {
-        cookiePrefix: process.env.AUTH_COOKIE_PREFIX || 'better-auth',
-        // Without a readable client IP, the rate limiter puts everyone in one shared bucket, so five
-        // PIN sign-ins by anyone lock out the next person (and the sign-in right after sign-up).
-        // Cloudflare sets cf-connecting-ip to the real visitor address.
-        ipAddress: {
-            ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'],
+        session: {
+            expiresIn: 60 * 60 * 24 * 30,
+            updateAge: 60 * 60 * 24,
+            cookieCache: COOKIE_CACHE,
         },
-    },
 
-    // A 4-digit PIN has only 10,000 combinations, so PIN sign-in is tightly limited and the
-    // counters live in the database (Workers isolates do not share memory).
-    rateLimit: {
-        enabled: true,
-        storage: 'database',
-        window: 60,
-        max: 100,
-        customRules: {
-            '/sign-in/phone-number': { window: 300, max: 5 },
-            '/sign-in/email': { window: 300, max: 10 },
+        baseURL: process.env.BETTER_AUTH_URL,
+
+        // localhost:3100 and :3001 share cookies (cookies ignore ports), so each app gets its own prefix.
+        advanced: {
+            cookiePrefix: process.env.AUTH_COOKIE_PREFIX || 'better-auth',
+            // Without a readable client IP, the rate limiter puts everyone in one shared bucket, so five
+            // PIN sign-ins by anyone lock out the next person (and the sign-in right after sign-up).
+            // Cloudflare sets cf-connecting-ip to the real visitor address.
+            ipAddress: {
+                ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'],
+            },
         },
-    },
 
-    plugins: [
-        phoneNumber({
-            // OTP is not live yet; sign-in is phone + PIN. Wire an SMS provider here to enable it.
-            sendOTP: async ({ phoneNumber: phone }) => {
-                console.warn(`[auth] OTP requested for ${phone} but no SMS provider is configured`)
+        // A 4-digit PIN has only 10,000 combinations, so PIN sign-in is tightly limited and the
+        // counters live in the database (Workers isolates do not share memory).
+        rateLimit: {
+            enabled: true,
+            storage: 'database',
+            window: 60,
+            max: 100,
+            customRules: {
+                '/sign-in/phone-number': { window: 300, max: 5 },
+                '/sign-in/email': { window: 300, max: 10 },
             },
-        }),
-        emailOTP({
-            async sendVerificationOTP({ email, otp, type }) {
-                const resendKey = process.env.RESEND_API_KEY
-                if (!resendKey) return
-                const { Resend } = await import('resend')
-                const resend = new Resend(resendKey)
-                const subject = type === 'email-verification'
-                    ? 'Your verification code'
-                    : type === 'forget-password'
-                        ? 'Your password reset code'
-                        : 'Your sign-in code'
-                await resend.emails.send({
-                    from: process.env.RESEND_FROM_EMAIL || 'noreply@sajilo.app',
-                    to: email,
-                    subject,
-                    html: buildOtpEmail({ otp, subject, type }),
-                }).catch(console.error)
-            },
-            otpLength: 6,
-            expiresIn: 600, // 10 minutes
-        }),
-        // LAST, always: lets Server Actions and route handlers pass better-auth's Set-Cookie through
-        // (sign-up signs in here; the cookie cache is refreshed after maxAge instead of falling back
-        // to a database read on every request).
-        nextCookies(),
-    ],
+        },
+
+        plugins: [
+            phoneNumber({
+                // OTP is not live yet; sign-in is phone + PIN. Wire an SMS provider here to enable it.
+                sendOTP: async ({ phoneNumber: phone }) => {
+                    console.warn(`[auth] OTP requested for ${phone} but no SMS provider is configured`)
+                },
+            }),
+            emailOTP({
+                async sendVerificationOTP({ email, otp, type }) {
+                    const resendKey = process.env.RESEND_API_KEY
+                    if (!resendKey) return
+                    const { Resend } = await import('resend')
+                    const resend = new Resend(resendKey)
+                    const subject = type === 'email-verification'
+                        ? 'Your verification code'
+                        : type === 'forget-password'
+                            ? 'Your password reset code'
+                            : 'Your sign-in code'
+                    await resend.emails.send({
+                        from: process.env.RESEND_FROM_EMAIL || 'noreply@sajilo.app',
+                        to: email,
+                        subject,
+                        html: buildOtpEmail({ otp, subject, type }),
+                    }).catch(console.error)
+                },
+                otpLength: 6,
+                expiresIn: 600, // 10 minutes
+            }),
+            // LAST, always: lets Server Actions and route handlers pass better-auth's Set-Cookie through
+            // (sign-up signs in here; the cookie cache is refreshed after maxAge instead of falling back
+            // to a database read on every request).
+            nextCookies(),
+        ],
+    })
+}
+
+type Auth = ReturnType<typeof createAuth>
+let instance: Auth | null = null
+
+/**
+ * better-auth starts its async setup the moment betterAuth() runs. On Cloudflare Workers a promise
+ * belongs to the request that created it: if the module is loaded by a request that never waits for
+ * auth (the public landing page) and that request ends first, the setup can never settle, and every
+ * later getSession in the isolate fails with "created by a request that has since ended". So the
+ * instance is built on first use, inside a request that awaits it, and dropped if it is ever lost.
+ */
+export const auth: Auth = new Proxy({} as Auth, {
+    get: (_t, key) => Reflect.get((instance ??= createAuth()), key),
+    has: (_t, key) => key in (instance ??= createAuth()),
 })
 
-export type Session = typeof auth.$Infer.Session
-export type User = typeof auth.$Infer.Session.user
+export function isLostAuthPromise(e: unknown): boolean {
+    return e instanceof Error && e.message.includes('request that has since ended')
+}
+
+/** Runs an auth call; if the shared setup was lost with an ended request, rebuilds it once and retries. */
+export async function withAuth<T>(run: (a: Auth) => Promise<T>): Promise<T> {
+    try {
+        return await run(auth)
+    } catch (e) {
+        if (!isLostAuthPromise(e)) throw e
+        instance = null
+        return run(auth)
+    }
+}
+
+export type Session = Auth['$Infer']['Session']
+export type User = Auth['$Infer']['Session']['user']
 
 function buildOtpEmail({ otp, subject, type }: { otp: string; subject: string; type: string }): string {
     const year = new Date().getFullYear()

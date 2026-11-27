@@ -17,7 +17,12 @@ export async function transcribe(audio: Blob, lang: "ne" | "en", keyterms: strin
     form.append("file", clean, type.includes("mp4") ? "speech.mp4" : type.includes("ogg") ? "speech.ogg" : "speech.webm")
     form.append("model", "saaras:v4")
     form.append("language_code", lang === "ne" ? "ne-IN" : "unknown")
-    const terms = keyterms.filter((k) => k.length <= 64).slice(0, 50)
+    // Sarvam refuses the whole request when a keyterm repeats (a customer who is also an udharo person).
+    const seen = new Set<string>()
+    const terms = keyterms
+        .map((k) => k.trim())
+        .filter((k) => k && k.length <= 64 && !seen.has(k.toLowerCase()) && seen.add(k.toLowerCase()))
+        .slice(0, 50)
     if (terms.length) form.append("keyterms", JSON.stringify(terms))
     const res = await fetch(`${BASE}/speech-to-text`, {
         method: "POST",

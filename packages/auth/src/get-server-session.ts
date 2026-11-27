@@ -1,9 +1,9 @@
-import { auth } from './auth'
+import { withAuth } from './auth'
 import { headers } from 'next/headers'
 
 export async function getServerSession() {
     const h = await headers()
-    return auth.api.getSession({ headers: h })
+    return withAuth((a) => a.api.getSession({ headers: h }))
 }
 
 export async function requireServerSession() {

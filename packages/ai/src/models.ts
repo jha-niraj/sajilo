@@ -31,6 +31,7 @@ export const MODELS = {
 	'claude-haiku-4-5-20251001': { id: 'claude-haiku-4-5-20251001', provider: 'anthropic', inputPerMillion: 1, outputPerMillion: 5, kind: 'chat' },
 	// Prompts up to 100k tokens; longer prompts cost $0.50 / $2.50 (Munshi's never come close).
 	'claude-haiku-5-5': { id: 'claude-haiku-5-5', provider: 'anthropic', inputPerMillion: 0.1, outputPerMillion: 0.5, kind: 'chat' },
+	'claude-sonnet-5-5': { id: 'claude-sonnet-5-5', provider: 'anthropic', inputPerMillion: 2, outputPerMillion: 10, kind: 'chat' },
 	'claude-sonnet-4-6': { id: 'claude-sonnet-4-6', provider: 'anthropic', inputPerMillion: 3, outputPerMillion: 15, kind: 'chat' },
 } as const satisfies Record<string, ModelInfo>;
 

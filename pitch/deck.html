@@ -182,7 +182,7 @@
         <tr><th>Service</th><th>What it does in Sajilo</th><th>Is it on the path that saves money?</th></tr>
         <tr><td>Sarvam Saaras (speech to text)</td><td>Turns his spoken words into text, using his customers' names as hints.</td><td>No. It only gives text; our own code reads names and amounts, and nothing saves until he says "haan".</td></tr>
         <tr><td>Sarvam Bulbul (text to speech)</td><td>Reads each card back to him in a natural voice.</td><td>No. Every reply is also shown on screen.</td></tr>
-        <tr><td>Claude Haiku (language model)</td><td>Answers only the sentences our rules cannot read, and the typed chat.</td><td>No. Entries, yes/no, totals and closing the day are plain code.</td></tr>
+        <tr><td>Claude Sonnet 5.5 (language model)</td><td>Answers only the sentences our rules cannot read, and the typed chat.</td><td>No. Entries, yes/no, totals and closing the day are plain code.</td></tr>
         <tr><td>Chrome on-device speech</td><td>Hears him with no network (free, runs on the phone).</td><td>No. Same "haan" rule applies.</td></tr>
         <tr><td>Postgres (Neon) + Cloudflare Workers</td><td>Backup, sync across devices, month register and reports.</td><td>Saves go to the phone first, then sync, so a slow or missing server never loses an entry.</td></tr>
     </table>
@@ -198,7 +198,7 @@
         <tr><th>Service</th><th>If it gets costly</th><th>If it stops working</th></tr>
         <tr><td>Speech to text (Sarvam Saaras)</td><td>Only a few seconds of audio per entry are sent. Next step: an open Indic speech model (for example AI4Bharat IndicConformer) on our own server, or Chrome's free on-device recognition.</td><td>Talk switches to Chrome's on-device recognition, the same path it already uses offline. Anything not understood is kept as a note. The tap-to-tick list always works.</td></tr>
         <tr><td>Voice replies (Sarvam Bulbul)</td><td>Replies are short ("2 entry, kul 700. Theek?"). Use the phone's built-in voice, which is free.</td><td>The phone's built-in voice reads the reply (already used offline). The text is always on screen.</td></tr>
-        <tr><td>Language model (Claude Haiku)</td><td>Most entries never reach it. Swap to a cheaper model: GPT mini and Sarvam-105b are already wired in.</td><td>Entries, questions and closing the day keep working. Only free-form chat shows "AI key missing".</td></tr>
+        <tr><td>Language model (Claude Sonnet 5.5)</td><td>Most entries never reach it. Swap to a cheaper model: GPT mini and Sarvam-105b are already wired in.</td><td>Entries, questions and closing the day keep working. Only free-form chat shows "AI key missing".</td></tr>
         <tr><td>Database and hosting (Neon, Cloudflare)</td><td>It is standard Postgres and Node, so it moves to any host. The Docker setup in the repo runs it on one machine.</td><td>The phone keeps saving to its own queue and syncs when the server is back. No entry is lost.</td></tr>
     </table>
     <div class="brand">Sajilo</div><div class="num">8</div>
